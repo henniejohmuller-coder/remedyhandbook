@@ -1,0 +1,432 @@
+import 'package:supabase_flutter/supabase_flutter.dart';
+import 'package:shared_preferences/shared_preferences.dart';
+
+final supabase = Supabase.instance.client;
+
+class SupabaseService {
+  // Expose client for direct access when needed
+  static final supabase = Supabase.instance.client;
+  // ── Auth ──────────────────────────────────────────────────────
+  static Future<AuthResponse> signIn(String email, String password) async {
+    return await supabase.auth.signInWithPassword(email: email, password: password);
+  }
+
+  static Future<AuthResponse> signUp(String email, String password, String fullName) async {
+    return await supabase.auth.signUp(
+      email: email, password: password,
+      data: {'full_name': fullName},
+    );
+  }
+
+  static Future<void> signOut() async {
+    clearContentCache();
+    clearDropdownCache();
+    clearProductsCache();
+    clearRemediesCache();
+    await supabase.auth.signOut();
+  }
+
+  static Future<void> setSessionPersistence(bool persist) async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setBool('stay_logged_in', persist);
+  }
+
+  static Future<bool> shouldStayLoggedIn() async {
+    final prefs = await SharedPreferences.getInstance();
+    return prefs.getBool('stay_logged_in') ?? true;
+  }
+  static User? get currentUser => supabase.auth.currentUser;
+  static bool get isLoggedIn => supabase.auth.currentUser != null;
+
+  // ── App content cache (30-min TTL, cleared on sign-out) ───────
+  static final Map<String, String> _contentCache   = {};
+  static final Map<String, DateTime> _contentTime  = {};
+  static const _contentTTL = Duration(minutes: 30);
+
+  static Future<String> getAppContent(String key) async {
+    final now = DateTime.now();
+    if (_contentCache.containsKey(key) &&
+        now.difference(_contentTime[key]!).compareTo(_contentTTL) < 0) {
+      return _contentCache[key]!;
+    }
+    try {
+      final data = await supabase
+          .from('app_content')
+          .select('content')
+          .eq('key', key)
+          .single();
+      _contentCache[key]  = data['content'] ?? '';
+      _contentTime[key]   = now;
+      return _contentCache[key]!;
+    } catch (_) { return ''; }
+  }
+
+  static void clearContentCache() {
+    _contentCache.clear();
+    _contentTime.clear();
+  }
+
+  static Future<Map<String, dynamic>?> getProfile(String userId) async {
+    return await supabase
+        .from('profiles')
+        .select('id, full_name, phone, location, address, city, country, avatar_url, role, joined_at')
+        .eq('id', userId)
+        .single();
+  }
+
+  static Future<void> updateProfile(String userId, Map<String, dynamic> data) async {
+    await supabase.from('profiles').update(data).eq('id', userId);
+  }
+
+  static Future<bool> isAdmin(String userId) async {
+    final profile = await getProfile(userId);
+    return profile?['role'] == 'admin' || profile?['role'] == 'moderator';
+  }
+
+  // ── Remedies ──────────────────────────────────────────────────
+  // Simple products cache to avoid repeated fetches
+  static List<Map<String, dynamic>>? _productsCache;
+  static DateTime? _productsCacheTime;
+
+  static Future<List<Map<String, dynamic>>> getProducts({String? type, bool forceRefresh = false}) async {
+    final now = DateTime.now();
+    if (!forceRefresh && _productsCache != null && _productsCacheTime != null &&
+        now.difference(_productsCacheTime!).inMinutes < 5) {
+      if (type != null) return _productsCache!.where((p) => p['type'] == type).toList();
+      return _productsCache!;
+    }
+    var query = supabase
+        .from('products')
+        .select('id, name, type, description, price, original_price, image_url, in_stock, active, linked_remedy_id, prep_guide_included, delivery_days')
+        .eq('active', true);
+    final response = await query;
+    _productsCache = List<Map<String, dynamic>>.from(response);
+    _productsCacheTime = now;
+    if (type != null) return _productsCache!.where((p) => p['type'] == type).toList();
+    return _productsCache!;
+  }
+
+  static void clearProductsCache() => _productsCache = null;
+
+  // ── Remedies cache (session-length, force-refreshable) ────────
+  static List<Map<String, dynamic>>? _remediesCache;
+  static DateTime? _remediesCacheTime;
+  static const _remediesTTL = Duration(minutes: 10);
+
+  static void clearRemediesCache() => _remediesCache = null;
+
+  static Future<List<Map<String, dynamic>>> getRemedies({
+    String? category, String? illness, String? component,
+    String? organ, String? symptom, int? minValidation,
+    int? minTradition, double? minUserRating,
+    String? difficulty, String? search,
+    bool includeInstructions = false,
+    bool forceRefresh = false,
+  }) async {
+    final now = DateTime.now();
+    final hasFilters = (category != null && category != 'All') ||
+        (illness  != null && illness  != 'All') ||
+        (component!= null && component!= 'All') ||
+        (organ    != null && organ    != 'All') ||
+        (symptom  != null && symptom  != 'All') ||
+        (minValidation != null && minValidation > 0) ||
+        (minTradition  != null && minTradition  > 0) ||
+        (minUserRating != null && minUserRating > 0) ||
+        (difficulty != null && difficulty != 'All') ||
+        (search != null && search.isNotEmpty) ||
+        includeInstructions;
+
+    // Serve from cache when no filters are active and cache is fresh
+    if (!forceRefresh && !hasFilters &&
+        _remediesCache != null && _remediesCacheTime != null &&
+        now.difference(_remediesCacheTime!).compareTo(_remediesTTL) < 0) {
+      return _remediesCache!;
+    }
+
+    var query = supabase
+        .from('remedies_full')
+        .select(includeInstructions ? '*, remedy_instructions(*)' : '*')
+        .eq('status', 'approved');
+
+    if (category  != null && category  != 'All') query = query.eq('category_name', category);
+    if (illness   != null && illness   != 'All') query = query.eq('illness_name', illness);
+    if (component != null && component != 'All') query = query.ilike('component', '%$component%');
+    if (organ     != null && organ     != 'All') query = query.eq('organ_name', organ);
+    if (symptom   != null && symptom   != 'All') query = query.eq('symptom_name', symptom);
+    if (minValidation != null && minValidation > 0) query = query.gte('validation_level', minValidation);
+    if (minTradition  != null && minTradition  > 0) query = query.gte('tradition_rating', minTradition);
+    if (minUserRating != null && minUserRating > 0) query = query.gte('avg_user_rating', minUserRating);
+    if (difficulty != null && difficulty != 'All') query = query.eq('difficulty', difficulty);
+    if (search != null && search.isNotEmpty)
+      query = query.or('name.ilike.%$search%,component.ilike.%$search%,function.ilike.%$search%');
+
+    final response = await query.order('name');
+    final list = List<Map<String, dynamic>>.from(response);
+
+    // Cache the unfiltered full list only
+    if (!hasFilters) {
+      _remediesCache     = list;
+      _remediesCacheTime = now;
+    }
+    return list;
+  }
+
+  static Future<Map<String, dynamic>?> getRemedyById(String id) async {
+    return await supabase.from('remedies_full')
+        .select('*, remedy_instructions(*), remedy_reviews(*, profiles(full_name))')
+        .eq('id', id).single();
+  }
+
+  // ── Reviews ───────────────────────────────────────────────────
+  static Future<void> _recalcAverageRating(String remedyId) async {
+    try {
+      debugPrint('_recalcAverageRating calling RPC for remedyId=$remedyId');
+      await supabase.rpc('recalc_remedy_rating', params: {'p_remedy_id': remedyId});
+      debugPrint('_recalcAverageRating RPC completed');
+    } catch (e) {
+      debugPrint('_recalcAverageRating error: $e');
+    }
+  }
+
+  static Future<void> submitReview({
+    required String remedyId, required int rating,
+    String? comment, bool isPreparation = false,
+  }) async {
+    final userId = currentUser?.id;
+    debugPrint('submitReview: userId=$userId remedyId=$remedyId rating=$rating');
+    if (userId == null) { debugPrint('ERROR: user not logged in'); return; }
+    if (remedyId.isEmpty) { debugPrint('ERROR: remedyId is empty'); return; }
+
+    try {
+      final existing = await supabase.from('remedy_reviews')
+          .select('id')
+          .eq('remedy_id', remedyId)
+          .eq('user_id', userId)
+          .maybeSingle();
+      debugPrint('existing review: $existing');
+
+      if (existing != null) {
+        await supabase.from('remedy_reviews').update({
+          'rating': rating, 'comment': comment ?? '',
+        }).eq('id', existing['id']);
+      } else {
+        await supabase.from('remedy_reviews').insert({
+          'remedy_id': remedyId, 'user_id': userId,
+          'rating': rating, 'comment': comment ?? '',
+        });
+      }
+      // Recalculate average from all reviews and write back to remedies
+      await _recalcAverageRating(remedyId);
+    } catch (e, stack) {
+      debugPrint('submitReview ERROR: $e');
+      debugPrint('stack: $stack');
+      rethrow;
+    }
+  }
+
+  // ── Saved Remedies ────────────────────────────────────────────
+  static Future<List<Map<String, dynamic>>> getSavedRemedies() async {
+    final userId = currentUser?.id;
+    if (userId == null) return [];
+    final response = await supabase.from('saved_remedies')
+        .select('*, remedies_full(*)').eq('user_id', userId);
+    return List<Map<String, dynamic>>.from(response);
+  }
+
+  static Future<void> saveRemedy(String remedyId) async {
+    final userId = currentUser?.id;
+    if (userId == null) return;
+    await supabase.from('saved_remedies').upsert({'user_id': userId, 'remedy_id': remedyId});
+  }
+
+  static Future<void> unsaveRemedy(String remedyId) async {
+    final userId = currentUser?.id;
+    if (userId == null) return;
+    await supabase.from('saved_remedies').delete().eq('user_id', userId).eq('remedy_id', remedyId);
+  }
+
+  static Future<bool> isRemedySaved(String remedyId) async {
+    final userId = currentUser?.id;
+    if (userId == null) return false;
+    final response = await supabase
+        .from('saved_remedies')
+        .select('id')
+        .eq('user_id', userId)
+        .eq('remedy_id', remedyId)
+        .limit(1);
+    return (response as List).isNotEmpty;
+  }
+
+  // ── Products ──────────────────────────────────────────────────
+  // ── Cart ──────────────────────────────────────────────────────
+  static Future<List<Map<String, dynamic>>> getCart() async {
+    final userId = currentUser?.id;
+    if (userId == null) return [];
+    final response = await supabase.from('cart_items')
+        .select('*, products(*)').eq('user_id', userId);
+    return List<Map<String, dynamic>>.from(response);
+  }
+
+  static Future<void> addToCart(String productId, {int quantity = 1}) async {
+    final userId = currentUser?.id;
+    if (userId == null) return;
+    final existing = await supabase.from('cart_items')
+        .select('id, quantity').eq('user_id', userId)
+        .eq('product_id', productId).maybeSingle();
+    if (existing != null) {
+      final newQty = ((existing['quantity'] ?? 1) as int) + quantity;
+      await supabase.from('cart_items')
+          .update({'quantity': newQty}).eq('id', existing['id']);
+    } else {
+      await supabase.from('cart_items').insert(
+          {'user_id': userId, 'product_id': productId, 'quantity': quantity});
+    }
+  }
+
+  static Future<void> updateCartQuantity(String productId, int quantity) async {
+    final userId = currentUser?.id;
+    if (userId == null) return;
+    if (quantity <= 0) {
+      await removeFromCart(productId);
+    } else {
+      await supabase.from('cart_items')
+          .update({'quantity': quantity})
+          .eq('user_id', userId).eq('product_id', productId);
+    }
+  }
+
+  static Future<void> removeFromCart(String productId) async {
+    final userId = currentUser?.id;
+    if (userId == null) return;
+    await supabase.from('cart_items').delete()
+        .eq('user_id', userId).eq('product_id', productId);
+  }
+
+  static Future<void> clearCart() async {
+    final userId = currentUser?.id;
+    if (userId == null) return;
+    await supabase.from('cart_items').delete().eq('user_id', userId);
+  }
+
+  // ── Orders ────────────────────────────────────────────────────
+  static Future<Map<String, dynamic>> placeOrder({
+    required Map<String, dynamic> deliveryDetails,
+    required List<Map<String, dynamic>> cartItems,
+    required double subtotal, required double shipping, required double total,
+  }) async {
+    final userId = currentUser?.id;
+    if (userId == null) throw Exception('Not logged in');
+
+    final order = await supabase.from('orders').insert({
+      'user_id':   userId,
+      'full_name': deliveryDetails['full_name'],
+      'email':     deliveryDetails['email'],
+      'phone':     deliveryDetails['phone'],
+      'address':   deliveryDetails['address'],
+      'city':      deliveryDetails['city'],
+      'postal_code': deliveryDetails['postal_code'],
+      'country':   deliveryDetails['country'] ?? 'South Africa',
+      'subtotal':  subtotal, 'shipping': shipping, 'total': total,
+      'status':    'paid',
+    }).select('id').single();
+
+    final items = cartItems.map((item) => {
+      'order_id': order['id'], 'product_id': item['product_id'],
+      'product_name': item['products']['name'],
+      'quantity': item['quantity'], 'unit_price': item['products']['price'],
+    }).toList();
+
+    await supabase.from('order_items').insert(items);
+    await clearCart();
+    return order;
+  }
+
+  static Future<List<Map<String, dynamic>>> getOrders() async {
+    final userId = currentUser?.id;
+    if (userId == null) return [];
+    final response = await supabase.from('orders')
+        .select('*, order_items(*)')
+        .eq('user_id', userId)
+        .order('created_at', ascending: false);
+    return List<Map<String, dynamic>>.from(response);
+  }
+
+  // ── Submissions ───────────────────────────────────────────────
+  static Future<void> submitRemedy(Map<String, dynamic> data) async {
+    final userId = currentUser?.id;
+    if (userId == null) return;
+    await supabase.from('remedy_submissions').insert({...data, 'user_id': userId});
+  }
+
+  static Future<List<Map<String, dynamic>>> getMySubmissions() async {
+    final userId = currentUser?.id;
+    if (userId == null) return [];
+    final response = await supabase
+        .from('remedy_submissions')
+        .select('id, name, primary_component, category, illness, status, submitted_at, review_notes')
+        .eq('user_id', userId)
+        .order('submitted_at', ascending: false);
+    return List<Map<String, dynamic>>.from(response);
+  }
+
+  // ── Admin ─────────────────────────────────────────────────────
+  static Future<List<Map<String, dynamic>>> getSubmissionsForReview() async {
+    final response = await supabase
+        .from('admin_submissions')
+        .select('id, name, primary_component, category, illness, status, submitted_at, review_notes, user_id, submitted_by')
+        .order('submitted_at', ascending: false);
+    return List<Map<String, dynamic>>.from(response);
+  }
+
+  static Future<void> updateSubmissionStatus(String id, String status, {String? notes}) async {
+    await supabase.from('remedy_submissions').update({
+      'status': status, 'review_notes': notes,
+      'reviewed_by': currentUser?.id,
+      'reviewed_at': DateTime.now().toIso8601String(),
+    }).eq('id', id);
+  }
+
+  // ── Dropdowns ─────────────────────────────────────────────────
+  // Single cached method replaces 10 separate uncached DB calls.
+  // Each table is cached independently with a 30-min TTL.
+  // Existing callers (getIllnesses, getCategories, etc.) remain as
+  // thin wrappers so no other screens need changing.
+  static final Map<String, List<String>> _dropdownCache = {};
+  static final Map<String, DateTime>     _dropdownTime  = {};
+  static const _dropdownTTL = Duration(minutes: 30);
+
+  static Future<List<String>> _getDropdown(
+      String table, {String nameCol = 'name'}) async {
+    final now = DateTime.now();
+    if (_dropdownCache.containsKey(table) &&
+        now.difference(_dropdownTime[table]!).compareTo(_dropdownTTL) < 0) {
+      return _dropdownCache[table]!;
+    }
+    final r = await supabase
+        .from(table)
+        .select(nameCol)
+        .eq('active', true)
+        .order(nameCol);
+    final list = (r as List).map((e) => e[nameCol] as String).toList();
+    _dropdownCache[table] = list;
+    _dropdownTime[table]  = now;
+    return list;
+  }
+
+  static void clearDropdownCache() {
+    _dropdownCache.clear();
+    _dropdownTime.clear();
+  }
+
+  // ── Thin wrappers — keep existing call sites unchanged ────────
+  static Future<List<String>> getIllnesses()    async => _getDropdown('illnesses');
+  static Future<List<String>> getCategories()   async => _getDropdown('categories');
+  static Future<List<String>> getSubCategories()async => _getDropdown('sub_categories');
+  static Future<List<String>> getSymptoms()     async => _getDropdown('symptoms');
+  static Future<List<String>> getOrgans()       async => _getDropdown('organs');
+  static Future<List<String>> getComponents()   async => _getDropdown('components', nameCol: 'common_name');
+  static Future<List<String>> getCountries()    async => _getDropdown('countries');
+  static Future<List<String>> getDifficulties() async => _getDropdown('difficulties');
+  static Future<List<String>> getPlantParts()   async => _getDropdown('plant_parts');
+  static Future<List<String>> getPrepTypes()    async => _getDropdown('prep_types');
+}

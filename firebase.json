@@ -1,0 +1,33 @@
+{
+  "hosting": {
+    "public": "build/web",
+    "ignore": ["firebase.json", "**/.*", "**/node_modules/**"],
+    "rewrites": [{"source": "**", "destination": "/index.html"}],
+    "headers": [
+      {
+        "source": "/index.html",
+        "headers": [{"key": "Cache-Control", "value": "no-store, no-cache, must-revalidate"}]
+      },
+      {
+        "source": "/flutter_service_worker.js",
+        "headers": [{"key": "Cache-Control", "value": "no-store, no-cache, must-revalidate"}]
+      },
+      {
+        "source": "/flutter_bootstrap.js",
+        "headers": [{"key": "Cache-Control", "value": "no-store, no-cache, must-revalidate"}]
+      },
+      {
+        "source": "/manifest.json",
+        "headers": [{"key": "Cache-Control", "value": "no-store, no-cache, must-revalidate"}]
+      },
+      {
+        "source": "**/*.js",
+        "headers": [{"key": "Cache-Control", "value": "public, max-age=31536000, immutable"}]
+      },
+      {
+        "source": "**/*.wasm",
+        "headers": [{"key": "Cache-Control", "value": "public, max-age=31536000, immutable"}]
+      }
+    ]
+  }
+}
