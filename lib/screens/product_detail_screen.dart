@@ -230,11 +230,18 @@ class _ProductDetailScreenDBState extends State<ProductDetailScreenDB> {
                   children: [
                     imageUrl.isNotEmpty
                         ? ClipRRect(borderRadius: BorderRadius.circular(12),
-                            child: Image.network(
-                              '$imageUrl?${DateTime.now().millisecondsSinceEpoch}',
-                              width: double.infinity, height: 140, fit: BoxFit.cover,
-                              headers: const {'Cache-Control': 'no-cache'},
-                              errorBuilder: (_, __, ___) => const HerbIconPlaceholder(size: 120),
+                            child: Container(
+                              height: 140,
+                              color: Colors.grey.shade50,
+                              child: Transform.scale(
+                                scale: 0.50,
+                                child: Image.network(
+                                  '$imageUrl?${DateTime.now().millisecondsSinceEpoch}',
+                                  width: double.infinity, fit: BoxFit.contain,
+                                  headers: const {'Cache-Control': 'no-cache'},
+                                  errorBuilder: (_, __, ___) => const HerbIconPlaceholder(size: 120),
+                                ),
+                              ),
                             ))
                         : const HerbIconPlaceholder(size: 120, icon: Icons.science),
                     const SizedBox(height: 16),
@@ -357,7 +364,7 @@ class _ProductDetailScreenDBState extends State<ProductDetailScreenDB> {
                                   child: pImg.isNotEmpty
                                       ? Image.network(pImg,
                                           height: 56, width: double.infinity,
-                                          fit: BoxFit.cover,
+                                          fit: BoxFit.contain,
                                           errorBuilder: (_, __, ___) =>
                                               const HerbIconPlaceholder(size: 56))
                                       : const HerbIconPlaceholder(size: 56),

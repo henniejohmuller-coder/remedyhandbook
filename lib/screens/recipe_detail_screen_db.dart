@@ -307,6 +307,32 @@ class _RecipeDetailScreenDBState extends State<RecipeDetailScreenDB> {
                         ]),
                       ),
                     ],
+                    if ((r['cautions'] ?? '').toString().trim().isNotEmpty) ...[
+                      const SizedBox(height: 12),
+                      Container(
+                        padding: const EdgeInsets.all(12),
+                        decoration: BoxDecoration(
+                          color: const Color(0xFFFFF8E1),
+                          borderRadius: BorderRadius.circular(8),
+                          border: Border.all(color: Colors.orange.shade300),
+                        ),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            const Row(children: [
+                              Icon(Icons.info_outline, color: Colors.orange, size: 16),
+                              SizedBox(width: 8),
+                              Text('Cautions', style: TextStyle(
+                                color: Colors.orange, fontSize: 13,
+                                fontWeight: FontWeight.w700)),
+                            ]),
+                            const SizedBox(height: 6),
+                            Text(r['cautions'].toString().trim(),
+                                style: const TextStyle(fontSize: 13, color: AppColors.dark)),
+                          ],
+                        ),
+                      ),
+                    ],
                     // Community reviews
                     const SectionLabel('COMMUNITY REVIEWS'),
                     if (_submitted)

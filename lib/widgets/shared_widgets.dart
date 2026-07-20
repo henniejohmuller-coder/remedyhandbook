@@ -545,19 +545,13 @@ class EncouragementBanner extends StatelessWidget {
 }
 
 // ── Multi-Select Pick Field ──────────────────────────────────────────────────
-// Lets the user "select and enter" multiple values one at a time.
-// Each pick becomes a removable chip. Options are shown alphabetically
-// (already sorted by the caller via Supabase .order(ascending: true)).
-// Supports "Not in list — enter manually" for custom additions.
-// `value` is a comma-separated string (matches the DB text-column convention
-// already used for fields like clinical_study_url).
 class MultiPickField extends StatefulWidget {
   final String label;
-  final String value;               // current comma-separated selections
-  final List<String> options;       // full option list (alphabetical)
+  final String value;
+  final List<String> options;
   final String customHint;
-  final ValueChanged<String> onChanged; // returns new comma-separated string
-  final bool allowCustom;            // show "Not in list — enter manually"?
+  final ValueChanged<String> onChanged;
+  final bool allowCustom;
 
   const MultiPickField({
     super.key,
@@ -606,6 +600,78 @@ class _MultiPickFieldState extends State<MultiPickField> {
     setState(() => _showCustom = false);
   }
 
+  void _openSearchPicker(BuildContext context, List<String> options) {
+    final searchCtrl = TextEditingController();
+    List<String> filtered = List.from(options);
+
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (ctx) => StatefulBuilder(
+        builder: (ctx, setModal) => Container(
+          height: MediaQuery.of(context).size.height * 0.75,
+          decoration: const BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+          ),
+          child: Column(children: [
+            Container(
+              margin: const EdgeInsets.only(top: 10),
+              width: 40, height: 4,
+              decoration: BoxDecoration(
+                color: Colors.grey.shade300,
+                borderRadius: BorderRadius.circular(2)),
+            ),
+            Padding(
+              padding: const EdgeInsets.all(16),
+              child: TextField(
+                controller: searchCtrl,
+                autofocus: true,
+                decoration: InputDecoration(
+                  hintText: 'Search ${widget.label.toLowerCase()}…',
+                  prefixIcon: const Icon(Icons.search, size: 18),
+                  border: OutlineInputBorder(borderRadius: BorderRadius.circular(10)),
+                  contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+                  isDense: true,
+                ),
+                onChanged: (v) {
+                  setModal(() {
+                    filtered = options
+                        .where((o) => o.toLowerCase().contains(v.toLowerCase()))
+                        .toList();
+                  });
+                },
+              ),
+            ),
+            const Divider(height: 1),
+            Expanded(
+              child: ListView(children: [
+                ...filtered.map((o) => ListTile(
+                  dense: true,
+                  title: Text(o, style: AppTextStyles.body),
+                  onTap: () { Navigator.pop(ctx); _addItem(o); },
+                )),
+                if (widget.allowCustom)
+                  ListTile(
+                    dense: true,
+                    leading: const Icon(Icons.add, color: AppColors.primary, size: 18),
+                    title: const Text('Not in list — enter manually',
+                        style: TextStyle(color: AppColors.dark,
+                            fontWeight: FontWeight.w700, fontSize: 13)),
+                    onTap: () {
+                      Navigator.pop(ctx);
+                      setState(() => _showCustom = true);
+                    },
+                  ),
+              ]),
+            ),
+          ]),
+        ),
+      ),
+    );
+  }
+
   @override
   void dispose() {
     _customController.dispose();
@@ -615,15 +681,13 @@ class _MultiPickFieldState extends State<MultiPickField> {
   @override
   Widget build(BuildContext context) {
     final selected = _selected;
-    // Real picklist options — exclude placeholder entries and already-selected,
-    // then deduplicate to prevent DropdownButtonFormField assertion crash.
     final realOptions = widget.options
         .where((o) =>
             !o.toLowerCase().startsWith('select') &&
             o != 'Not in list — enter manually' &&
             o != 'All')
         .where((o) => !selected.contains(o))
-        .toSet()  // ← deduplicate: prevents crash if DB has duplicate rows
+        .toSet()
         .toList()
         ..sort((a, b) => a.toLowerCase().compareTo(b.toLowerCase()));
 
@@ -632,7 +696,6 @@ class _MultiPickFieldState extends State<MultiPickField> {
       children: [
         Text(widget.label, style: AppTextStyles.caption),
         const SizedBox(height: 4),
-        // Selected chips
         if (selected.isNotEmpty) ...[
           Wrap(
             spacing: 6,
@@ -649,52 +712,26 @@ class _MultiPickFieldState extends State<MultiPickField> {
           ),
           const SizedBox(height: 6),
         ],
-        // Add-another dropdown or custom entry field
         if (!_showCustom)
-          DropdownButtonFormField<String>(
-            // key forces a fresh widget any time the options list changes,
-            // preventing stale state from a prior selection being retained.
-            key: ValueKey(realOptions.join(',')),
-            value: null,           // always null — never triggers the assertion
-            isExpanded: true,
-            decoration: InputDecoration(
-              hintText: selected.isEmpty
-                  ? 'Select…'
-                  : '+ Add another',
-              hintStyle: AppTextStyles.caption,
-              isDense: true,
-              filled: true,
-              fillColor: Colors.white,
+          GestureDetector(
+            onTap: () => _openSearchPicker(context, realOptions),
+            child: Container(
+              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
+              decoration: BoxDecoration(
+                color: Colors.white,
+                border: Border.all(color: Colors.grey.shade300),
+                borderRadius: BorderRadius.circular(8),
+              ),
+              child: Row(children: [
+                const Icon(Icons.search, size: 16, color: AppColors.textSecondary),
+                const SizedBox(width: 8),
+                Expanded(child: Text(
+                  selected.isEmpty ? 'Search and select…' : '+ Add another…',
+                  style: const TextStyle(fontSize: 13, color: AppColors.textSecondary),
+                )),
+                const Icon(Icons.arrow_drop_down, color: AppColors.textSecondary),
+              ]),
             ),
-            items: [
-              ...realOptions
-                  .toSet()   // final safety dedup before Flutter sees items
-                  .map((o) => DropdownMenuItem(
-                        value: o,
-                        child: Text(o,
-                            style: AppTextStyles.body,
-                            overflow: TextOverflow.ellipsis),
-                      )),
-              if (widget.allowCustom)
-                DropdownMenuItem(
-                  value: 'Not in list — enter manually',
-                  child: Text(
-                    'Not in list — enter manually',
-                    style: const TextStyle(
-                        color: AppColors.dark,
-                        fontWeight: FontWeight.w700,
-                        fontSize: 13),
-                  ),
-                ),
-            ],
-            onChanged: (v) {
-              if (v == null) return;
-              if (v == 'Not in list — enter manually') {
-                setState(() => _showCustom = true);
-              } else {
-                _addItem(v);
-              }
-            },
           )
         else
           Container(
@@ -704,48 +741,46 @@ class _MultiPickFieldState extends State<MultiPickField> {
               border: Border.all(color: AppColors.primary, width: 1.5),
             ),
             padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 4),
-            child: Row(
-              children: [
-                const Icon(Icons.edit, size: 16, color: AppColors.textSecondary),
-                const SizedBox(width: 8),
-                Expanded(
-                  child: TextField(
-                    controller: _customController,
-                    decoration: InputDecoration(
-                      hintText: widget.customHint,
-                      hintStyle: AppTextStyles.caption,
-                      border: InputBorder.none,
-                      isDense: true,
-                      contentPadding: const EdgeInsets.symmetric(vertical: 10),
-                    ),
-                    onChanged: (_) => setState(() {}),
-                    onSubmitted: (_) => _confirmCustom(),
+            child: Row(children: [
+              const Icon(Icons.edit, size: 16, color: AppColors.textSecondary),
+              const SizedBox(width: 8),
+              Expanded(
+                child: TextField(
+                  controller: _customController,
+                  decoration: InputDecoration(
+                    hintText: widget.customHint,
+                    hintStyle: AppTextStyles.caption,
+                    border: InputBorder.none,
+                    isDense: true,
+                    contentPadding: const EdgeInsets.symmetric(vertical: 10),
                   ),
+                  onChanged: (_) => setState(() {}),
+                  onSubmitted: (_) => _confirmCustom(),
                 ),
-                if (_customController.text.isNotEmpty)
-                  GestureDetector(
-                    onTap: _confirmCustom,
-                    child: Container(
-                      padding: const EdgeInsets.all(4),
-                      decoration: BoxDecoration(
-                        color: Colors.green,
-                        borderRadius: BorderRadius.circular(20),
-                      ),
-                      child: const Icon(Icons.check, color: Colors.white, size: 16),
-                    ),
-                  ),
+              ),
+              if (_customController.text.isNotEmpty)
                 GestureDetector(
-                  onTap: () => setState(() {
-                    _showCustom = false;
-                    _customController.clear();
-                  }),
-                  child: const Padding(
-                    padding: EdgeInsets.only(left: 6),
-                    child: Icon(Icons.close, size: 16, color: AppColors.textSecondary),
+                  onTap: _confirmCustom,
+                  child: Container(
+                    padding: const EdgeInsets.all(4),
+                    decoration: BoxDecoration(
+                      color: Colors.green,
+                      borderRadius: BorderRadius.circular(20),
+                    ),
+                    child: const Icon(Icons.check, color: Colors.white, size: 16),
                   ),
                 ),
-              ],
-            ),
+              GestureDetector(
+                onTap: () => setState(() {
+                  _showCustom = false;
+                  _customController.clear();
+                }),
+                child: const Padding(
+                  padding: EdgeInsets.only(left: 6),
+                  child: Icon(Icons.close, size: 16, color: AppColors.textSecondary),
+                ),
+              ),
+            ]),
           ),
         if (_showCustom)
           const Padding(

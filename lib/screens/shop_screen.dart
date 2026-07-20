@@ -143,18 +143,18 @@ class _ShopScreenState extends State<ShopScreen> {
                       : RefreshIndicator(
                           onRefresh: _loadProducts,
                           color: AppColors.primary,
-                          child: GridView.builder(
-                            padding: const EdgeInsets.symmetric(horizontal: 16),
-                            gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-                              crossAxisCount: 2, crossAxisSpacing: 12, mainAxisSpacing: 12, childAspectRatio: 0.78,
-                            ),
+                          child: ListView.builder(
+                            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
                             itemCount: _filtered.length,
                             itemBuilder: (context, i) {
                               final p = _filtered[i];
-                              return _ProductCard(
-                                product: p,
-                                onTap: () => Navigator.push(context, MaterialPageRoute(
-                                    builder: (_) => ProductDetailScreenDB(product: p))),
+                              return Padding(
+                                padding: const EdgeInsets.only(bottom: 10),
+                                child: _ProductCard(
+                                  product: p,
+                                  onTap: () => Navigator.push(context, MaterialPageRoute(
+                                      builder: (_) => ProductDetailScreenDB(product: p))),
+                                ),
                               );
                             },
                           ),
@@ -177,6 +177,7 @@ class _ProductCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final name     = product['name'] ?? '';
+    final desc     = product['description'] ?? '';
     final type     = product['type'] ?? '';
     final price    = ((product['price'] ?? 0) as num).toDouble();
     final imageUrl = product['image_url'] ?? '';
@@ -184,48 +185,87 @@ class _ProductCard extends StatelessWidget {
     final stock    = product['stock'] as int?;
     final inStock  = stock == null || stock > 0;
 
-    return GestureDetector(
+    return SizedBox(
+      width: double.infinity,
+      child: GestureDetector(
       onTap: onTap,
       child: Container(
-        padding: const EdgeInsets.all(12),
         decoration: BoxDecoration(
           color: Colors.white, borderRadius: BorderRadius.circular(12),
           boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.04), blurRadius: 6)],
         ),
-        child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-          // Image
-          Expanded(
-            child: ClipRRect(
-              borderRadius: BorderRadius.circular(10),
-              child: imageUrl.isNotEmpty
-                  ? Image.network(imageUrl, width: double.infinity, fit: BoxFit.cover,
-                      errorBuilder: (_, __, ___) => _placeholder(isComp))
-                  : _placeholder(isComp),
-            ),
-          ),
-          const SizedBox(height: 8),
-          Text(name, style: AppTextStyles.heading3, maxLines: 1, overflow: TextOverflow.ellipsis),
-          Text(type, style: AppTextStyles.caption),
-          const SizedBox(height: 4),
-          Text('R${price.toInt()}', style: const TextStyle(fontSize: 15, fontWeight: FontWeight.bold, color: AppColors.dark)),
-          const SizedBox(height: 8),
-          SizedBox(
-            width: double.infinity,
-            child: ElevatedButton(
-              onPressed: inStock ? onTap : null,
-              style: ElevatedButton.styleFrom(
-                backgroundColor: inStock ? AppColors.primary : Colors.grey.shade200,
-                foregroundColor: inStock ? AppColors.dark : Colors.grey.shade400,
-                padding: const EdgeInsets.symmetric(vertical: 6),
-                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
-                elevation: 0,
+        child: IntrinsicHeight(
+          child: Row(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
+            // Image — fixed 80x80 square, same size for all products
+            ClipRRect(
+              borderRadius: const BorderRadius.horizontal(left: Radius.circular(12)),
+              child: Container(
+                width: 80, height: 80,
+                color: Colors.grey.shade50,
+                child: imageUrl.isNotEmpty
+                    ? Image.network(imageUrl,
+                        width: 80, height: 80,
+                        fit: BoxFit.contain,
+                        errorBuilder: (_, __, ___) => _placeholder(isComp))
+                    : _placeholder(isComp),
               ),
-              child: Text(inStock ? '+ Add' : 'Out of stock',
-                  style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w600)),
             ),
-          ),
-        ]),
+            // Details — expands to fill remaining width
+            Expanded(
+              child: Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Text(name, style: AppTextStyles.heading3, softWrap: true),
+                    if (desc.isNotEmpty) ...[
+                      const SizedBox(height: 2),
+                      Text(desc, style: AppTextStyles.caption,
+                          maxLines: 2, overflow: TextOverflow.ellipsis),
+                    ],
+                    const SizedBox(height: 4),
+                    Row(children: [
+                      Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                        decoration: BoxDecoration(
+                          color: isComp ? AppColors.lightGreen : AppColors.lightYellow,
+                          borderRadius: BorderRadius.circular(4)),
+                        child: Text(type,
+                            style: const TextStyle(fontSize: 10, fontWeight: FontWeight.w600)),
+                      ),
+                      const SizedBox(width: 8),
+                      Text('R${price.toInt()}',
+                          style: const TextStyle(fontWeight: FontWeight.bold,
+                              fontSize: 14, color: AppColors.dark)),
+                    ]),
+                  ],
+                ),
+              ),
+            ),
+            // Add button — right side, vertically centred
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 10),
+              child: Center(
+                child: ElevatedButton(
+                  onPressed: inStock ? onTap : null,
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: inStock ? AppColors.primary : Colors.grey.shade200,
+                    foregroundColor: inStock ? AppColors.dark : Colors.grey.shade400,
+                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                    elevation: 0, minimumSize: Size.zero,
+                    tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                  ),
+                  child: Text(inStock ? '+ Add' : 'N/A',
+                      style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w600)),
+                ),
+              ),
+            ),
+          ]),
+        ),
       ),
+    ),
     );
   }
 

@@ -153,7 +153,6 @@ class _AdminReviewScreenState extends State<AdminReviewScreen>
         item['ingredients'],
         item['dosage'],
         item['tip'],
-        item['cautions'],
         item['encouragement'],
         item['submitted_by'],
         item['approved_by'],

@@ -15,18 +15,14 @@
 </head>
 <body>
   <script>
-    // Unregister old service workers and force fresh load on every deploy
     if ('serviceWorker' in navigator) {
       navigator.serviceWorker.getRegistrations().then(function(registrations) {
-        for (let registration of registrations) {
-          registration.update();
-        }
-      });
-      navigator.serviceWorker.addEventListener('controllerchange', function() {
-        window.location.reload();
+        var hadWorkers = registrations.length > 0;
+        for (var r of registrations) { r.unregister(); }
+        if (hadWorkers) { window.location.reload(); }
       });
     }
   </script>
-  <script src="flutter_bootstrap.js?v=<%=Date.now()%>" async></script>
+  <script src="flutter_bootstrap.js" async></script>
 </body>
 </html>
