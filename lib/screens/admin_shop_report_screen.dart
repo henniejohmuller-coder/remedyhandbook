@@ -93,13 +93,14 @@ class _AdminShopReportScreenState extends State<AdminShopReportScreen> {
   Future<void> _deleteSelected() async {
     if (_selectedIds.isEmpty) return;
     if (!mounted) return;
-    final ctx = context; // capture context before async gap
+    final ctx = context;
+    final deleteCount = _selectedIds.length;
     final confirmed = await showDialog<bool>(
       context: ctx,
       barrierDismissible: false,
       builder: (dialogCtx) => AlertDialog(
         title: const Text('Delete transactions?'),
-        content: Text('Permanently delete ${_selectedIds.length} transaction(s). Cannot be undone.'),
+        content: Text('Permanently delete $deleteCount transaction(s). Cannot be undone.'),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(dialogCtx, false),

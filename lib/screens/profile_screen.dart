@@ -577,3 +577,4 @@ class _MenuRow extends StatelessWidget {
     );
   }
 }
+
