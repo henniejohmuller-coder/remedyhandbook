@@ -1,20 +1,7 @@
 import 'package:flutter/services.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:supabase_flutter/supabase_flutter.dart';
-import 'config.dart';
-import 'theme/app_theme.dart';
-import 'services/supabase_service.dart';
-import 'widgets/shared_widgets.dart';
-import 'widgets/navigation_guard.dart';import 'screens/login_screen.dart';
-import 'screens/home_screen.dart';
-import 'screens/recipes_screen.dart';
-import 'screens/shop_screen.dart';
-import 'screens/cart_screen.dart';
-import 'screens/checkout_screen.dart';
-import 'screens/order_confirmation_screen.dart';
-import 'screens/submit_remedy_screen.dart';
-import 'screens/my_recipes_screen.dart';
-import 'screens/profile_screen.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -164,3 +151,4 @@ class _AppShellState extends State<AppShell> {
     );
   }
 }
+

@@ -600,7 +600,7 @@ class _RecipeDetailScreenDBState extends State<RecipeDetailScreenDB> {
           .from('products')
           .select()
           .eq('linked_remedy_id', remedyId)
-          .order('name', ascending: true);
+          .order('name');
       final all = (data as List).cast<Map<String, dynamic>>();
       setState(() {
         _linkedComponents = all.where((p) => p['type'] == 'Component').toList();

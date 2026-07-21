@@ -361,13 +361,18 @@ class _ProductDetailScreenDBState extends State<ProductDetailScreenDB> {
                               child: Column(children: [
                                 ClipRRect(
                                   borderRadius: BorderRadius.circular(6),
-                                  child: pImg.isNotEmpty
-                                      ? Image.network(pImg,
-                                          height: 56, width: double.infinity,
-                                          fit: BoxFit.contain,
-                                          errorBuilder: (_, __, ___) =>
-                                              const HerbIconPlaceholder(size: 56))
-                                      : const HerbIconPlaceholder(size: 56),
+                                  child: Container(
+                                    height: 90,
+                                    width: double.infinity,
+                                    color: Colors.grey.shade50,
+                                    child: pImg.isNotEmpty
+                                        ? Image.network(pImg,
+                                            height: 90, width: double.infinity,
+                                            fit: BoxFit.contain,
+                                            errorBuilder: (_, __, ___) =>
+                                                const HerbIconPlaceholder(size: 90))
+                                        : const HerbIconPlaceholder(size: 90),
+                                  ),
                                 ),
                                 const SizedBox(height: 4),
                                 Text(pName,
