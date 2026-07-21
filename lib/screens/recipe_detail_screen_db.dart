@@ -104,7 +104,7 @@ class _RecipeDetailScreenDBState extends State<RecipeDetailScreenDB> {
                           remedy: widget.remedy,
                           onSaved: () {
                             Navigator.pop(context);
-                            RecipesScreen.reload();
+                            
                           },
                         ),
                       ),

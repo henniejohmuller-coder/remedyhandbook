@@ -180,11 +180,11 @@ class SupabaseService {
   // ── Reviews ───────────────────────────────────────────────────
   static Future<void> _recalcAverageRating(String remedyId) async {
     try {
-      debugPrint('_recalcAverageRating calling RPC for remedyId=$remedyId');
+      print('_recalcAverageRating calling RPC for remedyId=$remedyId');
       await supabase.rpc('recalc_remedy_rating', params: {'p_remedy_id': remedyId});
-      debugPrint('_recalcAverageRating RPC completed');
+      print('_recalcAverageRating RPC completed');
     } catch (e) {
-      debugPrint('_recalcAverageRating error: $e');
+      print('_recalcAverageRating error: $e');
     }
   }
 
@@ -193,9 +193,9 @@ class SupabaseService {
     String? comment, bool isPreparation = false,
   }) async {
     final userId = currentUser?.id;
-    debugPrint('submitReview: userId=$userId remedyId=$remedyId rating=$rating');
-    if (userId == null) { debugPrint('ERROR: user not logged in'); return; }
-    if (remedyId.isEmpty) { debugPrint('ERROR: remedyId is empty'); return; }
+    print('submitReview: userId=$userId remedyId=$remedyId rating=$rating');
+    if (userId == null) { print('ERROR: user not logged in'); return; }
+    if (remedyId.isEmpty) { print('ERROR: remedyId is empty'); return; }
 
     try {
       final existing = await supabase.from('remedy_reviews')
@@ -203,7 +203,7 @@ class SupabaseService {
           .eq('remedy_id', remedyId)
           .eq('user_id', userId)
           .maybeSingle();
-      debugPrint('existing review: $existing');
+      print('existing review: $existing');
 
       if (existing != null) {
         await supabase.from('remedy_reviews').update({
@@ -218,8 +218,8 @@ class SupabaseService {
       // Recalculate average from all reviews and write back to remedies
       await _recalcAverageRating(remedyId);
     } catch (e, stack) {
-      debugPrint('submitReview ERROR: $e');
-      debugPrint('stack: $stack');
+      print('submitReview ERROR: $e');
+      print('stack: $stack');
       rethrow;
     }
   }

@@ -92,18 +92,20 @@ class _AdminShopReportScreenState extends State<AdminShopReportScreen> {
 
   Future<void> _deleteSelected() async {
     if (_selectedIds.isEmpty) return;
+    if (!mounted) return;
+    final ctx = context; // capture context before async gap
     final confirmed = await showDialog<bool>(
-      context: context,
+      context: ctx,
       barrierDismissible: false,
-      builder: (ctx) => AlertDialog(
+      builder: (dialogCtx) => AlertDialog(
         title: const Text('Delete transactions?'),
         content: Text('Permanently delete ${_selectedIds.length} transaction(s). Cannot be undone.'),
         actions: [
           TextButton(
-            onPressed: () => Navigator.pop(ctx, false),
+            onPressed: () => Navigator.pop(dialogCtx, false),
             child: const Text('Cancel', style: TextStyle(color: AppColors.textSecondary))),
           ElevatedButton(
-            onPressed: () => Navigator.pop(ctx, true),
+            onPressed: () => Navigator.pop(dialogCtx, true),
             style: ElevatedButton.styleFrom(backgroundColor: Colors.red, foregroundColor: Colors.white),
             child: const Text('Delete'),
           ),
@@ -111,6 +113,7 @@ class _AdminShopReportScreenState extends State<AdminShopReportScreen> {
       ),
     );
     if (confirmed != true) return;
+    if (!mounted) return;
     for (final id in _selectedIds) {
       await SupabaseService.supabase.from('order_items').delete().eq('order_id', id);
       await SupabaseService.supabase.from('orders').delete().eq('id', id);
