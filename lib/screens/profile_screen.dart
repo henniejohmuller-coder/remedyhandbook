@@ -354,7 +354,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                                         decoration: BoxDecoration(color: AppColors.lightYellow,
                                             borderRadius: BorderRadius.circular(8),
                                             border: Border.all(color: AppColors.primary)),
-                                        child: Text(content.isNotEmpty ? content : 'support@myherb.co.za',
+                                        child: Text(content.isNotEmpty ? content : 'support@remedyhandbook.com',
                                             style: const TextStyle(fontWeight: FontWeight.w700, fontSize: 15, color: AppColors.dark)),
                                       ),
                                       const SizedBox(height: 8),
@@ -399,7 +399,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                                           textAlign: TextAlign.center),
                                       const SizedBox(height: 16),
                                       const Text('Version 1.0.0', style: AppTextStyles.caption),
-                                      const Text('© 2026 MyHerb.co.za', style: AppTextStyles.caption),
+                                      const Text('© 2026 RemedyHandbook.com', style: AppTextStyles.caption),
                                     ])),
                                     actions: [ElevatedButton(
                                       onPressed: () => Navigator.pop(ctx),

@@ -18,6 +18,7 @@ import 'screens/submit_remedy_screen.dart';
 import 'screens/my_recipes_screen.dart';
 import 'screens/profile_screen.dart';
 
+import 'package:url_launcher/url_launcher.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -117,6 +118,53 @@ class _AppShellState extends State<AppShell> {
   void initState() {
     super.initState();
     _currentIndex = widget.initialIndex;
+    if (!kIsWeb) {
+      WidgetsBinding.instance.addPostFrameCallback((_) => _checkVersion());
+    }
+  }
+
+  Future<void> _checkVersion() async {
+    try {
+      const currentVersion = '1.0.0';
+      final data = await Supabase.instance.client
+          .from('app_version').select().eq('id', 1).single();
+      final latest = data['version']?.toString() ?? currentVersion;
+      final forceUpdate = data['force_update'] == true;
+      final updateUrl = data['update_url']?.toString() ?? 'https://remedyhandbook.com';
+      if (!mounted) return;
+      if (latest != currentVersion) {
+        showDialog(
+          context: context,
+          barrierDismissible: !forceUpdate,
+          builder: (ctx) => AlertDialog(
+            backgroundColor: AppColors.dark,
+            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+            title: const Text('Update Available',
+                style: TextStyle(color: AppColors.primary, fontWeight: FontWeight.w700)),
+            content: Text(
+              'A new version ($latest) of Remedy Handbook is available.\n\nUpdate now for the latest features and fixes.',
+              style: const TextStyle(color: Colors.white70, fontSize: 13)),
+            actions: [
+              if (!forceUpdate)
+                TextButton(
+                  onPressed: () => Navigator.pop(ctx),
+                  child: const Text('Later', style: TextStyle(color: Colors.white54))),
+              ElevatedButton(
+                onPressed: () async {
+                  Navigator.pop(ctx);
+                  final uri = Uri.parse(updateUrl);
+                  if (await canLaunchUrl(uri)) {
+                    await launchUrl(uri, mode: LaunchMode.externalApplication);
+                  }
+                },
+                style: ElevatedButton.styleFrom(
+                    backgroundColor: AppColors.primary, foregroundColor: AppColors.dark),
+                child: const Text('Update Now', style: TextStyle(fontWeight: FontWeight.w700))),
+            ],
+          ),
+        );
+      }
+    } catch (_) {}
   }
 
   void _switchTab(int index) {

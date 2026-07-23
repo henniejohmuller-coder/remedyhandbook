@@ -81,7 +81,7 @@ class YellowAppBar extends StatelessWidget {
   });
 
   Future<void> _launchUrl() async {
-    final uri = Uri.parse('https://www.MyHerb.co.za');
+    final uri = Uri.parse('https://www.remedyhandbook.com');
     if (await canLaunchUrl(uri)) {
       await launchUrl(uri, mode: LaunchMode.externalApplication);
     }
@@ -123,7 +123,7 @@ class YellowAppBar extends StatelessWidget {
                       GestureDetector(
                         onTap: _launchUrl,
                         child: const Text(
-                          'www.MyHerb.co.za',
+                          'www.remedyhandbook.com',
                           style: TextStyle(
                           fontSize: 11,
                           color: AppColors.dark,

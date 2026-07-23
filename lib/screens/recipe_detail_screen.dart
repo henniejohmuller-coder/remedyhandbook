@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:url_launcher/url_launcher.dart';
 import '../theme/app_theme.dart';
 import '../widgets/shared_widgets.dart';
+import '../widgets/install_banner.dart';
 import '../widgets/navigation_guard.dart';
 import '../models/models.dart';
 import '../services/supabase_service.dart';
@@ -9,6 +10,8 @@ import 'preparation_screen.dart';
 import 'product_detail_screen.dart';
 import 'recipes_screen.dart';
 import 'admin_remedy_edit_screen.dart';
+import 'login_screen.dart';
+import 'package:go_router/go_router.dart';
 
 class RecipeDetailScreen extends StatefulWidget {
   final Remedy remedy;
@@ -412,7 +415,8 @@ class _BuyCard extends StatelessWidget {
 
 class RecipeDetailScreenDB extends StatefulWidget {
   final Map<String, dynamic> remedy;
-  const RecipeDetailScreenDB({super.key, required this.remedy});
+  final bool isGuest;
+  const RecipeDetailScreenDB({super.key, required this.remedy, this.isGuest = false});
 
   @override
   State<RecipeDetailScreenDB> createState() => _RecipeDetailScreenDBState();
@@ -562,6 +566,7 @@ class _RecipeDetailScreenDBState extends State<RecipeDetailScreenDB> {
   }
 
   Future<void> _submitReview() async {
+    if (!_requireAuth(context)) return;
     try {
       await SupabaseService.submitReview(
         remedyId: _remedy['id'].toString(),
@@ -617,7 +622,16 @@ class _RecipeDetailScreenDBState extends State<RecipeDetailScreenDB> {
     super.dispose();
   }
 
+  bool _requireAuth(BuildContext context) {
+    if (widget.isGuest) {
+      context.go('/');
+      return false;
+    }
+    return true;
+  }
+
   Future<void> _goToProduct(BuildContext context, bool isHerb) async {
+    if (!_requireAuth(context)) return;
     try {
       final remedyId = _remedy['id']?.toString() ?? '';
       final products = await SupabaseService.getProducts();
@@ -698,6 +712,7 @@ class _RecipeDetailScreenDBState extends State<RecipeDetailScreenDB> {
                   ),
               ],
             ),
+            const InstallBanner(),
             Expanded(
               child: SingleChildScrollView(
                 padding: const EdgeInsets.symmetric(horizontal: 16),
@@ -873,9 +888,11 @@ class _RecipeDetailScreenDBState extends State<RecipeDetailScreenDB> {
                     ),
                     const SizedBox(height: 10),
                     OutlinedButton(
-                      onPressed: () => Navigator.push(context, MaterialPageRoute(
+                      onPressed: () {
+                        Navigator.push(context, MaterialPageRoute(
                           builder: (_) => PreparationScreenDB(
                             remedy: _remedy,
+                            isGuest: widget.isGuest,
                             hasRated: _submitted,
                             existingRating: _selectedRating,
                           ))).then((_) async {
@@ -883,7 +900,8 @@ class _RecipeDetailScreenDBState extends State<RecipeDetailScreenDB> {
             await _loadExistingReview();
             await _reloadRemedy();
             RecipesScreen.reload();
-          }),
+          });
+                      },
                       style: OutlinedButton.styleFrom(
                         side: const BorderSide(color: AppColors.primary),
                         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
@@ -1130,7 +1148,7 @@ class _RecipeDetailScreenDBState extends State<RecipeDetailScreenDB> {
                       const SizedBox(height: 8),
                       Row(children: [
                         ...List.generate(5, (i) => GestureDetector(
-                          onTap: () => setState(() => _selectedRating = i + 1),
+                          onTap: () { if (!_requireAuth(context)) return; setState(() => _selectedRating = i + 1); },
                           child: Padding(
                             padding: const EdgeInsets.only(right: 6),
                             child: Icon(
@@ -1203,11 +1221,13 @@ class PreparationScreenDB extends StatefulWidget {
   final Map<String, dynamic> remedy;
   final bool hasRated;
   final int existingRating;
+  final bool isGuest;
   const PreparationScreenDB({
     super.key,
     required this.remedy,
     this.hasRated = false,
     this.existingRating = 0,
+    this.isGuest = false,
   });
 
   @override
@@ -1277,6 +1297,7 @@ class _PreparationScreenDBState extends State<PreparationScreenDB> {
   }
 
   Future<bool> _showRatingPopup(BuildContext ctx) async {
+    if (widget.isGuest) return true;
     if (_hasAlreadyRated || _hasPromptedRating) return true;
     setState(() => _hasPromptedRating = true);
     final result = await showDialog<bool>(
@@ -1424,7 +1445,30 @@ class _PreparationScreenDBState extends State<PreparationScreenDB> {
                         ),
                       ],
                       const SizedBox(height: 24),
-                      _RateRemedySectionDB(
+                      widget.isGuest ? Container(
+                              width: double.infinity,
+                              padding: const EdgeInsets.all(16),
+                              decoration: BoxDecoration(
+                                color: AppColors.primary.withOpacity(0.12),
+                                borderRadius: BorderRadius.circular(12),
+                              ),
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  const Text('Want to rate this remedy?', style: AppTextStyles.heading3),
+                                  const SizedBox(height: 6),
+                                  const Text('Sign up or log in to rate and review remedies.', style: AppTextStyles.body),
+                                  const SizedBox(height: 12),
+                                  SizedBox(
+                                    width: double.infinity,
+                                    child: ElevatedButton(
+                                      onPressed: () => context.go('/'),
+                                      child: const Text('Sign up / Log in'),
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ) : _RateRemedySectionDB(
                         remedyId: widget.remedy['id'] ?? '',
                         remedyName: widget.remedy['name'] ?? '',
                         initialRating: widget.existingRating,
