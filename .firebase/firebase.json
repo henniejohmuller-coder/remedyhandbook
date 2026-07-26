@@ -1,12 +1,15 @@
 {
   "hosting": {
     "public": "build/web",
-    "ignore": ["firebase.json", "**/.*", "**/node_modules/**"],
-    "rewrites": [{"source": "**", "destination": "/index.html"}],
+    "ignore": ["firebase.json", "**/.*", "**/node_modules/**", "**.apk"],
+    "rewrites": [
+      {"source": "/download", "destination": "/download.html"},
+      {"source": "**", "destination": "/index.html"}
+    ],
     "headers": [
       {
         "source": "**",
-        "headers": [{"key": "Cache-Control", "value": "no-store, no-cache, must-revalidate, max-age=0"}]
+        "headers": [{"key": "Cache-Control", "value": "no-cache, no-store, must-revalidate"}]
       }
     ]
   }

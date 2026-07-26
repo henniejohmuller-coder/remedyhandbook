@@ -1,0 +1,114 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Download Remedy Handbook</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body {
+      font-family: sans-serif;
+      background: #F5F0E8;
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 20px;
+    }
+    .card {
+      background: #2C1A00;
+      border-radius: 24px;
+      padding: 40px 32px;
+      max-width: 400px;
+      width: 100%;
+      text-align: center;
+      box-shadow: 0 8px 32px rgba(0,0,0,0.2);
+    }
+    .logo { font-size: 48px; margin-bottom: 16px; }
+    h1 { color: #F5C518; font-size: 24px; margin-bottom: 8px; }
+    .version { color: rgba(255,255,255,0.5); font-size: 13px; margin-bottom: 32px; }
+    .btn {
+      display: block;
+      width: 100%;
+      padding: 16px;
+      border-radius: 50px;
+      font-size: 16px;
+      font-weight: 700;
+      text-decoration: none;
+      margin-bottom: 12px;
+      cursor: pointer;
+      border: none;
+    }
+    .btn-android {
+      background: #F5C518;
+      color: #2C1A00;
+    }
+    .btn-web {
+      background: transparent;
+      color: #F5C518;
+      border: 2px solid #F5C518;
+    }
+    .note {
+      color: rgba(255,255,255,0.4);
+      font-size: 11px;
+      margin-top: 24px;
+      line-height: 1.6;
+    }
+    .steps {
+      background: rgba(255,255,255,0.05);
+      border-radius: 12px;
+      padding: 16px;
+      margin: 20px 0;
+      text-align: left;
+    }
+    .steps p { color: rgba(255,255,255,0.7); font-size: 13px; margin-bottom: 8px; }
+    .steps p:last-child { margin-bottom: 0; }
+  </style>
+</head>
+<body>
+  <div class="card">
+    <div class="logo">🌿</div>
+    <h1>Remedy Handbook</h1>
+    <div class="version" id="version-text">Latest Version</div>
+
+    <a class="btn btn-android" href="https://github.com/henniejohmuller-coder/remedyhandbook/releases/download/v1.0.2/app-release.apk" download="RemedyHandbook.apk">
+      📲 Download for Android
+    </a>
+    <a class="btn btn-web" href="https://remedyhandbook.com">
+      🌐 Open Web App
+    </a>
+
+    <div class="steps">
+      <p>📥 <b>How to install:</b></p>
+      <p>1. Tap <b>Download for Android</b> above</p>
+      <p>2. Tap the downloaded file in your notifications</p>
+      <p>3. If prompted — tap <b>Settings</b> and enable <b>Install unknown apps</b></p>
+      <p>4. Go back and tap <b>Install</b></p>
+      <p>5. Tap <b>Open</b> when done</p>
+    </div>
+
+    <div class="note">
+      Remedy Handbook · Evidence-based herbal remedies<br>
+      © 2026 MyHerb
+    </div>
+  </div>
+
+  <script>
+    // Fetch latest version from API
+    fetch('https://stawsdjfjzugeleldaxz.supabase.co/rest/v1/app_version?id=eq.1&select=version', {
+      headers: {
+        'apikey': 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InN0YXdzZGpmanp1Z2VsZWxkYXh6Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzk1NDQ1MTUsImV4cCI6MjA5NTEyMDUxNX0.LfGEc_VAOTOw3SdJ1Zm0I_u5xogy7wH6wiyTRHFg26c'
+      }
+    })
+    .then(r => r.json())
+    .then(data => {
+      if (data && data[0]) {
+        document.getElementById('version-text').textContent = 'Version ' + data[0].version;
+      }
+    })
+    .catch(() => {});
+  </script>
+</body>
+</html>
+
+

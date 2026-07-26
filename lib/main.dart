@@ -2,6 +2,7 @@ import 'package:flutter/services.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:supabase_flutter/supabase_flutter.dart';
+import 'package:url_launcher/url_launcher.dart';
 import 'config.dart';
 import 'theme/app_theme.dart';
 import 'services/supabase_service.dart';
@@ -18,7 +19,6 @@ import 'screens/submit_remedy_screen.dart';
 import 'screens/my_recipes_screen.dart';
 import 'screens/profile_screen.dart';
 
-import 'package:url_launcher/url_launcher.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();

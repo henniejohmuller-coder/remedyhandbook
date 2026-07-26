@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:url_launcher/url_launcher.dart';
 import '../theme/app_theme.dart';
 import '../widgets/shared_widgets.dart';
@@ -501,4 +502,9 @@ class _BuyCard extends StatelessWidget {
     );
   }
 }
+
+
+
+
+
 
