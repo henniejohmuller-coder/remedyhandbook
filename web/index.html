@@ -149,7 +149,7 @@
 
     // Register service worker for PWA install eligibility
     if ('serviceWorker' in navigator) {
-      navigator.serviceWorker.register('flutter_service_worker.js').catch(function(){});
+      // service worker disabled
       navigator.serviceWorker.addEventListener('controllerchange', function() {
         window.location.reload();
       });
@@ -157,4 +157,5 @@
   </script>
 </body>
 </html>
+
 

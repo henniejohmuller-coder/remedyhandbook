@@ -1,6 +1,8 @@
 import 'package:flutter/services.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/foundation.dart' show kIsWeb;
+import 'package:go_router/go_router.dart';
+import 'package:flutter_web_plugins/url_strategy.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'config.dart';
@@ -18,101 +20,117 @@ import 'screens/order_confirmation_screen.dart';
 import 'screens/submit_remedy_screen.dart';
 import 'screens/my_recipes_screen.dart';
 import 'screens/profile_screen.dart';
-
+import 'screens/recipe_detail_screen_db.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
-
-
+  if (kIsWeb) usePathUrlStrategy();
   await Supabase.initialize(
     url: AppConfig.supabaseUrl,
     anonKey: AppConfig.supabaseAnonKey,
   );
-
-  // Load initial cart count if logged in
   if (Supabase.instance.client.auth.currentUser != null) {
     try {
       final cart = await Supabase.instance.client
-          .from('cart_items').select().eq('user_id', Supabase.instance.client.auth.currentUser!.id);
+          .from('cart_items').select()
+          .eq('user_id', Supabase.instance.client.auth.currentUser!.id);
       CartBadge.update((cart as List).fold<int>(0, (s, i) => s + ((i['quantity'] ?? 1) as int)));
     } catch (_) {}
   }
-
   runApp(const HerbalRemedyApp());
 }
 
+// ── Router ────────────────────────────────────────────────────────────────────
+final _router = GoRouter(
+  initialLocation: '/',
+  redirect: (context, state) {
+    final isLoggedIn = Supabase.instance.client.auth.currentUser != null;
+    final isRemedyRoute = state.uri.path.startsWith('/remedy/');
+    // Allow remedy routes for everyone — guests see limited view
+    if (isRemedyRoute) return null;
+    return null;
+  },
+  routes: [
+    GoRoute(
+      path: '/',
+      builder: (_, __) => const _AuthGate(),
+    ),
+    GoRoute(
+      path: '/remedy/:id',
+      builder: (context, state) {
+        final id = state.pathParameters['id'] ?? '';
+        final isLoggedIn = Supabase.instance.client.auth.currentUser != null;
+        if (isLoggedIn) {
+          return _LoggedInRemedyLoader(remedyId: id);
+        }
+        return _GuestRemedyLoader(remedyId: id);
+      },
+    ),
+  ],
+);
+
+// ── App ───────────────────────────────────────────────────────────────────────
 class HerbalRemedyApp extends StatelessWidget {
   const HerbalRemedyApp({super.key});
-
   @override
   Widget build(BuildContext context) {
-    return MaterialApp(
-      title: 'Herbal Remedy Book',
+    return MaterialApp.router(
+      title: 'Remedy Handbook',
       debugShowCheckedModeBanner: false,
       theme: appTheme(),
-      home: const _AuthGate(),
+      routerConfig: _router,
     );
   }
 }
 
+// ── Auth Gate ─────────────────────────────────────────────────────────────────
 class _AuthGate extends StatefulWidget {
   const _AuthGate();
-
   @override
   State<_AuthGate> createState() => _AuthGateState();
 }
 
 class _AuthGateState extends State<_AuthGate> {
-  bool _loggedIn  = false;
-  bool _checked   = false;
+  bool _loggedIn = false;
+  bool _checked  = false;
 
   @override
   void initState() {
     super.initState();
     _checkAuth();
     Supabase.instance.client.auth.onAuthStateChange.listen((data) {
-      final isLoggedIn = data.session != null;
-      if (mounted && isLoggedIn != _loggedIn) {
-        setState(() => _loggedIn = isLoggedIn);
-      }
+      if (mounted) setState(() => _loggedIn = data.session != null);
     });
   }
 
   Future<void> _checkAuth() async {
     final session    = Supabase.instance.client.auth.currentSession;
     final stayIn     = await SupabaseService.shouldStayLoggedIn();
-    if (session != null && !stayIn) {
-      await SupabaseService.signOut();
-      if (mounted) setState(() { _loggedIn = false; _checked = true; });
-    } else {
-      if (mounted) setState(() { _loggedIn = session != null; _checked = true; });
-    }
+    if (!stayIn) await SupabaseService.signOut();
+    if (mounted) setState(() { _loggedIn = stayIn && session != null; _checked = true; });
   }
 
   @override
   Widget build(BuildContext context) {
     if (!_checked) return const Scaffold(
       body: Center(child: CircularProgressIndicator(color: AppColors.primary)));
-    return _loggedIn ? const AppShell() : const LoginScreen();
+    if (!_loggedIn) return const LoginScreen();
+    return AppShell(initialIndex: 0);
   }
 }
 
-// ── Navigation Shell ──────────────────────────────────────────────────────
-
+// ── App Shell ─────────────────────────────────────────────────────────────────
 class AppShell extends StatefulWidget {
   final int initialIndex;
-  const AppShell({super.key, this.initialIndex = 0});
-
+  const AppShell({super.key, required this.initialIndex});
   @override
   State<AppShell> createState() => _AppShellState();
 }
 
 class _AppShellState extends State<AppShell> {
   late int _currentIndex;
-
-  final List<GlobalKey<NavigatorState>> _navigatorKeys = List.generate(
-    6, (_) => GlobalKey<NavigatorState>(),
-  );
+  final List<GlobalKey<NavigatorState>> _navigatorKeys =
+      List.generate(6, (_) => GlobalKey<NavigatorState>());
 
   @override
   void initState() {
@@ -125,25 +143,24 @@ class _AppShellState extends State<AppShell> {
 
   Future<void> _checkVersion() async {
     try {
-      const currentVersion = '1.0.0';
+      const currentVersion = '1.0.2';
       final data = await Supabase.instance.client
           .from('app_version').select().eq('id', 1).single();
-      final latest = data['version']?.toString() ?? currentVersion;
+      final latest     = data['version']?.toString() ?? currentVersion;
       final forceUpdate = data['force_update'] == true;
-      final updateUrl = data['update_url']?.toString() ?? 'https://remedyhandbook.com';
+      final updateUrl  = data['update_url']?.toString() ?? 'https://remedyhandbook.com/download';
       if (!mounted) return;
       if (latest != currentVersion) {
         showDialog(
           context: context,
           barrierDismissible: !forceUpdate,
           builder: (ctx) => AlertDialog(
-            backgroundColor: AppColors.dark,
+            backgroundColor: const Color(0xFF2C1A00),
             shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
             title: const Text('Update Available',
-                style: TextStyle(color: AppColors.primary, fontWeight: FontWeight.w700)),
-            content: Text(
-              'A new version ($latest) of Remedy Handbook is available.\n\nUpdate now for the latest features and fixes.',
-              style: const TextStyle(color: Colors.white70, fontSize: 13)),
+                style: TextStyle(color: Color(0xFFF5C518), fontWeight: FontWeight.w700)),
+            content: Text('Version $latest is available.\nTap Update Now to download.',
+                style: const TextStyle(color: Colors.white70, fontSize: 13)),
             actions: [
               if (!forceUpdate)
                 TextButton(
@@ -158,7 +175,8 @@ class _AppShellState extends State<AppShell> {
                   }
                 },
                 style: ElevatedButton.styleFrom(
-                    backgroundColor: AppColors.primary, foregroundColor: AppColors.dark),
+                    backgroundColor: const Color(0xFFF5C518),
+                    foregroundColor: const Color(0xFF2C1A00)),
                 child: const Text('Update Now', style: TextStyle(fontWeight: FontWeight.w700))),
             ],
           ),
@@ -168,51 +186,174 @@ class _AppShellState extends State<AppShell> {
   }
 
   void _switchTab(int index) {
-    setState(() => _currentIndex = index);
+    if (index == _currentIndex) {
+      _navigatorKeys[index].currentState?.popUntil((r) => r.isFirst);
+    } else {
+      setState(() => _currentIndex = index);
+    }
   }
 
-  Widget _buildTab(int index) {
-    switch (index) {
-      case 0: return HomeScreen(onTabSwitch: _switchTab);
-      case 1: return const RecipesScreen();
-      case 2: return const ShopScreen();
-      case 3: return const SubmitRemedyScreen();
-      case 4: return const MyRecipesScreen();
-      case 5: return const ProfileScreen();
-      default: return HomeScreen(onTabSwitch: _switchTab);
+  Future<bool> _onWillPop() async {
+    final nav = _navigatorKeys[_currentIndex].currentState;
+    if (nav != null && nav.canPop()) {
+      nav.pop();
+      return false;
+    }
+    return true;
+  }
+
+  Widget _buildTab(Widget screen) => Navigator(
+    key: _navigatorKeys[_currentIndex],
+    onGenerateRoute: (_) => MaterialPageRoute(builder: (_) => screen),
+  );
+
+  @override
+  Widget build(BuildContext context) {
+    final screens = [
+      HomeScreen(),
+      const RecipesScreen(),
+      const ShopScreen(),
+      const SubmitRemedyScreen(),
+      const MyRecipesScreen(),
+      const ProfileScreen(),
+    ];
+    return PopScope(
+      canPop: false,
+      onPopInvokedWithResult: (didPop, _) async {
+        if (!didPop) await _onWillPop();
+      },
+      child: Scaffold(
+        backgroundColor: AppColors.background,
+        body: _buildTab(screens[_currentIndex]),
+        bottomNavigationBar: AppBottomNavBar(
+          currentIndex: _currentIndex,
+          onTap: (i) async {
+            final canNav = await NavigationGuard.shouldNavigate(context);
+            if (canNav) _switchTab(i);
+          },
+        ),
+      ),
+    );
+  }
+}
+
+// ── Logged In Remedy Loader ───────────────────────────────────────────────────
+class _LoggedInRemedyLoader extends StatefulWidget {
+  final String remedyId;
+  const _LoggedInRemedyLoader({required this.remedyId});
+  @override
+  State<_LoggedInRemedyLoader> createState() => _LoggedInRemedyLoaderState();
+}
+
+class _LoggedInRemedyLoaderState extends State<_LoggedInRemedyLoader> {
+  Map<String, dynamic>? _remedy;
+  bool _loading  = true;
+  bool _notFound = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _load();
+  }
+
+  Future<void> _load() async {
+    try {
+      final data = await SupabaseService.supabase
+          .from('remedies_full')
+          .select()
+          .eq('id', widget.remedyId)
+          .maybeSingle();
+      setState(() {
+        _remedy   = data;
+        _notFound = data == null;
+        _loading  = false;
+      });
+    } catch (_) {
+      setState(() { _notFound = true; _loading = false; });
     }
   }
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      body: Stack(
-        children: List.generate(6, (i) => Offstage(
-          offstage: _currentIndex != i,
-          child: Navigator(
-            key: _navigatorKeys[i],
-            onGenerateRoute: (settings) =>
-                MaterialPageRoute(builder: (_) => _buildTab(i)),
-          ),
-        )),
-      ),
-      bottomNavigationBar: AppBottomNavBar(
-        currentIndex: _currentIndex,
-        onTap: (i) async {
-          final canNavigate = await NavigationGuard.shouldNavigate(context);
-          if (!canNavigate) return;
-          if (i == _currentIndex) {
-            _navigatorKeys[i].currentState?.popUntil((r) => r.isFirst);
-          } else {
-            setState(() => _currentIndex = i);
-            // Reload recipes when switching to recipes tab
-            if (i == 1) {
-              _navigatorKeys[1].currentState?.popUntil((r) => r.isFirst);
-            }
-          }
-        },
-      ),
-    );
+    if (_loading) return const Scaffold(
+      body: Center(child: CircularProgressIndicator(color: AppColors.primary)));
+    if (_notFound || _remedy == null) return Scaffold(
+      backgroundColor: AppColors.background,
+      body: SafeArea(child: Center(child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          const Icon(Icons.search_off, size: 48, color: AppColors.textSecondary),
+          const SizedBox(height: 12),
+          const Text('Remedy not found', style: AppTextStyles.heading3),
+          const SizedBox(height: 16),
+          ElevatedButton(
+            onPressed: () => context.go('/'),
+            style: ElevatedButton.styleFrom(
+                backgroundColor: AppColors.dark, foregroundColor: AppColors.primary),
+            child: const Text('Go to Remedy Handbook')),
+        ],
+      ))));
+    return RecipeDetailScreenDB(remedy: _remedy!, isGuest: false);
+  }
+}
+
+// ── Guest Remedy Loader ───────────────────────────────────────────────────────
+class _GuestRemedyLoader extends StatefulWidget {
+  final String remedyId;
+  const _GuestRemedyLoader({required this.remedyId});
+  @override
+  State<_GuestRemedyLoader> createState() => _GuestRemedyLoaderState();
+}
+
+class _GuestRemedyLoaderState extends State<_GuestRemedyLoader> {
+  Map<String, dynamic>? _remedy;
+  bool _loading  = true;
+  bool _notFound = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _load();
+  }
+
+  Future<void> _load() async {
+    try {
+      final data = await SupabaseService.supabase
+          .from('remedies_full')
+          .select()
+          .eq('id', widget.remedyId)
+          .maybeSingle();
+      setState(() {
+        _remedy   = data;
+        _notFound = data == null;
+        _loading  = false;
+      });
+    } catch (_) {
+      setState(() { _notFound = true; _loading = false; });
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    if (_loading) return const Scaffold(
+      body: Center(child: CircularProgressIndicator(color: AppColors.primary)));
+    if (_notFound || _remedy == null) return Scaffold(
+      backgroundColor: AppColors.background,
+      body: SafeArea(child: Center(child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          const Icon(Icons.search_off, size: 48, color: AppColors.textSecondary),
+          const SizedBox(height: 12),
+          const Text('Remedy not found', style: AppTextStyles.heading3),
+          const SizedBox(height: 16),
+          ElevatedButton(
+            onPressed: () => context.go('/'),
+            style: ElevatedButton.styleFrom(
+                backgroundColor: AppColors.dark, foregroundColor: AppColors.primary),
+            child: const Text('Go to Remedy Handbook')),
+        ],
+      ))));
+    return RecipeDetailScreenDB(remedy: _remedy!, isGuest: true);
   }
 }
 

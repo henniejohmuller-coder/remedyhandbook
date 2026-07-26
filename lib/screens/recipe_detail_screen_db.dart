@@ -9,7 +9,8 @@ import 'admin_remedy_edit_screen.dart';
 
 class RecipeDetailScreenDB extends StatefulWidget {
   final Map<String, dynamic> remedy;
-  const RecipeDetailScreenDB({super.key, required this.remedy});
+  final bool isGuest;
+  const RecipeDetailScreenDB({super.key, required this.remedy, this.isGuest = false});
 
   @override
   State<RecipeDetailScreenDB> createState() => _RecipeDetailScreenDBState();
@@ -95,35 +96,6 @@ class _RecipeDetailScreenDBState extends State<RecipeDetailScreenDB> {
               subtitle: '$component${origin.isNotEmpty ? ' · $origin' : ''}',
               showBack: true,
               actions: [
-                GestureDetector(
-                  onTap: () async {
-                    final illness = r['illness_name'] ?? r['illness'] ?? '';
-                    final msg = Uri.encodeComponent('?? Check out this remedy: "' + '' + '"\n\nIllness: ' + '' + '\nComponent: ' + '' + '\n\nDownload FREE app:\n?? https://remedyhandbook.com');
-                    final url = Uri.parse('https://wa.me/?text=' + '' + '');
-                    if (await canLaunchUrl(url)) await launchUrl(url, mode: LaunchMode.externalApplication);
-                  },
-                  child: const Icon(Icons.share_outlined, size: 22, color: AppColors.dark),
-                ),
-                const SizedBox(width: 12),
-                // Share button
-                GestureDetector(
-                  onTap: () async {
-                    final illness = r['illness_name'] ?? r['illness'] ?? '';
-                    final message = Uri.encodeComponent(
-                      '🌿 Check out this remedy: "$name"\n\n'
-                      '${illness.isNotEmpty ? 'Illness: $illness\n' : ''}'
-                      '${component.isNotEmpty ? 'Component: $component\n' : ''}'
-                      '\nDownload the FREE Remedy Handbook app:\n'
-                      '🌐 Web: https://remedyhandbook.com'
-                    );
-                    final url = Uri.parse('https://wa.me/?text=$message');
-                    if (await canLaunchUrl(url)) {
-                      await launchUrl(url, mode: LaunchMode.externalApplication);
-                    }
-                  },
-                  child: const Icon(Icons.share_outlined, size: 22, color: AppColors.dark),
-                ),
-                const SizedBox(width: 12),
                 if (_isAdmin)
                   GestureDetector(
                     onTap: () => Navigator.push(
@@ -133,7 +105,7 @@ class _RecipeDetailScreenDBState extends State<RecipeDetailScreenDB> {
                           remedy: widget.remedy,
                           onSaved: () {
                             Navigator.pop(context);
-                            RecipesScreen.reload();
+                            
                           },
                         ),
                       ),
@@ -361,31 +333,6 @@ class _RecipeDetailScreenDBState extends State<RecipeDetailScreenDB> {
                           ],
                         ),
                       ),
-                    ],
-                    // Encouragement
-                    if ((r['encouragement'] ?? '').toString().trim().isNotEmpty) ...[
-                      const SizedBox(height: 12),
-                      Container(
-                        padding: const EdgeInsets.all(14),
-                        decoration: BoxDecoration(
-                          color: AppColors.lightYellow,
-                          borderRadius: BorderRadius.circular(12),
-                          border: Border.all(color: AppColors.primary.withOpacity(0.3)),
-                        ),
-                        child: Row(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                          const Icon(Icons.format_quote, color: AppColors.primary, size: 20),
-                          const SizedBox(width: 8),
-                          Expanded(
-                            child: Text(
-                              r['encouragement'].toString().trim(),
-                              style: const TextStyle(
-                                fontSize: 13, color: AppColors.dark,
-                                fontStyle: FontStyle.italic, height: 1.5),
-                            ),
-                          ),
-                        ]),
-                      ),
-                      const SizedBox(height: 12),
                     ],
                     // Community reviews
                     const SectionLabel('COMMUNITY REVIEWS'),
