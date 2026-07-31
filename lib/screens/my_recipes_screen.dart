@@ -66,7 +66,7 @@ class _MyRecipesScreenState extends State<MyRecipesScreen>
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            const YellowAppBar(title: 'My Recipes', subtitle: 'Saved · Submissions · Orders'),
+            const YellowAppBar(title: 'My Recipes', subtitle: 'Favourites · Submissions · Orders'),
             const SizedBox(height: 12),
             Padding(
               padding: const EdgeInsets.symmetric(horizontal: 16),
@@ -83,7 +83,7 @@ class _MyRecipesScreenState extends State<MyRecipesScreen>
                   indicator: BoxDecoration(color: AppColors.primary, borderRadius: BorderRadius.circular(10)),
                   labelStyle: const TextStyle(fontWeight: FontWeight.w600, fontSize: 13),
                   tabs: [
-                    Tab(text: 'Saved (${_saved.length})'),
+                    Tab(text: 'Favourites (${_saved.length})'),
                     Tab(text: 'Submissions (${_submissions.length})'),
                     Tab(text: 'Orders (${_orders.length})'),
                   ],
@@ -120,7 +120,7 @@ class _SavedTab extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     if (saved.isEmpty) {
-      return _EmptyState(icon: Icons.bookmark_border, message: 'No saved remedies yet',
+      return _EmptyState(icon: Icons.bookmark_border, message: 'No favourites yet',
           hint: 'Tap the bookmark on any remedy to save it', onRefresh: onRefresh);
     }
     return RefreshIndicator(

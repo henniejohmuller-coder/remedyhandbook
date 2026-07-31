@@ -9,6 +9,7 @@ import 'config.dart';
 import 'theme/app_theme.dart';
 import 'services/supabase_service.dart';
 import 'widgets/shared_widgets.dart';
+import 'widgets/install_banner.dart';
 import 'widgets/navigation_guard.dart';
 import 'screens/login_screen.dart';
 import 'screens/home_screen.dart';
@@ -20,7 +21,7 @@ import 'screens/order_confirmation_screen.dart';
 import 'screens/submit_remedy_screen.dart';
 import 'screens/my_recipes_screen.dart';
 import 'screens/profile_screen.dart';
-import 'screens/recipe_detail_screen_db.dart';
+import 'screens/recipe_detail_screen.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -54,6 +55,10 @@ final _router = GoRouter(
     GoRoute(
       path: '/',
       builder: (_, __) => const _AuthGate(),
+    ),
+    GoRoute(
+      path: '/download',
+      builder: (_, __) => const _DownloadScreen(),
     ),
     GoRoute(
       path: '/remedy/:id',
@@ -298,6 +303,40 @@ class _LoggedInRemedyLoaderState extends State<_LoggedInRemedyLoader> {
 }
 
 // ── Guest Remedy Loader ───────────────────────────────────────────────────────
+class _DownloadScreen extends StatefulWidget {
+  const _DownloadScreen();
+  @override
+  State<_DownloadScreen> createState() => _DownloadScreenState();
+}
+
+class _DownloadScreenState extends State<_DownloadScreen> {
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      backgroundColor: AppColors.background,
+      body: SafeArea(
+        child: Center(
+          child: Padding(
+            padding: const EdgeInsets.all(24),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                const Icon(Icons.download_outlined, size: 56, color: AppColors.primary),
+                const SizedBox(height: 16),
+                const Text('Get Remedy Handbook', style: AppTextStyles.heading2, textAlign: TextAlign.center),
+                const SizedBox(height: 24),
+                const InstallBanner(),
+                const SizedBox(height: 16),
+                TextButton(onPressed: () => context.go('/'), child: const Text('Continue to Remedy Handbook')),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
 class _GuestRemedyLoader extends StatefulWidget {
   final String remedyId;
   const _GuestRemedyLoader({required this.remedyId});
