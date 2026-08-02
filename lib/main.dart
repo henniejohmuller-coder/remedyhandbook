@@ -148,7 +148,7 @@ class _AppShellState extends State<AppShell> {
 
   Future<void> _checkVersion() async {
     try {
-      const currentVersion = '1.0.2';
+      const currentVersion = '1.0.4';
       final data = await Supabase.instance.client
           .from('app_version').select().eq('id', 1).single();
       final latest     = data['version']?.toString() ?? currentVersion;
@@ -395,4 +395,9 @@ class _GuestRemedyLoaderState extends State<_GuestRemedyLoader> {
     return RecipeDetailScreenDB(remedy: _remedy!, isGuest: true);
   }
 }
+
+
+
+
+
 
