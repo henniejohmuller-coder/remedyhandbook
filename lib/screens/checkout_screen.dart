@@ -3,6 +3,7 @@ import '../theme/app_theme.dart';
 import '../widgets/shared_widgets.dart';
 import '../services/supabase_service.dart';
 import 'order_confirmation_screen.dart';
+import 'payfast_screen.dart';
 import 'cart_screen.dart';
 
 class CheckoutScreen extends StatefulWidget {
@@ -89,7 +90,7 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
     }
     setState(() => _paying = true);
     try {
-      await SupabaseService.placeOrder(
+      final orderResult = await SupabaseService.placeOrder(
         deliveryDetails: {
           'full_name':   _nameController.text.trim(),
           'email':       _emailController.text.trim(),
@@ -104,17 +105,23 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
         shipping: shipping,
         total: total,
       );
-      CartBadge.update(0);
-      CartScreen.reload();
       setState(() => _paying = false);
-      if (context.mounted) {
-        Navigator.of(context).popUntil((route) => route.isFirst);
-        Navigator.push(context, MaterialPageRoute(builder: (_) => const OrderConfirmationScreen()));
+      if (!mounted) return;
+      await Navigator.push(context, MaterialPageRoute(
+        builder: (_) => PayFastScreen(
+          productName: 'Remedy Handbook Order',
+          amount: total,
+          orderId: orderResult['id']?.toString() ?? '',
+        ),
+      ));
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Complete payment in browser, then return here'), backgroundColor: Colors.blue, duration: Duration(seconds: 5)));
       }
     } catch (e) {
       setState(() => _paying = false);
-      if (context.mounted) ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Order failed: $e'), backgroundColor: Colors.red));
+      if (mounted) ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Order failed: ' + e.toString()), backgroundColor: Colors.red));
     }
   }
 
@@ -266,3 +273,5 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
     ]);
   }
 }
+
+
