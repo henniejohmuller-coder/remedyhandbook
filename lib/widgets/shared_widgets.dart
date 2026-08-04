@@ -142,6 +142,13 @@ class YellowAppBar extends StatelessWidget {
             children: [
               if (actions != null) ...actions!,
               if (actions != null) const SizedBox(width: 10),
+              Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  const Text('V1.0.7',
+                    style: TextStyle(fontSize: 8, color: AppColors.dark,
+                      fontWeight: FontWeight.w400, letterSpacing: 0.5)),
+                  const SizedBox(height: 1),
               GestureDetector(
                 onTap: () async {
                   final canNavigate = await NavigationGuard.shouldNavigate(context);
@@ -177,6 +184,8 @@ class YellowAppBar extends StatelessWidget {
                     ),
                   ],
                 ),
+              ),
+                ],
               ),
             ],
           ),
