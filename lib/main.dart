@@ -60,6 +60,8 @@ final _router = GoRouter(
       path: '/download',
       builder: (_, __) => const _DownloadScreen(),
     ),
+    GoRoute(path: '/payment-success', builder: (_, __) => const _PaymentSuccessPage()),
+    GoRoute(path: '/payment-cancel', builder: (_, __) => const _PaymentCancelPage()),
     GoRoute(
       path: '/remedy/:id',
       builder: (context, state) {
@@ -408,3 +410,54 @@ class _GuestRemedyLoaderState extends State<_GuestRemedyLoader> {
 
 
 
+
+
+class _PaymentSuccessPage extends StatelessWidget {
+  const _PaymentSuccessPage();
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      backgroundColor: AppColors.background,
+      body: SafeArea(child: Center(child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          const Icon(Icons.check_circle, color: Colors.green, size: 64),
+          const SizedBox(height: 16),
+          const Text('Payment Successful!', style: AppTextStyles.heading2),
+          const SizedBox(height: 8),
+          const Text('Thank you for your order.', style: AppTextStyles.caption),
+          const SizedBox(height: 24),
+          ElevatedButton(
+            onPressed: () => context.go('/'),
+            style: ElevatedButton.styleFrom(backgroundColor: AppColors.dark, foregroundColor: AppColors.primary),
+            child: const Text('Continue Shopping')),
+        ],
+      ))),
+    );
+  }
+}
+
+class _PaymentCancelPage extends StatelessWidget {
+  const _PaymentCancelPage();
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      backgroundColor: AppColors.background,
+      body: SafeArea(child: Center(child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          const Icon(Icons.cancel_outlined, color: Colors.orange, size: 64),
+          const SizedBox(height: 16),
+          const Text('Payment Cancelled', style: AppTextStyles.heading2),
+          const SizedBox(height: 8),
+          const Text('Your order was not completed.', style: AppTextStyles.caption),
+          const SizedBox(height: 24),
+          ElevatedButton(
+            onPressed: () => context.go('/'),
+            style: ElevatedButton.styleFrom(backgroundColor: AppColors.dark, foregroundColor: AppColors.primary),
+            child: const Text('Return to App')),
+        ],
+      ))),
+    );
+  }
+}

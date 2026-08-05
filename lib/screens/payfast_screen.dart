@@ -34,8 +34,8 @@ class _PayFastScreenState extends State<PayFastScreen> {
       ? 'https://sandbox.payfast.co.za/eng/process'
       : 'https://payment.payfast.io/eng/process';
 
-  static const _returnUrl = 'https://remedyhandbook.com/';
-  static const _cancelUrl = 'https://remedyhandbook.com/';
+  static const _returnUrl = 'https://remedyhandbook.com/payment-success';
+  static const _cancelUrl = 'https://remedyhandbook.com/payment-cancel';
   static const _notifyUrl = 'https://remedyhandbook.com/';
 
   // ── Build HTML form for POST submission ───────────────────────────────────
@@ -197,4 +197,5 @@ class _PayFastScreenState extends State<PayFastScreen> {
     );
   }
 }
+
 
