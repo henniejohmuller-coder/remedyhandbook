@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/foundation.dart' show kIsWeb;
 import '../theme/app_theme.dart';
 import '../widgets/shared_widgets.dart';
 import '../services/supabase_service.dart';
@@ -115,8 +116,14 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
         ),
       ));
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Complete payment in browser, then return here'), backgroundColor: Colors.blue, duration: Duration(seconds: 5)));
+        if (kIsWeb) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text('Complete payment in browser. Return here after payment.'),
+              backgroundColor: Colors.blue, duration: Duration(seconds: 8)));
+        } else {
+          Navigator.of(context).popUntil((route) => route.isFirst);
+          Navigator.push(context, MaterialPageRoute(builder: (_) => const OrderConfirmationScreen()));
+        }
       }
     } catch (e) {
       setState(() => _paying = false);
@@ -273,5 +280,6 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
     ]);
   }
 }
+
 
 

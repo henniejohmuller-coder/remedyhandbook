@@ -19,7 +19,7 @@ class _AdminShopReportScreenState extends State<AdminShopReportScreen> {
   final Set<String> _selectedIds = {};
   // Lifted supplier_paid state — persists across scroll
   final Map<String, bool> _supplierPaid = {};
-  final List<String> _statuses = ['All','paid','processing','shipped','delivered','cancelled'];
+  final List<String> _statuses = ['All','pending','paid','processing','shipped','delivered','cancelled'];
 
   @override void initState() { super.initState(); _loadOrders(); }
   @override void dispose() { _txnController.dispose(); super.dispose(); }
@@ -455,3 +455,4 @@ class _OrderCard extends StatelessWidget {
     );
   }
 }
+

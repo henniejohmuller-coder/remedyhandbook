@@ -254,7 +254,7 @@ class SupabaseService {
       'postal_code': deliveryDetails['postal_code'],
       'country':   deliveryDetails['country'] ?? 'South Africa',
       'subtotal':  subtotal, 'shipping': shipping, 'total': total,
-      'status':    'paid',
+
     }).select().single();
 
     final items = cartItems.map((item) => {
@@ -430,3 +430,4 @@ class SupabaseService {
     return (r as List).map((e) => e['name'] as String).toList();
   }
 }
+

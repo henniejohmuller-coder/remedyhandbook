@@ -27,7 +27,7 @@ class _PayFastScreenState extends State<PayFastScreen> {
   bool _loading = true;
 
   // ── PayFast Credentials ───────────────────────────────────────────────────
-  static const _receiver    = '15410594'; // Your Merchant ID
+  static const _receiver    = '15410594';
   static const _sandbox     = false;
 
   static String get _pfUrl => _sandbox
@@ -36,9 +36,9 @@ class _PayFastScreenState extends State<PayFastScreen> {
 
   static const _returnUrl = 'https://remedyhandbook.com/payment-success';
   static const _cancelUrl = 'https://remedyhandbook.com/payment-cancel';
-  static const _notifyUrl = 'https://remedyhandbook.com/';
+  static const _notifyUrl = 'https://stawsdjfjzugeleldaxz.supabase.co/functions/v1/payfast-notify';
 
-  // ── Build HTML form for POST submission ───────────────────────────────────
+  // ── Build HTML form ───────────────────────────────────────────────────────
   String _buildPayFastHtml() {
     final amount = widget.amount.toStringAsFixed(2);
     return '''
@@ -47,18 +47,17 @@ class _PayFastScreenState extends State<PayFastScreen> {
 <head>
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <style>
-    body { display: flex; justify-content: center; align-items: center; 
+    body { display: flex; justify-content: center; align-items: center;
            height: 100vh; margin: 0; background: #F5F0E8; font-family: sans-serif; }
-    .loading { text-align: center; color: #2C1A00; }
     h2 { color: #2C1A00; }
   </style>
 </head>
 <body>
-  <div class="loading">
+  <div style="text-align:center">
     <h2>Redirecting to PayFast...</h2>
     <p>Please wait while we redirect you to secure payment.</p>
   </div>
-  <form id="pf" name="PayFastPayNowForm" action="$_pfUrl" method="post">
+  <form id="pf" action="$_pfUrl" method="post">
     <input type="hidden" name="cmd" value="_paynow">
     <input type="hidden" name="receiver" value="$_receiver">
     <input type="hidden" name="return_url" value="$_returnUrl">
@@ -67,6 +66,7 @@ class _PayFastScreenState extends State<PayFastScreen> {
     <input type="hidden" name="amount" value="$amount">
     <input type="hidden" name="item_name" value="${widget.productName}">
     <input type="hidden" name="m_payment_id" value="${widget.orderId}">
+    <input type="hidden" name="subscription_type" value="2">
   </form>
   <script>document.getElementById('pf').submit();</script>
 </body>
@@ -74,15 +74,25 @@ class _PayFastScreenState extends State<PayFastScreen> {
 ''';
   }
 
+  // ── Update order status in Supabase ───────────────────────────────────────
+  Future<void> _updateOrderStatus(String status) async {
+    try {
+      await SupabaseService.supabase
+          .from('orders')
+          .update({'status': status, 'payment_status': status})
+          .eq('id', widget.orderId);
+    } catch (e) {
+      debugPrint('Error updating order status: $e');
+    }
+  }
+
   @override
   void initState() {
     super.initState();
 
     if (kIsWeb) {
-      // On web: build PayFast URL and open in new tab
       WidgetsBinding.instance.addPostFrameCallback((_) async {
         final amount = widget.amount.toStringAsFixed(2);
-        // Use GET parameters for web (simpler than POST form)
         final params = {
           'cmd': '_paynow',
           'receiver': _receiver,
@@ -92,10 +102,12 @@ class _PayFastScreenState extends State<PayFastScreen> {
           'amount': amount,
           'item_name': widget.productName,
           'm_payment_id': widget.orderId,
+          'subscription_type': '2',
         };
-        final query = params.entries.map((e) => e.key + '=' + Uri.encodeComponent(e.value)).join('&');
-        final pfUrl = _pfUrl + '?' + query;
-        final uri = Uri.parse(pfUrl);
+        final query = params.entries
+            .map((e) => e.key + '=' + Uri.encodeComponent(e.value))
+            .join('&');
+        final uri = Uri.parse(_pfUrl + '?' + query);
         if (await canLaunchUrl(uri)) {
           await launchUrl(uri, mode: LaunchMode.externalApplication);
         }
@@ -104,7 +116,6 @@ class _PayFastScreenState extends State<PayFastScreen> {
       return;
     }
 
-    // On mobile: load HTML in WebView which auto-submits form to PayFast
     _controller = WebViewController()
       ..setJavaScriptMode(JavaScriptMode.unrestricted)
       ..setNavigationDelegate(NavigationDelegate(
@@ -112,8 +123,10 @@ class _PayFastScreenState extends State<PayFastScreen> {
         onPageFinished: (url) {
           setState(() => _loading = false);
           if (url.contains('payment-success') || url.startsWith(_returnUrl)) {
+            _updateOrderStatus('paid');
             _onPaymentSuccess();
           } else if (url.contains('payment-cancel') || url.startsWith(_cancelUrl)) {
+            _updateOrderStatus('cancelled');
             _onPaymentCancelled();
           }
         },
@@ -182,7 +195,8 @@ class _PayFastScreenState extends State<PayFastScreen> {
                 TextButton(onPressed: () => Navigator.pop(ctx), child: const Text('Continue')),
                 ElevatedButton(
                   onPressed: () { Navigator.pop(ctx); Navigator.pop(context); },
-                  style: ElevatedButton.styleFrom(backgroundColor: Colors.red, foregroundColor: Colors.white),
+                  style: ElevatedButton.styleFrom(
+                      backgroundColor: Colors.red, foregroundColor: Colors.white),
                   child: const Text('Cancel'),
                 ),
               ],
@@ -191,11 +205,10 @@ class _PayFastScreenState extends State<PayFastScreen> {
         ),
         Expanded(child: Stack(children: [
           WebViewWidget(controller: _controller!),
-          if (_loading) const Center(child: CircularProgressIndicator(color: AppColors.primary)),
+          if (_loading) const Center(
+              child: CircularProgressIndicator(color: AppColors.primary)),
         ])),
       ])),
     );
   }
 }
-
-
