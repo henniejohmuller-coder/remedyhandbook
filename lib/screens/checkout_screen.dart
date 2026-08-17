@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:http/http.dart' as http;
+import 'dart:convert';
 import 'package:flutter/foundation.dart' show kIsWeb;
 import '../theme/app_theme.dart';
 import '../widgets/shared_widgets.dart';
@@ -18,6 +20,7 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
   List<Map<String, dynamic>> _items = [];
   bool _loading = true;
   bool _paying  = false;
+  String? _savedToken;
 
   final _nameController    = TextEditingController();
   final _emailController   = TextEditingController();
@@ -32,6 +35,7 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
   void initState() {
     super.initState();
     _loadCart();
+    _loadSavedToken();
     _prefillProfile();
   }
 
@@ -46,6 +50,20 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
     _provinceController.dispose();
     _specialController.dispose();
     super.dispose();
+  }
+
+
+  Future<void> _loadSavedToken() async {
+    try {
+      final userId = SupabaseService.supabase.auth.currentUser?.id;
+      if (userId == null) return;
+      final data = await SupabaseService.supabase
+          .from('profiles').select('payfast_token,payfast_token_status')
+          .eq('id', userId).single();
+      if (data['payfast_token'] != null && data['payfast_token_status'] == 'active') {
+        setState(() => _savedToken = data['payfast_token']);
+      }
+    } catch (_) {}
   }
 
   Future<void> _loadCart() async {
@@ -83,6 +101,56 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
   double get shipping => subtotal >= 500 ? 0 : 85;
   double get total    => subtotal + shipping;
 
+
+  Future<void> _payWithToken() async {
+    if (_nameController.text.isEmpty || _addressController.text.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Please fill in all required fields'), backgroundColor: Colors.red));
+      return;
+    }
+    setState(() => _paying = true);
+    try {
+      final orderResult = await SupabaseService.placeOrder(
+        deliveryDetails: {
+          'full_name':   _nameController.text.trim(),
+          'email':       _emailController.text.trim(),
+          'phone':       _phoneController.text.trim(),
+          'address':     _addressController.text.trim(),
+          'city':        _cityController.text.trim(),
+          'postal_code': _postalController.text.trim(),
+          'country':     'South Africa',
+        },
+        cartItems: _items, subtotal: subtotal, shipping: shipping, total: total,
+      );
+      final orderId = orderResult['id']?.toString() ?? '';
+      final adhocUrl = Uri.parse('https://stawsdjfjzugeleldaxz.supabase.co/functions/v1/payfast-adhoc');
+      final httpResponse = await http.post(adhocUrl,
+        headers: {'Content-Type': 'application/json'},
+        body: jsonEncode({'token': _savedToken, 'amount': total, 'itemName': 'Remedy Handbook Order', 'orderId': orderId}),
+      );
+      final data = jsonDecode(httpResponse.body);
+      if (data != null && data['code'] == 200) {
+        await SupabaseService.supabase.from('orders')
+            .update({'status': 'paid', 'payment_status': 'paid'}).eq('id', orderId);
+        CartBadge.update(0);
+        CartScreen.reload();
+        setState(() => _paying = false);
+        if (mounted) {
+          Navigator.of(context).popUntil((route) => route.isFirst);
+          Navigator.push(context, MaterialPageRoute(builder: (_) => const OrderConfirmationScreen()));
+        }
+      } else {
+        setState(() => _paying = false);
+        if (mounted) await Navigator.push(context, MaterialPageRoute(
+          builder: (_) => PayFastScreen(productName: 'Remedy Handbook Order', amount: total, orderId: orderId)));
+      }
+    } catch (e) {
+      setState(() => _paying = false);
+      if (mounted) ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Payment failed: ' + e.toString()), backgroundColor: Colors.red));
+    }
+  }
+
   Future<void> _pay() async {
     if (_nameController.text.isEmpty || _addressController.text.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
@@ -115,20 +183,16 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
           orderId: orderResult['id']?.toString() ?? '',
         ),
       ));
+      CartBadge.update(0);
+      CartScreen.reload();
       if (mounted) {
-        if (kIsWeb) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text('Complete payment in browser. Return here after payment.'),
-              backgroundColor: Colors.blue, duration: Duration(seconds: 8)));
-        } else {
-          Navigator.of(context).popUntil((route) => route.isFirst);
-          Navigator.push(context, MaterialPageRoute(builder: (_) => const OrderConfirmationScreen()));
-        }
+        Navigator.of(context).popUntil((route) => route.isFirst);
+        Navigator.push(context, MaterialPageRoute(builder: (_) => const OrderConfirmationScreen()));
       }
     } catch (e) {
       setState(() => _paying = false);
-      if (mounted) ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Order failed: ' + e.toString()), backgroundColor: Colors.red));
+      if (context.mounted) ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Order failed: $e'), backgroundColor: Colors.red));
     }
   }
 
@@ -222,7 +286,7 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
                         SizedBox(
                           width: double.infinity,
                           child: ElevatedButton(
-                            onPressed: _paying ? null : _pay,
+                            onPressed: _paying ? null : (_savedToken != null ? _payWithToken : _pay),
                             style: ElevatedButton.styleFrom(
                               backgroundColor: AppColors.dark, foregroundColor: Colors.white,
                               padding: const EdgeInsets.symmetric(vertical: 14),
@@ -280,6 +344,4 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
     ]);
   }
 }
-
-
 
