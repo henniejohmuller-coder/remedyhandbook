@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import '../theme/app_theme.dart';
 import '../widgets/shared_widgets.dart';
+import '../services/supabase_service.dart';
 
 class OrderConfirmationScreen extends StatelessWidget {
   const OrderConfirmationScreen({super.key});
@@ -24,7 +25,7 @@ class OrderConfirmationScreen extends StatelessWidget {
                 child: const Icon(Icons.check, color: Colors.green, size: 40),
               ),
               const SizedBox(height: 24),
-              const Text('Thank you, Maria!', style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: AppColors.dark)),
+              Text('Thank you, ' + (SupabaseService.supabase.auth.currentUser?.email?.split('@').first ?? 'there') + '!', style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: AppColors.dark)),
               const SizedBox(height: 8),
               const Text(
                 'Your order has been placed.\nConfirmation email sent.',
@@ -81,3 +82,4 @@ class OrderConfirmationScreen extends StatelessWidget {
     );
   }
 }
+
