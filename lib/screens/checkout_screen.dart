@@ -18,6 +18,7 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
   List<Map<String, dynamic>> _items = [];
   bool _loading = true;
   bool _paying  = false;
+  String? _savedToken;
 
   final _nameController    = TextEditingController();
   final _emailController   = TextEditingController();
@@ -32,6 +33,7 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
   void initState() {
     super.initState();
     _loadCart();
+    _loadSavedToken();
     _prefillProfile();
   }
 
@@ -46,6 +48,19 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
     _provinceController.dispose();
     _specialController.dispose();
     super.dispose();
+  }
+
+  Future<void> _loadSavedToken() async {
+    try {
+      final userId = SupabaseService.supabase.auth.currentUser?.id;
+      if (userId == null) return;
+      final data = await SupabaseService.supabase
+          .from('profiles').select('payfast_token,payfast_token_status')
+          .eq('id', userId).single();
+      if (data['payfast_token'] != null && data['payfast_token_status'] == 'active') {
+        setState(() => _savedToken = data['payfast_token']);
+      }
+    } catch (_) {}
   }
 
   Future<void> _loadCart() async {
@@ -82,6 +97,47 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
   });
   double get shipping => subtotal >= 500 ? 0 : 85;
   double get total    => subtotal + shipping;
+
+  Future<void> _payWithToken() async {
+    if (_nameController.text.isEmpty || _addressController.text.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Please fill in all required fields'), backgroundColor: Colors.red));
+      return;
+    }
+    setState(() => _paying = true);
+    try {
+      final orderResult = await SupabaseService.placeOrder(
+        deliveryDetails: {
+          'full_name':   _nameController.text.trim(),
+          'email':       _emailController.text.trim(),
+          'phone':       _phoneController.text.trim(),
+          'address':     _addressController.text.trim(),
+          'city':        _cityController.text.trim(),
+          'postal_code': _postalController.text.trim(),
+          'country':     'South Africa',
+        },
+        cartItems: _items, subtotal: subtotal, shipping: shipping, total: total,
+      );
+      final orderId = orderResult['id']?.toString() ?? '';
+      await SupabaseService.supabase.rpc('process_token_payment', params: {
+        'p_token': _savedToken,
+        'p_amount': (total * 100).round(),
+        'p_item_name': 'Remedy Handbook Order',
+        'p_order_id': orderId,
+      });
+      CartBadge.update(0);
+      CartScreen.reload();
+      setState(() => _paying = false);
+      if (mounted) {
+        Navigator.of(context).popUntil((route) => route.isFirst);
+        Navigator.push(context, MaterialPageRoute(builder: (_) => const OrderConfirmationScreen()));
+      }
+    } catch (e) {
+      setState(() => _paying = false);
+      if (mounted) ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Payment failed: ' + e.toString()), backgroundColor: Colors.red));
+    }
+  }
 
   Future<void> _pay() async {
     if (_nameController.text.isEmpty || _addressController.text.isEmpty) {
@@ -222,7 +278,7 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
                         SizedBox(
                           width: double.infinity,
                           child: ElevatedButton(
-                            onPressed: _paying ? null : _pay,
+                            onPressed: _paying ? null : (_savedToken != null ? _payWithToken : _pay),
                             style: ElevatedButton.styleFrom(
                               backgroundColor: AppColors.dark, foregroundColor: Colors.white,
                               padding: const EdgeInsets.symmetric(vertical: 14),
@@ -233,7 +289,7 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
                                 ? const SizedBox(width: 20, height: 20,
                                     child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white))
                                 : Row(mainAxisAlignment: MainAxisAlignment.center, children: [
-                                    Text('Pay R${total.toInt()} securely  ',
+                                    Text(_savedToken != null ? 'One-click Pay R\  ' : 'Pay R\ securely  ',
                                         style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14)),
                                     Container(
                                       padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
@@ -280,6 +336,8 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
     ]);
   }
 }
+
+
 
 
 
