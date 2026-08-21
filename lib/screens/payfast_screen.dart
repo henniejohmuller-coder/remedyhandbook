@@ -1,3 +1,5 @@
+import 'dart:convert';
+import 'package:crypto/crypto.dart';
 import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter/material.dart';
 import 'package:url_launcher/url_launcher.dart';
@@ -26,8 +28,9 @@ class _PayFastScreenState extends State<PayFastScreen> {
   WebViewController? _controller;
   bool _loading = true;
 
-  // ── PayFast Credentials ───────────────────────────────────────────────────
-  static const _receiver    = '15410594';
+  static const _merchantId  = '15410594';
+  static const _merchantKey = '8dpf81oao9xdo';
+  static const _passphrase  = 'PayfastHennie1';
   static const _sandbox     = false;
 
   static String get _pfUrl => _sandbox
@@ -38,43 +41,61 @@ class _PayFastScreenState extends State<PayFastScreen> {
   static const _cancelUrl = 'https://remedyhandbook.com/payment-cancel';
   static const _notifyUrl = 'https://stawsdjfjzugeleldaxz.supabase.co/functions/v1/payfast-notify';
 
-  // ── Build HTML form ───────────────────────────────────────────────────────
-  String _buildPayFastHtml() {
-    final amount = widget.amount.toStringAsFixed(2);
-    return '''
-<!DOCTYPE html>
-<html>
-<head>
-  <meta name="viewport" content="width=device-width, initial-scale=1">
-  <style>
-    body { display: flex; justify-content: center; align-items: center;
-           height: 100vh; margin: 0; background: #F5F0E8; font-family: sans-serif; }
-    h2 { color: #2C1A00; }
-  </style>
-</head>
-<body>
-  <div style="text-align:center">
-    <h2>Redirecting to PayFast...</h2>
-    <p>Please wait while we redirect you to secure payment.</p>
-  </div>
-  <form id="pf" action="$_pfUrl" method="post">
-    <input type="hidden" name="cmd" value="_paynow">
-    <input type="hidden" name="receiver" value="$_receiver">
-    <input type="hidden" name="return_url" value="$_returnUrl">
-    <input type="hidden" name="cancel_url" value="$_cancelUrl">
-    <input type="hidden" name="notify_url" value="$_notifyUrl">
-    <input type="hidden" name="amount" value="$amount">
-    <input type="hidden" name="item_name" value="${widget.productName}">
-    <input type="hidden" name="m_payment_id" value="${widget.orderId}">
-    <input type="hidden" name="subscription_type" value="2">
-  </form>
-  <script>document.getElementById('pf').submit();</script>
-</body>
-</html>
-''';
+  // PHP-compatible urlencode
+  String _phpEncode(String value) =>
+      Uri.encodeComponent(value.trim()).replaceAll('%20', '+');
+
+  // Generate MD5 signature
+  String _generateSignature(Map<String, String> data) {
+    final query = data.entries
+        .map((e) => '${e.key}=${_phpEncode(e.value)}')
+        .join('&');
+    final withPp = '$query&passphrase=${_phpEncode(_passphrase)}';
+    return md5.convert(utf8.encode(withPp)).toString();
   }
 
-  // ── Update order status in Supabase ───────────────────────────────────────
+  // Build payment data
+  Map<String, String> _buildData() {
+    final user = SupabaseService.supabase.auth.currentUser;
+    final email = user?.email ?? '';
+    final firstName = email.isNotEmpty ? email.split('@').first : 'Customer';
+    return {
+      'merchant_id':       _merchantId,
+      'merchant_key':      _merchantKey,
+      'return_url':        _returnUrl,
+      'cancel_url':        _cancelUrl,
+      'notify_url':        _notifyUrl,
+      'name_first':        firstName,
+      'name_last':         '',
+      'email_address':     email,
+      'm_payment_id':      widget.orderId,
+      'amount':            widget.amount.toStringAsFixed(2),
+      'item_name':         widget.productName,
+      'subscription_type': '2',
+    };
+  }
+
+  String _buildPayFastHtml() {
+    final data = _buildData();
+    final sig = _generateSignature(data);
+    final fields = data.entries
+        .map((e) => '  <input type="hidden" name="${e.key}" value="${e.value}">')
+        .join('\n');
+    return '''<!DOCTYPE html>
+<html>
+<head><meta name="viewport" content="width=device-width, initial-scale=1">
+<style>body{display:flex;justify-content:center;align-items:center;height:100vh;margin:0;background:#F5F0E8;font-family:sans-serif;}h2{color:#2C1A00;}</style>
+</head>
+<body>
+<div style="text-align:center"><h2>Redirecting to PayFast...</h2><p>Please wait...</p></div>
+<form id="pf" action="$_pfUrl" method="post">
+$fields
+  <input type="hidden" name="signature" value="$sig">
+</form>
+<script>document.getElementById('pf').submit();</script>
+</body></html>''';
+  }
+
   Future<void> _updateOrderStatus(String status) async {
     try {
       await SupabaseService.supabase
@@ -92,22 +113,12 @@ class _PayFastScreenState extends State<PayFastScreen> {
 
     if (kIsWeb) {
       WidgetsBinding.instance.addPostFrameCallback((_) async {
-        final amount = widget.amount.toStringAsFixed(2);
-        final params = {
-          'cmd': '_paynow',
-          'receiver': _receiver,
-          'return_url': _returnUrl,
-          'cancel_url': _cancelUrl,
-          'notify_url': _notifyUrl,
-          'amount': amount,
-          'item_name': widget.productName,
-          'm_payment_id': widget.orderId,
-          'subscription_type': '2',
-        };
-        final query = params.entries
-            .map((e) => e.key + '=' + Uri.encodeComponent(e.value))
-            .join('&');
-        final uri = Uri.parse(_pfUrl + '?' + query);
+        final data = _buildData();
+        final sig = _generateSignature(data);
+        final query = data.entries
+            .map((e) => '${e.key}=${Uri.encodeComponent(e.value)}')
+            .join('&') + '&signature=$sig';
+        final uri = Uri.parse('$_pfUrl?$query');
         if (await canLaunchUrl(uri)) {
           await launchUrl(uri, mode: LaunchMode.externalApplication);
         }
@@ -119,19 +130,32 @@ class _PayFastScreenState extends State<PayFastScreen> {
     _controller = WebViewController()
       ..setJavaScriptMode(JavaScriptMode.unrestricted)
       ..setNavigationDelegate(NavigationDelegate(
-        onPageStarted: (_) => setState(() => _loading = true),
-        onPageFinished: (url) {
-          setState(() => _loading = false);
-          if (url.contains('payment-success') || url.startsWith(_returnUrl)) {
+        onPageStarted: (url) {
+          if (url.startsWith(_returnUrl)) {
             _updateOrderStatus('paid');
             _onPaymentSuccess();
-          } else if (url.contains('payment-cancel') || url.startsWith(_cancelUrl)) {
+          } else if (url.startsWith(_cancelUrl)) {
             _updateOrderStatus('cancelled');
             _onPaymentCancelled();
+          } else {
+            setState(() => _loading = true);
           }
         },
+        onPageFinished: (url) => setState(() => _loading = false),
       ))
       ..loadHtmlString(_buildPayFastHtml());
+  }
+
+  Future<void> _enableOneClick() async {
+    try {
+      final userId = SupabaseService.supabase.auth.currentUser?.id;
+      if (userId == null) return;
+      await SupabaseService.supabase.from('profiles')
+          .update({'payfast_oneclick_enabled': true})
+          .eq('id', userId);
+    } catch (e) {
+      debugPrint('Error enabling one-click: ' + e.toString());
+    }
   }
 
   void _onPaymentSuccess() {
@@ -143,11 +167,39 @@ class _PayFastScreenState extends State<PayFastScreen> {
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
         title: const Text('Payment Successful!',
             style: TextStyle(color: AppColors.primary, fontWeight: FontWeight.w700)),
-        content: Text('Thank you for your order!\n${widget.productName}',
+        content: Text('Thank you!' + '\n' + widget.productName,
             style: const TextStyle(color: Colors.white70, fontSize: 13)),
         actions: [
           ElevatedButton(
-            onPressed: () { Navigator.pop(ctx); Navigator.pop(context); },
+            onPressed: () async {
+              Navigator.pop(ctx);
+              // Ask about one-click payment
+              if (mounted) {
+                final enable = await showDialog<bool>(
+                  context: context,
+                  builder: (ctx2) => AlertDialog(
+                    backgroundColor: AppColors.dark,
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                    title: const Text('One-click payments?',
+                        style: TextStyle(color: AppColors.primary, fontWeight: FontWeight.w700)),
+                    content: const Text('Enable one-click payments for future orders? Your card will be charged automatically.',
+                        style: TextStyle(color: Colors.white70, fontSize: 13)),
+                    actions: [
+                      TextButton(
+                        onPressed: () => Navigator.pop(ctx2, false),
+                        child: const Text('No thanks', style: TextStyle(color: Colors.white54))),
+                      ElevatedButton(
+                        onPressed: () => Navigator.pop(ctx2, true),
+                        style: ElevatedButton.styleFrom(
+                            backgroundColor: AppColors.primary, foregroundColor: AppColors.dark),
+                        child: const Text('Yes, enable')),
+                    ],
+                  ),
+                );
+                if (enable == true) await _enableOneClick();
+              }
+              if (mounted) Navigator.pop(context);
+            },
             style: ElevatedButton.styleFrom(
                 backgroundColor: AppColors.primary, foregroundColor: AppColors.dark),
             child: const Text('Done', style: TextStyle(fontWeight: FontWeight.w700)),
@@ -160,7 +212,7 @@ class _PayFastScreenState extends State<PayFastScreen> {
   void _onPaymentCancelled() {
     if (mounted) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Payment cancelled'), backgroundColor: Colors.orange));
+          const SnackBar(content: Text('Payment cancelled'), backgroundColor: Colors.orange));
       Navigator.pop(context);
     }
   }
@@ -190,7 +242,7 @@ class _PayFastScreenState extends State<PayFastScreen> {
             context: context,
             builder: (ctx) => AlertDialog(
               title: const Text('Cancel Payment?'),
-              content: const Text('Are you sure you want to cancel?'),
+              content: const Text('Are you sure?'),
               actions: [
                 TextButton(onPressed: () => Navigator.pop(ctx), child: const Text('Continue')),
                 ElevatedButton(
@@ -212,3 +264,5 @@ class _PayFastScreenState extends State<PayFastScreen> {
     );
   }
 }
+
+

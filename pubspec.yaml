@@ -1,7 +1,7 @@
 name: herbal_remedy_app
 description: Herbal Remedy Book - Your natural health companion
 publish_to: 'none'
-version: 1.0.7+8
+version: 1.0.8+10
 
 environment:
   sdk: '>=3.0.0 <4.0.0'
@@ -39,6 +39,7 @@ flutter:
         - asset: fonts/Lato-BoldItalic.ttf
           weight: 700
           style: italic
+
 
 
 

@@ -19,6 +19,8 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
   bool _loading = true;
   bool _paying  = false;
   String? _savedToken;
+  String? _savedTokenBackup;
+  bool _oneclickChecked = false;
 
   final _nameController    = TextEditingController();
   final _emailController   = TextEditingController();
@@ -55,10 +57,74 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
       final userId = SupabaseService.supabase.auth.currentUser?.id;
       if (userId == null) return;
       final data = await SupabaseService.supabase
-          .from('profiles').select('payfast_token,payfast_token_status')
+          .from('profiles').select('payfast_token,payfast_token_status,payfast_oneclick_enabled,payfast_oneclick_asked_at')
           .eq('id', userId).single();
-      if (data['payfast_token'] != null && data['payfast_token_status'] == 'active') {
-        setState(() => _savedToken = data['payfast_token']);
+      final hasToken = data['payfast_token'] != null && data['payfast_token_status'] == 'active';
+      final oneclickEnabled = data['payfast_oneclick_enabled'] == true;
+      if (hasToken) {
+        setState(() => _savedTokenBackup = data['payfast_token']);
+        if (oneclickEnabled) {
+          setState(() { _savedToken = data['payfast_token']; _oneclickChecked = true; });
+        } else if (mounted) {
+          // Has token but one-click disabled - ask user
+          final enable = await showDialog<bool>(
+            context: context,
+            builder: (ctx) => AlertDialog(
+              backgroundColor: AppColors.dark,
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+              title: const Text('One-click payments?',
+                  style: TextStyle(color: AppColors.primary, fontWeight: FontWeight.w700)),
+              content: const Text('Enable one-click payments? Your saved card will be charged automatically on future orders.',
+                  style: TextStyle(color: Colors.white70, fontSize: 13)),
+              actions: [
+                TextButton(
+                  onPressed: () => Navigator.pop(ctx, false),
+                  child: const Text('No thanks', style: TextStyle(color: Colors.white54))),
+                ElevatedButton(
+                  onPressed: () => Navigator.pop(ctx, true),
+                  style: ElevatedButton.styleFrom(
+                      backgroundColor: AppColors.primary, foregroundColor: AppColors.dark),
+                  child: const Text('Yes, enable')),
+              ],
+            ),
+          );
+          if (enable == true) {
+            await SupabaseService.supabase.from('profiles')
+                .update({'payfast_oneclick_enabled': true})
+                .eq('id', userId);
+            setState(() { _oneclickChecked = true; _savedToken = _savedTokenBackup; });
+          }
+          await SupabaseService.supabase.from('profiles')
+              .update({'payfast_oneclick_asked_at': DateTime.now().toIso8601String()})
+              .eq('id', userId);
+        }
+      } else if (mounted) {
+        // New user - no token yet, ask if they want one-click
+        final enable = await showDialog<bool>(
+          context: context,
+          builder: (ctx) => AlertDialog(
+            backgroundColor: AppColors.dark,
+            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+            title: const Text('One-click payments?',
+                style: TextStyle(color: AppColors.primary, fontWeight: FontWeight.w700)),
+            content: const Text('Enable one-click payments after this payment? Your card will be saved for instant future payments.',
+                style: TextStyle(color: Colors.white70, fontSize: 13)),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.pop(ctx, false),
+                child: const Text('No thanks', style: TextStyle(color: Colors.white54))),
+              ElevatedButton(
+                onPressed: () => Navigator.pop(ctx, true),
+                style: ElevatedButton.styleFrom(
+                    backgroundColor: AppColors.primary, foregroundColor: AppColors.dark),
+                child: const Text('Yes, enable')),
+            ],
+          ),
+        );
+        if (enable == true) setState(() => _oneclickChecked = true);
+        await SupabaseService.supabase.from('profiles')
+            .update({'payfast_oneclick_asked_at': DateTime.now().toIso8601String()})
+            .eq('id', userId);
       }
     } catch (_) {}
   }
@@ -125,6 +191,15 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
         'p_item_name': 'Remedy Handbook Order',
         'p_order_id': orderId,
       });
+      // If user opted in to one-click, save preference after payment
+      if (_oneclickChecked) {
+        final userId = SupabaseService.supabase.auth.currentUser?.id;
+        if (userId != null) {
+          await SupabaseService.supabase.from('profiles')
+              .update({'payfast_oneclick_enabled': true})
+              .eq('id', userId);
+        }
+      }
       CartBadge.update(0);
       CartScreen.reload();
       setState(() => _paying = false);
@@ -275,6 +350,89 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
                         const SizedBox(height: 20),
 
                         // Pay button
+                        // Always show one-click checkbox
+                          Padding(
+                            padding: const EdgeInsets.only(bottom: 8),
+                            child: Row(
+                              children: [
+                                Checkbox(
+                                  value: _oneclickChecked,
+                                  activeColor: AppColors.dark,
+                                  onChanged: (val) async {
+                                    if (val == true) {
+                                      if (_savedTokenBackup != null) {
+                                        // Existing token - enable one-click
+                                        final userId = SupabaseService.supabase.auth.currentUser?.id;
+                                        if (userId != null) {
+                                          await SupabaseService.supabase.from('profiles')
+                                              .update({'payfast_oneclick_enabled': true})
+                                              .eq('id', userId);
+                                          setState(() { _oneclickChecked = true; _savedToken = _savedTokenBackup; });
+                                        }
+                                      } else {
+                                        // New user - explain one-click
+                                        if (mounted) {
+                                          await showDialog(
+                                            context: context,
+                                            builder: (ctx) => AlertDialog(
+                                              backgroundColor: AppColors.dark,
+                                              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                                              title: const Text('One-click payments',
+                                                  style: TextStyle(color: AppColors.primary, fontWeight: FontWeight.w700)),
+                                              content: const Text('After your first payment, your card will be saved for one-click payments on future orders.',
+                                                  style: TextStyle(color: Colors.white70, fontSize: 13)),
+                                              actions: [
+                                                ElevatedButton(
+                                                  onPressed: () => Navigator.pop(ctx),
+                                                  style: ElevatedButton.styleFrom(
+                                                      backgroundColor: AppColors.primary, foregroundColor: AppColors.dark),
+                                                  child: const Text('OK')),
+                                              ],
+                                            ),
+                                          );
+                                          setState(() => _oneclickChecked = true);
+                                        }
+                                      }
+                                    } else {
+                                      // Disable one-click - show popup
+                                      final confirm = await showDialog<bool>(
+                                        context: context,
+                                        builder: (ctx) => AlertDialog(
+                                          backgroundColor: AppColors.dark,
+                                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                                          title: const Text('Switch to normal payment?',
+                                              style: TextStyle(color: AppColors.primary, fontWeight: FontWeight.w700)),
+                                          content: const Text('You will be redirected to PayFast to complete payment.',
+                                              style: TextStyle(color: Colors.white70, fontSize: 13)),
+                                          actions: [
+                                            TextButton(
+                                              onPressed: () => Navigator.pop(ctx, false),
+                                              child: const Text('Cancel', style: TextStyle(color: Colors.white54))),
+                                            ElevatedButton(
+                                              onPressed: () => Navigator.pop(ctx, true),
+                                              style: ElevatedButton.styleFrom(
+                                                  backgroundColor: AppColors.primary, foregroundColor: AppColors.dark),
+                                              child: const Text('Yes, switch')),
+                                          ],
+                                        ),
+                                      );
+                                      if (confirm == true) {
+                                        final userId = SupabaseService.supabase.auth.currentUser?.id;
+                                        if (userId != null) {
+                                          await SupabaseService.supabase.from('profiles')
+                                              .update({'payfast_oneclick_enabled': false})
+                                              .eq('id', userId);
+                                          setState(() { _oneclickChecked = false; _savedToken = null; });
+                                        }
+                                      }
+                                    }
+                                  },
+                                ),
+                                const Text('One-click payment', style: TextStyle(fontSize: 13, color: AppColors.dark)),
+                              ],
+                            ),
+                          ),
+
                         SizedBox(
                           width: double.infinity,
                           child: ElevatedButton(
@@ -336,6 +494,22 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
     ]);
   }
 }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 

@@ -150,7 +150,7 @@ class _AppShellState extends State<AppShell> {
 
   Future<void> _checkVersion() async {
     try {
-      const currentVersion = '1.0.7';
+      const currentVersion = '1.0.8';
       final data = await Supabase.instance.client
           .from('app_version').select().eq('id', 1).single();
       final latest     = data['version']?.toString() ?? currentVersion;
@@ -461,3 +461,4 @@ class _PaymentCancelPage extends StatelessWidget {
     );
   }
 }
+
