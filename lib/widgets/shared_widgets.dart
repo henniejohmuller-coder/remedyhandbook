@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:url_launcher/url_launcher.dart';
 import '../theme/app_theme.dart';
+import '../services/supabase_service.dart';
 import '../screens/cart_screen.dart';
 import 'navigation_guard.dart';
 
@@ -145,9 +146,11 @@ class YellowAppBar extends StatelessWidget {
               Column(
                 mainAxisSize: MainAxisSize.min,
                 children: [
-                  const Text('V1.0.7',
-                    style: TextStyle(fontSize: 8, color: AppColors.dark,
-                      fontWeight: FontWeight.w400, letterSpacing: 0.5)),
+                  FutureBuilder<String>(
+                    future: SupabaseService.supabase.from('app_version').select('version').eq('id', 1).single().then((d) => 'V' + (d['version'] as String)),
+                    builder: (context, snap) => Text(snap.data ?? 'V1.0.8',
+                    style: const TextStyle(fontSize: 8, color: AppColors.dark,
+                      fontWeight: FontWeight.w400, letterSpacing: 0.5))),
                   const SizedBox(height: 1),
               GestureDetector(
                 onTap: () async {
@@ -803,3 +806,5 @@ class _MultiPickFieldState extends State<MultiPickField> {
     );
   }
 }
+
+
