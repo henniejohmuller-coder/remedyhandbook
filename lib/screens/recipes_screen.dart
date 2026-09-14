@@ -181,19 +181,10 @@ class _RecipesScreenState extends State<RecipesScreen>
 
       // Live search field — filters as you type
       if (_searchQuery.isNotEmpty) {
-        final q = _searchQuery.toLowerCase();
-        final matches =
-          (r['name']             ?? '').toString().toLowerCase().contains(q) ||
-          component.contains(q) ||
-          (r['illness_name']     ?? '').toString().toLowerCase().contains(q) ||
-          (r['category_name']    ?? '').toString().toLowerCase().contains(q) ||
-          (r['sub_category_name']?? '').toString().toLowerCase().contains(q) ||
-          (r['symptom_name']     ?? '').toString().toLowerCase().contains(q) ||
-          (r['organ_name']       ?? '').toString().toLowerCase().contains(q) ||
-          (r['origin']           ?? '').toString().toLowerCase().contains(q) ||
-          (r['function']         ?? '').toString().toLowerCase().contains(q) ||
-          (r['mechanism']        ?? '').toString().toLowerCase().contains(q) ||
-          (r['constituent']      ?? '').toString().toLowerCase().contains(q);
+        final terms = _searchQuery.split(RegExp(r'[;\s]+')).map((t) => t.trim().toLowerCase()).where((t) => t.isNotEmpty).toList();
+        final fields = [r['name'], component, r['illness_name'], r['category_name'], r['sub_category_name'], r['symptom_name'], r['organ_name'], r['origin'], r['function'], r['mechanism'], r['constituent']]
+            .map((v) => (v ?? '').toString().toLowerCase()).toList();
+        final matches = terms.any((term) => fields.any((field) => field.contains(term)));
         if (!matches) return false;
       }
       // Committed search terms — ALL must match (AND logic)
@@ -1000,6 +991,8 @@ class _RatingRow extends StatelessWidget {
     );
   }
 }
+
+
 
 
 

@@ -1,5 +1,12 @@
 {
   "projects": {
     "default": "remedy-handbook"
+  },
+  "targets": {
+    "remedy-handbook": {
+      "hosting": {
+        "remedy-handbook": ["remedy-handbook"]
+      }
+    }
   }
 }

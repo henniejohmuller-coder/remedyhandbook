@@ -57,6 +57,7 @@ class _ShopScreenState extends State<ShopScreen> {
     if (!mounted) return;
     setState(() => _loading = true);
     try {
+      SupabaseService.clearProductsCache();
       final data = await SupabaseService.getProducts();
       if (!mounted) return;
       setState(() { _products = data; _loading = false; });
@@ -76,12 +77,16 @@ class _ShopScreenState extends State<ShopScreen> {
           || (_filter == 'Remedies'   && type == 'Remedy');
       final matchCategory = _categoryFilter == 'All' || (p['category'] ?? '') == _categoryFilter;
       final matchBrand = _brandFilter == 'All' || (p['brand'] ?? '') == _brandFilter;
-      final matchPrimaryHerb = _primaryHerbFilter.isEmpty ||
-          (p['name'] ?? '').toString().toLowerCase().contains(_primaryHerbFilter.toLowerCase()) ||
-          (p['description'] ?? '').toString().toLowerCase().contains(_primaryHerbFilter.toLowerCase());
-      final matchMainConstituent = _mainConstituentFilter.isEmpty ||
-          (p['name'] ?? '').toString().toLowerCase().contains(_mainConstituentFilter.toLowerCase()) ||
-          (p['description'] ?? '').toString().toLowerCase().contains(_mainConstituentFilter.toLowerCase());
+      // Primary herb filter - split on ; OR logic across all fields
+      final primaryTerms = _primaryHerbFilter.split(RegExp(r'[;\s]+')).map((t) => t.trim().toLowerCase()).where((t) => t.isNotEmpty).toList();
+      final matchPrimaryHerb = primaryTerms.isEmpty || primaryTerms.any((term) =>
+          ['name','description','category','brand','primary_herb','main_constituent']
+          .any((f) => (p[f] ?? '').toString().toLowerCase().contains(term)));
+      // Main constituent filter - split on ; OR logic across all fields
+      final constituentTerms = _mainConstituentFilter.split(RegExp(r'[;\s]+')).map((t) => t.trim().toLowerCase()).where((t) => t.isNotEmpty).toList();
+      final matchMainConstituent = constituentTerms.isEmpty || constituentTerms.any((term) =>
+          ['name','description','category','brand','primary_herb','main_constituent']
+          .any((f) => (p[f] ?? '').toString().toLowerCase().contains(term)));
       final matchSearch = _search.isEmpty
           || name.contains(_search.toLowerCase())
           || desc.contains(_search.toLowerCase());
@@ -381,6 +386,14 @@ class _ProductCard extends StatelessWidget {
     );
   }
 }
+
+
+
+
+
+
+
+
 
 
 

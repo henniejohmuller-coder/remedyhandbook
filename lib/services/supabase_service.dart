@@ -65,10 +65,18 @@ class SupabaseService {
       if (type != null) return _productsCache!.where((p) => p['type'] == type).toList();
       return _productsCache!;
     }
-    var query = supabase.from('products').select().eq('active', true);
-    final response = await query;
+    final allProducts = <Map<String, dynamic>>[];
+    int offset = 0;
+    const pageSize = 1000;
+    while (true) {
+      final page = await supabase.from('products').select().eq('active', true).range(offset, offset + pageSize - 1);
+      final pageList = List<Map<String, dynamic>>.from(page);
+      allProducts.addAll(pageList);
+      if (pageList.length < pageSize) break;
+      offset += pageSize;
+    }
+    final response = allProducts;
     _productsCache = List<Map<String, dynamic>>.from(response);
-    _productsCacheTime = now;
     if (type != null) return _productsCache!.where((p) => p['type'] == type).toList();
     return _productsCache!;
   }
@@ -430,6 +438,8 @@ class SupabaseService {
     return (r as List).map((e) => e['name'] as String).toList();
   }
 }
+
+
 
 
 
