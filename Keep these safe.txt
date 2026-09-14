@@ -1,0 +1,44 @@
+Keep these safe — losing any will block you:
+
+Supabase:
+
+URL: https://stawsdjfjzugeleldaxz.supabase.co
+Anon key: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InN0YXdzZGpmanp1Z2VsZWxkYXh6Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzk1NDQ1MTUsImV4cCI6MjA5NTEyMDUxNX0.LfGEc_VAOTOw3SdJ1Zm0I_u5xogy7wH6wiyTRHFg26c
+
+Android Keystore (CRITICAL — losing this means you can never update the APK):
+
+File: android\app\remedy_release.jks
+Alias: remedy
+Password: MissionLife@1
+
+Google accounts:
+
+Firebase: henniejoh.muller@gmail.com
+GitHub: henniejohmuller-coder
+GitHub token (in your password manager)
+
+Hostinger:
+
+Domain: remedyhandbook.com
+Account login
+
+Back up the keystore file to a safe location (USB drive, Google Drive) — it cannot be recovered if lost. 🌿
+
+>>>>>
+
+When a user taps Update Now:
+
+Opens https://remedy-handbook.web.app/download
+Taps Manual Install (Android APK)
+Downloads from GitHub Releases (v1.0.0/app-release.apk)
+
+For future updates, you need to:
+
+Build new APK: flutter build apk --release
+Go to https://github.com/henniejohmuller-coder/remedyhandbook/releases
+Create new release v1.0.1 and upload the new app-release.apk
+Update download link in web\download.html to point to v1.0.1
+Update Supabase: UPDATE app_version SET version = '1.0.1' WHERE id = 1;
+Deploy: .\deploy_web.ps1
+
+Users then get notified → tap Update Now → download new APK from GitHub → install. 🌿

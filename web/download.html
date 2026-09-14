@@ -1,0 +1,75 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <link rel="icon" type="image/png" href="https://remedy-handbook.web.app/favicon.png">
+  <link rel="apple-touch-icon" href="https://remedy-handbook.web.app/icons/Icon-192.png">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Download Remedy Handbook</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body { font-family: sans-serif; background: #F5F0E8; min-height: 100vh; display: flex; align-items: center; justify-content: center; padding: 20px; }
+    .card { background: #2C1A00; border-radius: 24px; padding: 40px 32px; max-width: 400px; width: 100%; text-align: center; box-shadow: 0 8px 32px rgba(0,0,0,0.2); }
+    .logo { font-size: 48px; margin-bottom: 16px; }
+    h1 { color: #F5C518; font-size: 24px; margin-bottom: 8px; }
+    .version { color: rgba(255,255,255,0.5); font-size: 13px; margin-bottom: 32px; }
+    .btn-android { display: block; width: 100%; padding: 16px; border-radius: 50px; font-size: 16px; font-weight: 700; text-decoration: none; margin-bottom: 24px; cursor: pointer; border: none; background: #3DDC84; color: #2C1A00; }
+    .section-title { color: #F5C518; font-weight: 700; font-size: 15px; text-align: left; margin-bottom: 10px; margin-top: 20px; }
+    .steps { text-align: left; margin-bottom: 8px; }
+    .steps p { color: rgba(255,255,255,0.8); font-size: 13px; margin-bottom: 6px; line-height: 1.5; }
+    .note { color: rgba(255,255,255,0.4); font-size: 11px; margin-top: 24px; line-height: 1.6; }
+    .divider { border: none; border-top: 1px solid rgba(255,255,255,0.1); margin: 20px 0; }
+  </style>
+</head>
+<body>
+  <div class="card">
+    <div class="logo"><a href="https://remedyhandbook.com"><img src="https://remedy-handbook.web.app/icons/Icon-192.png" alt="Remedy Handbook" style="width:72px;height:72px;border-radius:16px;"></a></div>
+    <h1>Remedy Handbook</h1>
+    <div class="version" id="version-text">Latest Version</div>
+    <a class="btn-android" href="https://github.com/henniejohmuller-coder/remedyhandbook/releases/download/V1.0.9/app-arm64-v8a-release.apk?v=1.0.9" download="RemedyHandbook.apk" onclick="showInstallTip()">
+      Download for Android
+    </a>
+    <div class="section-title">How to install Android app:</div>
+    <div class="steps">
+      Download for Android
+      <p>2. Tap the downloaded file in your notifications</p>
+      <p>3. If prompted — tap <b>Settings</b> and enable <b>Install unknown apps</b></p>
+      <p>4. Go back and tap <b>Install</b></p>
+      <p>5. Tap <b>Open</b> when done</p>
+    </div>
+    <hr class="divider">
+    <div class="section-title">Use Web App only:</div>
+    <div class="steps">
+      <p>1. Go to browser settings top right</p>
+      <p>2. Select <b>"Add to Home Screen"</b></p>
+      <p>This will add a web shortcut that will open the app in your web browser. PC, Android and Apple.</p>
+    </div>
+    <div class="note">Remedy Handbook · Evidence-based herbal remedies<br>© 2026 MyHerb</div>
+  </div>
+  <script>
+    fetch('https://stawsdjfjzugeleldaxz.supabase.co/rest/v1/app_version?id=eq.1&select=version', {
+      headers: { 'apikey': 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InN0YXdzZGpmanp1Z2VsZWxkYXh6Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzk1NDQ1MTUsImV4cCI6MjA5NTEyMDUxNX0.LfGEc_VAOTOw3SdJ1Zm0I_u5xogy7wH6wiyTRHFg26c' }
+    }).then(r => r.json()).then(d => {
+      if (d && d[0]) document.getElementById('version-text').textContent = 'Version ' + d[0].version;
+    }).catch(() => {});
+    function showInstallTip() {
+      setTimeout(function() {
+        document.getElementById("install-tip").style.display = "block";
+      }, 2000);
+    }
+  </script>
+  <div id="install-tip" style="display:none;position:fixed;bottom:20px;left:50%;transform:translateX(-50%);background:#2C1A00;border:2px solid #F5C518;border-radius:16px;padding:16px 24px;text-align:center;z-index:9999;width:320px;box-shadow:0 4px 20px rgba(0,0,0,0.4);">
+    <p style="color:#F5C518;font-weight:700;margin-bottom:8px;">Download started!</p>
+    <p style="color:rgba(255,255,255,0.8);font-size:13px;margin-bottom:12px;">Tap the downloaded file in your notifications to install.</p>
+    <button onclick="document.getElementById('install-tip').style.display='none'" style="background:#F5C518;color:#2C1A00;border:none;padding:8px 20px;border-radius:20px;font-weight:700;cursor:pointer;">OK</button>
+  </div>
+</body>
+</html>
+
+
+
+
+
+
+
+

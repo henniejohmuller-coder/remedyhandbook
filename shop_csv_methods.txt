@@ -1,0 +1,72 @@
+  Future<void> _exportShopCsv() async {
+    setState(() => _shopExporting = true);
+    try {
+      final data = await SupabaseService.supabase.from('products').select(
+        'id, name, type, description, price, cost_price, stock, delivery_cost, active, image_url'
+      ).order('name');
+      final rows = data as List;
+      final headers = ['id','name','type','description','price','cost_price','stock','delivery_cost','active','image_url'];
+      final csvLines = [headers.join(',')];
+      for (final r in rows) {
+        final row = headers.map((h) {
+          final val = (r[h] ?? '').toString().replaceAll('"', "'");
+          return '"' + val + '"';
+        }).toList();
+        csvLines.add(row.join(','));
+      }
+      final csv = csvLines.join('\n');
+      await downloadCsv(csv, 'shop_items_' + DateTime.now().millisecondsSinceEpoch.toString() + '.csv');
+      if (mounted) ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Shop items exported!'), backgroundColor: Colors.green));
+    } catch (e) {
+      if (mounted) ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Export failed: ' + e.toString()), backgroundColor: Colors.red));
+    } finally {
+      if (mounted) setState(() => _shopExporting = false);
+    }
+  }
+
+  Future<void> _importShopCsv() async {
+    final result = await FilePicker.platform.pickFiles(
+      type: FileType.custom, allowedExtensions: ['csv'], withData: true);
+    if (result == null || result.files.isEmpty) return;
+    final bytes = result.files.first.bytes;
+    if (bytes == null) return;
+    setState(() => _shopImporting = true);
+    try {
+      final csv = utf8.decode(bytes);
+      final lines = csv.split('\n').where((l) => l.trim().isNotEmpty).toList();
+      if (lines.isEmpty) return;
+      final headers = lines.first.split(',').map((h) => h.trim().replaceAll('"', '')).toList();
+      int updated = 0;
+      for (int i = 1; i < lines.length; i++) {
+        final values = lines[i].split(',').map((v) => v.trim().replaceAll('"', '')).toList();
+        if (values.length < 2) continue;
+        final row = <String, dynamic>{};
+        for (int j = 0; j < headers.length; j++) {
+          final h = headers[j];
+          final v = j < values.length ? values[j] : '';
+          if (h == 'price' || h == 'cost_price' || h == 'delivery_cost') {
+            row[h] = double.tryParse(v) ?? 0;
+          } else if (h == 'stock') {
+            row[h] = int.tryParse(v) ?? 0;
+          } else if (h == 'active') {
+            row[h] = v.toLowerCase() == 'true';
+          } else {
+            if (v.isNotEmpty) row[h] = v;
+          }
+        }
+        if (row.containsKey('id') && row['id'] != null) {
+          await SupabaseService.supabase.from('products').upsert(row);
+          updated++;
+        }
+      }
+      if (mounted) ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Imported ' + updated.toString() + ' shop items'), backgroundColor: Colors.green));
+    } catch (e) {
+      if (mounted) ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Import failed: ' + e.toString()), backgroundColor: Colors.red));
+    } finally {
+      if (mounted) setState(() => _shopImporting = false);
+    }
+  }

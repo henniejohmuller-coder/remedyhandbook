@@ -1,0 +1,55 @@
+name: herbal_remedy_app
+description: Herbal Remedy Book - Your natural health companion
+publish_to: 'none'
+version: 1.0.8+10
+
+environment:
+  sdk: '>=3.0.0 <4.0.0'
+
+dependencies:
+  flutter:
+    sdk: flutter
+  cupertino_icons: ^1.0.6
+  url_launcher: ^6.3.0
+  webview_flutter: ^4.10.0
+  file_picker: ^8.0.0
+  image: ^4.2.0
+  supabase_flutter: ^2.3.0
+  go_router: ^14.2.0
+  share_plus: ^10.1.4
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+  flutter_lints: ^3.0.0
+
+flutter:
+  uses-material-design: true
+
+  fonts:
+    - family: Lato
+      fonts:
+        - asset: fonts/Lato-Regular.ttf
+        - asset: fonts/Lato-Bold.ttf
+          weight: 700
+        - asset: fonts/Lato-Light.ttf
+          weight: 300
+        - asset: fonts/Lato-Italic.ttf
+          style: italic
+        - asset: fonts/Lato-BoldItalic.ttf
+          weight: 700
+          style: italic
+
+
+
+
+
+
+
+
+
+
+
+
+
+
