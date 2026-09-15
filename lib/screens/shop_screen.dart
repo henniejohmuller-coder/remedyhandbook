@@ -2,13 +2,19 @@ import 'package:flutter/material.dart';
 import '../theme/app_theme.dart';
 import '../widgets/shared_widgets.dart';
 import '../services/supabase_service.dart';
-import 'product_detail_screen_db.dart';
+import 'product_detail_screen.dart';
 
 class ShopScreen extends StatefulWidget {
   final String? initialPrimaryHerb;
   final String? initialMainConstituent;
   final String? initialType;
-  const ShopScreen({super.key, this.initialPrimaryHerb, this.initialMainConstituent, this.initialType});
+
+  const ShopScreen({
+    super.key,
+    this.initialPrimaryHerb,
+    this.initialMainConstituent,
+    this.initialType,
+  });
 
   static VoidCallback? _reloadCallback;
   static void reload() => _reloadCallback?.call();
@@ -19,28 +25,27 @@ class ShopScreen extends StatefulWidget {
 
 class _ShopScreenState extends State<ShopScreen> {
   String _filter = 'All';
-  String _categoryFilter = 'All';
-  String _brandFilter = 'All';
-  String _primaryHerbFilter = '';
-  String _mainConstituentFilter = '';
   String _search = '';
   List<Map<String, dynamic>> _products = [];
   bool _loading = true;
   final _searchController = TextEditingController();
-  TextEditingController _primaryHerbController = TextEditingController();
-  TextEditingController _mainConstituentController = TextEditingController();
 
   @override
   void initState() {
     super.initState();
     ShopScreen._reloadCallback = _loadProducts;
-    if (widget.initialPrimaryHerb != null) _primaryHerbFilter = widget.initialPrimaryHerb!;
-    if (widget.initialMainConstituent != null) _mainConstituentFilter = widget.initialMainConstituent!;
-    _primaryHerbController = TextEditingController(text: _primaryHerbFilter);
-    _mainConstituentController = TextEditingController(text: _mainConstituentFilter);
-    _primaryHerbController.addListener(() => setState(() => _primaryHerbFilter = _primaryHerbController.text));
-    _mainConstituentController.addListener(() => setState(() => _mainConstituentFilter = _mainConstituentController.text));
-    if (widget.initialType != null) _filter = widget.initialType!;
+    if (widget.initialPrimaryHerb != null) {
+      _search = widget.initialPrimaryHerb!;
+      _searchController.text = widget.initialPrimaryHerb!;
+    } else if (widget.initialMainConstituent != null) {
+      _search = widget.initialMainConstituent!;
+      _searchController.text = widget.initialMainConstituent!;
+    }
+    if (widget.initialType == 'Component') {
+      _filter = 'Components';
+    } else if (widget.initialType == 'Remedy') {
+      _filter = 'Remedies';
+    }
     _loadProducts();
   }
 
@@ -48,8 +53,6 @@ class _ShopScreenState extends State<ShopScreen> {
   void dispose() {
     ShopScreen._reloadCallback = null;
     _searchController.dispose();
-    _primaryHerbController.dispose();
-    _mainConstituentController.dispose();
     super.dispose();
   }
 
@@ -57,7 +60,6 @@ class _ShopScreenState extends State<ShopScreen> {
     if (!mounted) return;
     setState(() => _loading = true);
     try {
-      SupabaseService.clearProductsCache();
       final data = await SupabaseService.getProducts();
       if (!mounted) return;
       setState(() { _products = data; _loading = false; });
@@ -67,30 +69,42 @@ class _ShopScreenState extends State<ShopScreen> {
     }
   }
 
+  /// Split search input by comma or semicolon into individual terms.
+  List<String> get _searchTerms => _search
+      .split(RegExp(r'[,;]'))
+      .map((t) => t.trim().toLowerCase())
+      .where((t) => t.isNotEmpty)
+      .toList();
+
   List<Map<String, dynamic>> get _filtered {
+    final terms = _searchTerms;
     return _products.where((p) {
-      final type    = (p['type'] ?? '').toString();
-      final name    = (p['name'] ?? '').toString().toLowerCase();
-      final desc    = (p['description'] ?? '').toString().toLowerCase();
+      final type = (p['type'] ?? '').toString();
+
+      // Tab filter
       final matchFilter = _filter == 'All'
           || (_filter == 'Components' && type == 'Component')
           || (_filter == 'Remedies'   && type == 'Remedy');
-      final matchCategory = _categoryFilter == 'All' || (p['category'] ?? '') == _categoryFilter;
-      final matchBrand = _brandFilter == 'All' || (p['brand'] ?? '') == _brandFilter;
-      // Primary herb filter - split on ; OR logic across all fields
-      final primaryTerms = _primaryHerbFilter.split(RegExp(r'[;\s]+')).map((t) => t.trim().toLowerCase()).where((t) => t.isNotEmpty).toList();
-      final matchPrimaryHerb = primaryTerms.isEmpty || primaryTerms.any((term) =>
-          ['name','description','category','brand','primary_herb','main_constituent']
-          .any((f) => (p[f] ?? '').toString().toLowerCase().contains(term)));
-      // Main constituent filter - split on ; OR logic across all fields
-      final constituentTerms = _mainConstituentFilter.split(RegExp(r'[;\s]+')).map((t) => t.trim().toLowerCase()).where((t) => t.isNotEmpty).toList();
-      final matchMainConstituent = constituentTerms.isEmpty || constituentTerms.any((term) =>
-          ['name','description','category','brand','primary_herb','main_constituent']
-          .any((f) => (p[f] ?? '').toString().toLowerCase().contains(term)));
-      final matchSearch = _search.isEmpty
-          || name.contains(_search.toLowerCase())
-          || desc.contains(_search.toLowerCase());
-      return matchFilter && matchSearch && matchCategory && matchBrand && matchPrimaryHerb && matchMainConstituent;
+
+      // Search all data fields — product matches if ANY term found in ANY field
+      final bool matchSearch;
+      if (terms.isEmpty) {
+        matchSearch = true;
+      } else {
+        final fields = [
+          p['name']        ?? '',
+          p['description'] ?? '',
+          p['category']    ?? '',
+          p['type']        ?? '',
+        ].map((f) => f.toString().toLowerCase()).toList();
+
+        // Either/or — match if ANY term appears in ANY field
+        matchSearch = terms.any(
+          (term) => fields.any((field) => field.contains(term)),
+        );
+      }
+
+      return matchFilter && matchSearch;
     }).toList();
   }
 
@@ -115,7 +129,7 @@ class _ShopScreenState extends State<ShopScreen> {
                   controller: _searchController,
                   onChanged: (v) => setState(() => _search = v),
                   decoration: InputDecoration(
-                    hintText: 'Search products...',
+                    hintText: 'Search by name, ingredient, category... (use , or ;)',
                     hintStyle: AppTextStyles.caption,
                     prefixIcon: const Icon(Icons.search, size: 18, color: AppColors.textSecondary),
                     suffixIcon: _search.isNotEmpty
@@ -154,84 +168,6 @@ class _ShopScreenState extends State<ShopScreen> {
                 )).toList(),
               ),
             ),
-            const SizedBox(height: 8),
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 16),
-              child: Row(children: [
-                Expanded(
-                  child: DropdownButtonFormField<String>(
-                    value: _categoryFilter,
-                    isDense: true,
-                    decoration: InputDecoration(
-                      labelText: 'Category',
-                      labelStyle: AppTextStyles.caption,
-                      contentPadding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
-                      border: OutlineInputBorder(borderRadius: BorderRadius.circular(8)),
-                    ),
-                    items: ['All', ...(_products.map((p) => p['category']?.toString() ?? '').where((c) => c.isNotEmpty).toSet().toList()..sort())]
-                        .map((c) => DropdownMenuItem(value: c, child: Text(c, style: AppTextStyles.caption))).toList(),
-                    onChanged: (v) => setState(() => _categoryFilter = v ?? 'All'),
-                  ),
-                ),
-                const SizedBox(width: 8),
-                Expanded(
-                  child: DropdownButtonFormField<String>(
-                    value: _brandFilter,
-                    isDense: true,
-                    decoration: InputDecoration(
-                      labelText: 'Brand',
-                      labelStyle: AppTextStyles.caption,
-                      contentPadding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
-                      border: OutlineInputBorder(borderRadius: BorderRadius.circular(8)),
-                    ),
-                    items: ['All', ...(_products.map((p) => p['brand']?.toString() ?? '').where((b) => b.isNotEmpty).toSet().toList()..sort())]
-                        .map((b) => DropdownMenuItem(value: b, child: Text(b, style: AppTextStyles.caption))).toList(),
-                    onChanged: (v) => setState(() => _brandFilter = v ?? 'All'),
-                  ),
-                ),
-              ]),
-            ),
-            const SizedBox(height: 8),
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 16),
-              child: Row(children: [
-                Expanded(
-                  child: TextField(
-                    controller: _primaryHerbController,
-                    decoration: InputDecoration(
-                      labelText: 'Primary Herb',
-                      hintText: 'e.g. Hawthorn',
-                      labelStyle: AppTextStyles.caption,
-                      isDense: true,
-                      contentPadding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
-                      border: OutlineInputBorder(borderRadius: BorderRadius.circular(8)),
-                      suffixIcon: _primaryHerbFilter.isNotEmpty
-                          ? IconButton(icon: const Icon(Icons.close, size: 16), onPressed: () => setState(() { _primaryHerbFilter = ''; _primaryHerbController.clear(); }))
-                          : null,
-                    ),
-
-                  ),
-                ),
-                const SizedBox(width: 8),
-                Expanded(
-                  child: TextField(
-                    controller: _mainConstituentController,
-                    decoration: InputDecoration(
-                      labelText: 'Main Constituent',
-                      hintText: 'e.g. Flavonoids',
-                      labelStyle: AppTextStyles.caption,
-                      isDense: true,
-                      contentPadding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
-                      border: OutlineInputBorder(borderRadius: BorderRadius.circular(8)),
-                      suffixIcon: _mainConstituentFilter.isNotEmpty
-                          ? IconButton(icon: const Icon(Icons.close, size: 16), onPressed: () => setState(() { _mainConstituentFilter = ''; _mainConstituentController.clear(); }))
-                          : null,
-                    ),
-
-                  ),
-                ),
-              ]),
-            ),
             const SizedBox(height: 16),
 
             // Grid
@@ -252,18 +188,18 @@ class _ShopScreenState extends State<ShopScreen> {
                       : RefreshIndicator(
                           onRefresh: _loadProducts,
                           color: AppColors.primary,
-                          child: ListView.builder(
-                            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                          child: GridView.builder(
+                            padding: const EdgeInsets.symmetric(horizontal: 16),
+                            gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+                              crossAxisCount: 2, crossAxisSpacing: 12, mainAxisSpacing: 12, childAspectRatio: 0.78,
+                            ),
                             itemCount: _filtered.length,
                             itemBuilder: (context, i) {
                               final p = _filtered[i];
-                              return Padding(
-                                padding: const EdgeInsets.only(bottom: 10),
-                                child: _ProductCard(
-                                  product: p,
-                                  onTap: () => Navigator.push(context, MaterialPageRoute(
-                                      builder: (_) => ProductDetailScreenDB(product: p))),
-                                ),
+                              return _ProductCard(
+                                product: p,
+                                onTap: () => Navigator.push(context, MaterialPageRoute(
+                                    builder: (_) => ProductDetailScreenDB(product: p))),
                               );
                             },
                           ),
@@ -286,7 +222,6 @@ class _ProductCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final name     = product['name'] ?? '';
-    final desc     = product['description'] ?? '';
     final type     = product['type'] ?? '';
     final price    = ((product['price'] ?? 0) as num).toDouble();
     final imageUrl = product['image_url'] ?? '';
@@ -294,87 +229,48 @@ class _ProductCard extends StatelessWidget {
     final stock    = product['stock'] as int?;
     final inStock  = stock == null || stock > 0;
 
-    return SizedBox(
-      width: double.infinity,
-      child: GestureDetector(
+    return GestureDetector(
       onTap: onTap,
       child: Container(
+        padding: const EdgeInsets.all(12),
         decoration: BoxDecoration(
           color: Colors.white, borderRadius: BorderRadius.circular(12),
           boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.04), blurRadius: 6)],
         ),
-        child: IntrinsicHeight(
-          child: Row(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
-            // Image — fixed 80x80 square, same size for all products
-            ClipRRect(
-              borderRadius: const BorderRadius.horizontal(left: Radius.circular(12)),
-              child: Container(
-                width: 80, height: 80,
-                color: Colors.grey.shade50,
-                child: imageUrl.isNotEmpty
-                    ? Image.network(imageUrl,
-                        width: 80, height: 80,
-                        fit: BoxFit.contain,
-                        errorBuilder: (_, __, ___) => _placeholder(isComp))
-                    : _placeholder(isComp),
-              ),
+        child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+          // Image
+          Expanded(
+            child: ClipRRect(
+              borderRadius: BorderRadius.circular(10),
+              child: imageUrl.isNotEmpty
+                  ? Image.network(imageUrl, width: double.infinity, fit: BoxFit.cover,
+                      errorBuilder: (_, __, ___) => _placeholder(isComp))
+                  : _placeholder(isComp),
             ),
-            // Details — expands to fill remaining width
-            Expanded(
-              child: Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    Text(name, style: AppTextStyles.heading3, softWrap: true),
-                    if (desc.isNotEmpty) ...[
-                      const SizedBox(height: 2),
-                      Text(desc, style: AppTextStyles.caption,
-                          maxLines: 2, overflow: TextOverflow.ellipsis),
-                    ],
-                    const SizedBox(height: 4),
-                    Row(children: [
-                      Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-                        decoration: BoxDecoration(
-                          color: isComp ? AppColors.lightGreen : AppColors.lightYellow,
-                          borderRadius: BorderRadius.circular(4)),
-                        child: Text(type,
-                            style: const TextStyle(fontSize: 10, fontWeight: FontWeight.w600)),
-                      ),
-                      const SizedBox(width: 8),
-                      Text('R${price.toInt()}',
-                          style: const TextStyle(fontWeight: FontWeight.bold,
-                              fontSize: 14, color: AppColors.dark)),
-                    ]),
-                  ],
-                ),
+          ),
+          const SizedBox(height: 8),
+          Text(name, style: AppTextStyles.heading3, maxLines: 1, overflow: TextOverflow.ellipsis),
+          Text(type, style: AppTextStyles.caption),
+          const SizedBox(height: 4),
+          Text('R${price.toInt()}', style: const TextStyle(fontSize: 15, fontWeight: FontWeight.bold, color: AppColors.dark)),
+          const SizedBox(height: 8),
+          SizedBox(
+            width: double.infinity,
+            child: ElevatedButton(
+              onPressed: inStock ? onTap : null,
+              style: ElevatedButton.styleFrom(
+                backgroundColor: inStock ? AppColors.primary : Colors.grey.shade200,
+                foregroundColor: inStock ? AppColors.dark : Colors.grey.shade400,
+                padding: const EdgeInsets.symmetric(vertical: 6),
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                elevation: 0,
               ),
+              child: Text(inStock ? '+ Add' : 'Out of stock',
+                  style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w600)),
             ),
-            // Add button — right side, vertically centred
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 10),
-              child: Center(
-                child: ElevatedButton(
-                  onPressed: inStock ? onTap : null,
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: inStock ? AppColors.primary : Colors.grey.shade200,
-                    foregroundColor: inStock ? AppColors.dark : Colors.grey.shade400,
-                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
-                    elevation: 0, minimumSize: Size.zero,
-                    tapTargetSize: MaterialTapTargetSize.shrinkWrap,
-                  ),
-                  child: Text(inStock ? '+ Add' : 'N/A',
-                      style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w600)),
-                ),
-              ),
-            ),
-          ]),
-        ),
+          ),
+        ]),
       ),
-    ),
     );
   }
 
@@ -386,27 +282,3 @@ class _ProductCard extends StatelessWidget {
     );
   }
 }
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
