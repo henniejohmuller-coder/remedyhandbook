@@ -220,7 +220,8 @@ class _RecipesScreenState extends State<RecipesScreen>
       if (_minUserRating  > 0 && ((r['avg_user_rating']  ?? 0.0) as num) < _minUserRating) return false;
       if (_difficulty != 'All' && (r['difficulty'] ?? '').toString().toLowerCase() != _difficulty.toLowerCase()) return false;
       return true;
-    }).toList();
+    }).toList()
+      ..sort((a, b) => (a['name'] ?? '').toString().compareTo((b['name'] ?? '').toString()));
   }
 
   List<String> get _activeChips {
