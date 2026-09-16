@@ -213,7 +213,7 @@ class _AppShellState extends State<AppShell> {
   @override
   Widget build(BuildContext context) {
     final screens = [
-      HomeScreen(),
+      HomeScreen(onTabSwitch: _switchTab),
       const RecipesScreen(),
       const ShopScreen(),
       const SubmitRemedyScreen(),
