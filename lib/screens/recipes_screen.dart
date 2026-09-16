@@ -31,6 +31,7 @@ class _RecipesScreenState extends State<RecipesScreen>
   int _minUserRating = 0;
   String _difficulty = 'All';
   String _searchQuery = '';          // live text in the search field
+  final ScrollController _scrollController = ScrollController();
   List<String> _searchTerms = [];    // committed search chips (AND logic)
   bool _filtersExpanded = false;
   bool _loading = true;
@@ -70,6 +71,7 @@ class _RecipesScreenState extends State<RecipesScreen>
     RecipesScreen._reloadCallback = null;
     _pulseController.dispose();
     _searchController.dispose();
+    _scrollController.dispose();
     super.dispose();
   }
 
@@ -454,81 +456,136 @@ class _RecipesScreenState extends State<RecipesScreen>
             Expanded(
               child: _loading
                   ? const Center(child: CircularProgressIndicator(color: AppColors.primary))
-                  : RefreshIndicator(
-                      onRefresh: _loadData,
-                      color: AppColors.primary,
-                      child: CustomScrollView(
-                        slivers: [
-                          // Filter panel
-                          if (_filtersExpanded)
+                  : Stack(
+                      children: [
+                        RefreshIndicator(
+                          onRefresh: _loadData,
+                          color: AppColors.primary,
+                          child: CustomScrollView(
+                            controller: _scrollController,
+                            slivers: [
+                            // Filter panel
+                            if (_filtersExpanded)
+                              SliverToBoxAdapter(
+                                child: Padding(
+                                  padding: const EdgeInsets.fromLTRB(16, 10, 16, 0),
+                                  child: _buildFilterRows(),
+                                ),
+                              ),
+                            const SliverToBoxAdapter(child: SizedBox(height: 12)),
+                            // Results count — always shows total and filtered
                             SliverToBoxAdapter(
                               child: Padding(
-                                padding: const EdgeInsets.fromLTRB(16, 10, 16, 0),
-                                child: _buildFilterRows(),
-                              ),
-                            ),
-                          const SliverToBoxAdapter(child: SizedBox(height: 12)),
-                          // Results count — always shows total and filtered
-                          SliverToBoxAdapter(
-                            child: Padding(
-                              padding: const EdgeInsets.symmetric(horizontal: 16),
-                              child: Text(
-                                _filtered.length == _allRemedies.length
-                                    ? '${_allRemedies.length} ${_allRemedies.length == 1 ? 'remedy' : 'remedies'} available'
-                                    : '${_filtered.length} of ${_allRemedies.length} ${_allRemedies.length == 1 ? 'remedy' : 'remedies'} found',
-                                style: AppTextStyles.caption,
-                              ),
-                            ),
-                          ),
-                          const SliverToBoxAdapter(child: SizedBox(height: 8)),
-                          // Recipe list
-                          if (_filtered.isEmpty)
-                            SliverToBoxAdapter(
-                              child: Center(
-                                child: Column(
-                                  mainAxisSize: MainAxisSize.min,
-                                  children: [
-                                    const SizedBox(height: 40),
-                                    const Text('No remedies match your filters', style: AppTextStyles.caption),
-                                    const SizedBox(height: 12),
-                                    TextButton.icon(
-                                      onPressed: _loadData,
-                                      icon: const Icon(Icons.refresh, size: 16),
-                                      label: const Text('Refresh'),
-                                    ),
-                                  ],
+                                padding: const EdgeInsets.symmetric(horizontal: 16),
+                                child: Text(
+                                  _filtered.length == _allRemedies.length
+                                      ? '${_allRemedies.length} ${_allRemedies.length == 1 ? 'remedy' : 'remedies'} available'
+                                      : '${_filtered.length} of ${_allRemedies.length} ${_allRemedies.length == 1 ? 'remedy' : 'remedies'} found',
+                                  style: AppTextStyles.caption,
                                 ),
                               ),
-                            )
-                          else
-                            SliverPadding(
-                              padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
-                              sliver: SliverList(
-                                delegate: SliverChildBuilderDelegate(
-                                  (context, i) {
-                                    final remedy = _filtered[i];
-                                    return Padding(
-                                      padding: const EdgeInsets.only(bottom: 12),
-                                      child: _RemedyCardDB(
-                                        remedy: remedy,
-                                        onTap: () => Navigator.push(
-                                          context,
-                                          MaterialPageRoute(builder: (_) => RecipeDetailScreenDB(remedy: remedy)),
-                                        ).then((_) => _refreshRemediesOnly()),
-                                        hasComponent: remedy['_has_component'] == true,
-                                        hasRemedy:    remedy['_has_remedy'] == true,
-                                        onBuyHerb:   () => _goToProduct(context, remedy, true),
-                                        onBuyRemedy: () => _goToProduct(context, remedy, false),
+                            ),
+                            const SliverToBoxAdapter(child: SizedBox(height: 8)),
+                            // Recipe list
+                            if (_filtered.isEmpty)
+                              SliverToBoxAdapter(
+                                child: Center(
+                                  child: Column(
+                                    mainAxisSize: MainAxisSize.min,
+                                    children: [
+                                      const SizedBox(height: 40),
+                                      const Text('No remedies match your filters', style: AppTextStyles.caption),
+                                      const SizedBox(height: 12),
+                                      TextButton.icon(
+                                        onPressed: _loadData,
+                                        icon: const Icon(Icons.refresh, size: 16),
+                                        label: const Text('Refresh'),
                                       ),
-                                    );
-                                  },
-                                  childCount: _filtered.length,
+                                    ],
+                                  ),
+                                ),
+                              )
+                            else
+                              SliverPadding(
+                                padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
+                                sliver: SliverList(
+                                  delegate: SliverChildBuilderDelegate(
+                                    (context, i) {
+                                      final remedy = _filtered[i];
+                                      return Padding(
+                                        padding: const EdgeInsets.only(bottom: 12),
+                                        child: _RemedyCardDB(
+                                          remedy: remedy,
+                                          onTap: () => Navigator.push(
+                                            context,
+                                            MaterialPageRoute(builder: (_) => RecipeDetailScreenDB(remedy: remedy)),
+                                          ).then((_) => _refreshRemediesOnly()),
+                                          hasComponent: remedy['_has_component'] == true,
+                                          hasRemedy:    remedy['_has_remedy'] == true,
+                                          onBuyHerb:   () => _goToProduct(context, remedy, true),
+                                          onBuyRemedy: () => _goToProduct(context, remedy, false),
+                                        ),
+                                      );
+                                    },
+                                    childCount: _filtered.length,
+                                  ),
                                 ),
                               ),
-                            ),
-                        ],
+                            ],
+                          ),
+                        ),
+                    // A-Z index slider
+                    Positioned(
+                      right: 0,
+                      top: 0,
+                      bottom: 0,
+                      width: 20,
+                      child: LayoutBuilder(
+                        builder: (context, constraints) {
+                          final letters = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ#'.split('');
+                          return Column(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: letters.map((letter) {
+                              final hasMatch = _filtered.any((r) {
+                                final name = (r['name'] ?? '').toString().toUpperCase();
+                                if (letter == '#') return name.isNotEmpty && !RegExp(r'[A-Z]').hasMatch(name[0]);
+                                return name.startsWith(letter);
+                              });
+                              return Expanded(
+                                child: GestureDetector(
+                                  onTap: () {
+                                    final idx = _filtered.indexWhere((r) {
+                                      final name = (r['name'] ?? '').toString().toUpperCase();
+                                      if (letter == '#') return name.isNotEmpty && !RegExp(r'[A-Z]').hasMatch(name[0]);
+                                      return name.startsWith(letter);
+                                    });
+                                    if (idx >= 0) {
+                                      _scrollController.animateTo(
+                                        idx * 180.0,
+                                        duration: const Duration(milliseconds: 300),
+                                        curve: Curves.easeOut,
+                                      );
+                                    }
+                                  },
+                                  child: Center(
+                                    child: Text(
+                                      letter,
+                                      style: TextStyle(
+                                        fontSize: 9,
+                                        fontWeight: FontWeight.w700,
+                                        color: hasMatch ? AppColors.dark : Colors.grey.shade300,
+                                      ),
+                                    ),
+                                  ),
+                                ),
+                              );
+                            }).toList(),
+                          );
+                        },
                       ),
                     ),
+                  ],
+                ),
             ),
           ],
         ),
