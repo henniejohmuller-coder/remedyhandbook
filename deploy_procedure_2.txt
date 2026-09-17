@@ -1,0 +1,84 @@
+# Remedy Handbook — Release Procedure
+
+# Replace X.X.X with new version (e.g. 1.0.6) and N with build number (increment by 1)
+
+## Step 1 — Update version numbers in pubspec.yaml
+# Increment BOTH the version name (1.0.X) and build number (+N)
+$content = Get-Content "pubspec.yaml" -Raw
+$content = $content -replace "version: 1\.0\.\d+\+\d+", "version: X.X.X+N"
+Set-Content "pubspec.yaml" $content
+
+example:
+$content = Get-Content "pubspec.yaml" -Raw
+$content = $content -replace "version: 1\.0\.\d+\+\d+", "version: 1.0.5+6"
+Set-Content "pubspec.yaml" $content
+
+## Step 2 — Update version check in main.dart
+# This is what the installed APK compares against Supabase to detect updates
+$content = Get-Content "lib\main.dart" -Raw
+$content = $content -replace "const currentVersion = '1\.0\.\d+'", "const currentVersion = 'X.X.X'"
+Set-Content "lib\main.dart" $content
+
+Example:
+$content = Get-Content "lib\main.dart" -Raw
+$content = $content -replace "const currentVersion = '1\.0\.\d+'", "const currentVersion = '1.0.5'"
+Set-Content "lib\main.dart" $content
+
+## Step 3 — Update download page APK link
+# Update BOTH the path version (vX.X.X) AND the cache-bust parameter (?v=X.X.X)
+# The ?v=X.X.X forces browsers to download fresh instead of using cached APK
+$content = Get-Content "web\download.html" -Raw
+$content = $content -replace "v1\.0\.\d+/app-release\.apk\?v=[\d\.]+", "VX.X.X/app-release.apk?v=X.X.X"
+Set-Content "web\download.html" $content
+
+Example:
+$content = Get-Content "web\download.html" -Raw
+$content = $content -replace "[Vv]1\.0\.\d+/app-release\.apk\?v=[\d\.]+", "V1.0.5/app-release.apk?v=1.0.5"
+Set-Content "web\download.html" $content
+
+## Step 4 — Update Supabase version (run in Supabase Dashboard → SQL Editor)
+# This triggers the in-app update notification for all installed APK users
+# Go to: https://supabase.com/dashboard/project/stawsdjfjzugeleldaxz/sql
+UPDATE app_version SET version = 'X.X.X' WHERE id = 1;
+
+Example:
+UPDATE app_version SET version = '1.0.5' WHERE id = 1;
+
+## Step 5 — Deploy web app to Firebase
+# Builds Flutter web, adds cache-bust timestamp to index.html, deploys to Firebase
+.\deploy_web.ps1
+
+Example:
+.\deploy_web.ps1
+
+## Step 6 — Commit and push to GitHub
+git add .
+git commit -m "Release VX.X.X"
+git push origin main
+
+Example:
+git add .
+git commit -m "Release V1.0.6"
+git push origin main
+
+## Step 7 — Build Android APK
+# The APK will be at: android\app\build\outputs\apk\release\app-release.apk
+flutter build apk --release
+
+## Step 8 — Upload APK to GitHub Releases (do in browser)
+# 1. Go to: https://github.com/henniejohmuller-coder/remedyhandbook/releases
+# 2. Click "Draft a new release"
+# 3. Set tag to: vX.X.X
+# 4. Set title to: Remedy Handbook vX.X.X
+# 5. Upload: android\app\build\outputs\apk\release\app-release.apk
+# 6. Click "Publish release"
+
+Step	Description	Status
+1	pubspec.yaml → 1.0.10+11	✅ Done
+2	main.dart → 1.0.10	✅ Done
+3	download.html APK link → V1.0.10	✅ Done
+4	Supabase app_version → 1.0.10	✅ Done
+5	Deploy web → Firebase	✅ Done
+7	Build Android APK	⏳ Do this now
+8	Upload APK to GitHub Releases	⏳ Next
+6	Commit and push to GitHub	⏳ Last
