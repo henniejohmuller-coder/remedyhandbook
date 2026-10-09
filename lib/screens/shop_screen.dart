@@ -1,4 +1,4 @@
-import 'package:flutter/material.dart';
+﻿import 'package:flutter/material.dart';
 import '../theme/app_theme.dart';
 import '../widgets/shared_widgets.dart';
 import '../services/supabase_service.dart';
@@ -152,7 +152,8 @@ class _ShopScreenState extends State<ShopScreen> {
           || (p['brand'] ?? '').toString().trim().toLowerCase()
               == _brandFilter.toLowerCase();
 
-      return matchFilter && matchSearch && matchHerb && matchConstituent && matchCat && matchBrand;
+      final matchHerbOrConst = (herbTerms.isEmpty && constTerms.isEmpty) || herbTerms.any((t) => (p['name'] ?? '').toString().toLowerCase().contains(t)) || constTerms.any((t) => (p['description'] ?? '').toString().toLowerCase().contains(t));
+      return matchFilter && matchSearch && matchHerbOrConst && matchCat && matchBrand;
     }).toList();
   }
 
