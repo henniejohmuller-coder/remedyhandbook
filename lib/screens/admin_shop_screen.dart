@@ -1,4 +1,4 @@
-import 'dart:typed_data';
+﻿import 'dart:typed_data';
 import 'dart:ui' as ui;
 import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart';
@@ -38,13 +38,24 @@ class _AdminShopScreenState extends State<AdminShopScreen> {
   Future<void> _load() async {
     setState(() => _loading = true);
     try {
-      final data = await SupabaseService.supabase
-          .from('products')
-          .select()
-          .order('type', ascending: true)
-          .order('name', ascending: true);
+      final allProducts = <Map<String, dynamic>>[];
+      int offset = 0;
+      const pageSize = 1000;
+      while (true) {
+        final page = await SupabaseService.supabase
+            .from('products')
+            .select()
+            .eq('active', true)
+            .order('type', ascending: true)
+            .order('name', ascending: true)
+            .range(offset, offset + pageSize - 1);
+        final pageList = List<Map<String, dynamic>>.from(page);
+        allProducts.addAll(pageList);
+        if (pageList.length < pageSize) break;
+        offset += pageSize;
+      }
       setState(() {
-        _products = List<Map<String, dynamic>>.from(data);
+        _products = allProducts;
         _loading = false;
       });
     } catch (e) {
@@ -123,7 +134,7 @@ class _AdminShopScreenState extends State<AdminShopScreen> {
         child: const Icon(Icons.add, color: AppColors.primary),
       ),
       body: SafeArea(child: Column(children: [
-        YellowAppBar(title: 'Manage Shop Items', subtitle: 'Add · Edit · Delete', showBack: true),
+        YellowAppBar(title: 'Manage Shop Items', subtitle: 'Add Â· Edit Â· Delete', showBack: true),
         Padding(
           padding: const EdgeInsets.all(12),
           child: Row(children: [
@@ -132,7 +143,7 @@ class _AdminShopScreenState extends State<AdminShopScreen> {
                 controller: _searchController,
                 onChanged: (v) => setState(() => _search = v),
                 decoration: InputDecoration(
-                  hintText: 'Search…',
+                  hintText: 'Searchâ€¦',
                   prefixIcon: const Icon(Icons.search, size: 18),
                   suffixIcon: _search.isNotEmpty
                       ? IconButton(
@@ -196,7 +207,7 @@ class _AdminShopScreenState extends State<AdminShopScreen> {
                                 children: [
                                   Text(p['description'] ?? '', style: AppTextStyles.caption,
                                       maxLines: 1, overflow: TextOverflow.ellipsis),
-                                  Text('${p['type']} · R${p['price']}',
+                                  Text('${p['type']} Â· R${p['price']}',
                                       style: AppTextStyles.caption),
                                 ],
                               ),
@@ -234,7 +245,7 @@ class _AdminShopScreenState extends State<AdminShopScreen> {
   }
 }
 
-// ── Shop Item Form ─────────────────────────────────────────────────────────────
+// â”€â”€ Shop Item Form â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 class _ShopItemForm extends StatefulWidget {
   final Map<String, dynamic>? product;
   final VoidCallback onSaved;
@@ -294,7 +305,7 @@ class _ShopItemFormState extends State<_ShopItemForm> {
     super.dispose();
   }
 
-  // ── Image Upload ─────────────────────────────────────────────────────────────
+  // â”€â”€ Image Upload â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
   Future<void> _pickAndUploadImage() async {
     final result = await FilePicker.platform.pickFiles(type: FileType.image, withData: true);
     if (result == null || result.files.isEmpty) return;
@@ -307,11 +318,11 @@ class _ShopItemFormState extends State<_ShopItemForm> {
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
         title: const Text('Choose image size'),
         content: Column(mainAxisSize: MainAxisSize.min, children: [
-          _sizeOption(ctx, 250, 'Small (250×250)', 'Thumbnail size'),
+          _sizeOption(ctx, 250, 'Small (250Ã—250)', 'Thumbnail size'),
           const SizedBox(height: 8),
-          _sizeOption(ctx, 512, 'Medium (512×512)', 'Recommended for shop'),
+          _sizeOption(ctx, 512, 'Medium (512Ã—512)', 'Recommended for shop'),
           const SizedBox(height: 8),
-          _sizeOption(ctx, 800, 'Large (800×800)', 'High quality'),
+          _sizeOption(ctx, 800, 'Large (800Ã—800)', 'High quality'),
         ]),
         actions: [TextButton(onPressed: () => Navigator.pop(ctx), child: const Text('Cancel'))],
       ),
@@ -322,7 +333,7 @@ class _ShopItemFormState extends State<_ShopItemForm> {
     try {
       final decoded = img.decodeImage(file.bytes!);
       if (decoded == null) throw Exception('Could not decode image');
-      // Resize to max 800px on longest side — no cropping, full image preserved
+      // Resize to max 800px on longest side â€” no cropping, full image preserved
       final resized = img.copyResize(decoded,
           width: decoded.width > decoded.height ? size : null,
           height: decoded.height >= decoded.width ? size : null);
@@ -337,7 +348,7 @@ class _ShopItemFormState extends State<_ShopItemForm> {
       setState(() { _imageController.text = url; _uploadingImage = false; });
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Uploaded ($size px) — adjust zoom below'),
+          SnackBar(content: Text('Uploaded ($size px) â€” adjust zoom below'),
               backgroundColor: Colors.green));
         // Auto-open zoom tool so user can crop immediately
         await Future.delayed(const Duration(milliseconds: 500));
@@ -547,7 +558,7 @@ class _ShopItemFormState extends State<_ShopItemForm> {
     }
   }
 
-  // ── Save ──────────────────────────────────────────────────────────────────────
+  // â”€â”€ Save â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
   Future<void> _save() async {
     if (_nameController.text.trim().isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
@@ -653,7 +664,7 @@ class _ShopItemFormState extends State<_ShopItemForm> {
 
           _field('Name *', 'e.g. Buchu Tincture', _nameController),
           const SizedBox(height: 10),
-          _field('Description', 'e.g. Raw herb � 100g', _descController),
+          _field('Description', 'e.g. Raw herb · 100g', _descController),
           const SizedBox(height: 10),
           Row(children: [
             Expanded(child: _field('Primary Herb', 'e.g. Hawthorn', _primaryHerbController)),
@@ -680,7 +691,7 @@ class _ShopItemFormState extends State<_ShopItemForm> {
           ]),
           const SizedBox(height: 10),
 
-          // Image — URL or upload
+          // Image â€” URL or upload
           const Text('Image', style: AppTextStyles.caption),
           const SizedBox(height: 4),
           Row(children: [

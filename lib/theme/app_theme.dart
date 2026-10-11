@@ -1,4 +1,4 @@
-import 'package:flutter/material.dart';
+﻿import 'package:flutter/material.dart';
 
 class AppColors {
   static const Color primary = Color(0xFFE8C840);       // yellow
@@ -119,13 +119,13 @@ ThemeData appTheme() {
   );
 }
 
-// ── Prep-time display helper ──────────────────────────────────────────────────
+// â”€â”€ Prep-time display helper â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 // Rule (from product spec):
-//   • null / 0              → ''            (nothing shown)
-//   • value > 100 minutes   → 'see instructions'  (tinctures, salves, etc.)
-//   • value ≤ 100 minutes   → '${value} min'
+//   â€¢ null / 0              â†’ ''            (nothing shown)
+//   â€¢ value > 100 minutes   â†’ 'see instructions'  (tinctures, salves, etc.)
+//   â€¢ value â‰¤ 100 minutes   â†’ '${value} min'
 // The DB stores integers (minutes); this function is the single source of truth
-// for how the value is presented to the user — no calculations are ever done.
+// for how the value is presented to the user â€” no calculations are ever done.
 String formatPrepTime(dynamic val) {
   if (val == null) return '';
   final n = val is int

@@ -6,12 +6,11 @@ import '../services/supabase_service.dart';
 import 'admin_content_screen.dart';
 import 'admin_csv_upload_screen.dart';
 import 'admin_ratings_screen.dart';
+import 'admin_user_management_screen.dart';
 import 'admin_review_screen.dart';
 import 'admin_shop_screen.dart';
 import 'admin_shop_report_screen.dart';
 import 'admin_purchase_report_screen.dart';
-import 'admin_purchase_report_screen.dart';
-import 'admin_shop_report_screen.dart';
 import 'change_password_screen.dart';
 import 'notifications_screen.dart';
 import 'shipping_address_screen.dart';
@@ -459,6 +458,12 @@ class _ProfileScreenState extends State<ProfileScreen> {
                               icon: Icons.star_half_outlined,
                               label: 'Manage ratings',
                               onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const AdminRatingsScreen())),
+                            ),
+                            const Divider(height: 1, indent: 48),
+                            _MenuRow(
+                              icon: Icons.people_outline,
+                              label: 'User management',
+                              onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const AdminUserManagementScreen())),
                             ),
                             const Divider(height: 1, indent: 48),
                             _MenuRow(
