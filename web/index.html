@@ -69,7 +69,7 @@
 </head>
 <body>
   <div id="install-bar">
-    <span id="bar-text">ðŸ“² Get the app for the best experience</span>
+    <span id="bar-text">📲 Get the app for the best experience</span>
     <div style="display:flex;align-items:center;flex-shrink:0">
       <a id="install-btn" href="https://remedy-handbook.web.app/download" target="_blank" style="background:#F5C518;color:#2C1A00;border:none;padding:6px 14px;border-radius:20px;font-weight:700;font-size:12px;cursor:pointer;white-space:nowrap;margin-left:8px;text-decoration:none;display:inline-block;">Install App</a>
       <button id="close-btn" onclick="closeBanner()">âœ•</button>
@@ -114,7 +114,7 @@
     // iOS instructions
     if (isIOS && !isStandalone) {
       document.getElementById('bar-text').innerHTML =
-        'ðŸ“² Tap <b>Share</b> â†’ <b>Add to Home Screen</b>';
+        'Tap Share then Add to Home Screen';
       document.getElementById('install-btn').style.display = 'none';
     }
 
@@ -138,8 +138,8 @@
         // Show step-by-step visual guide
         var isAndroid = /android/i.test(navigator.userAgent);
         var msg = isAndroid
-          ? 'ðŸ“² Install in 2 steps:\n\n1. Tap the â‹® menu (top right of Chrome)\n2. Tap "Add to Home Screen"\n\nThe app will install like a normal app!'
-          : 'ðŸ“² Install in 2 steps:\n\n1. Tap the Share button (Safari) or browser menu\n2. Tap "Add to Home Screen"\n\nThe app will appear on your home screen!';
+        ? '📲 Install: Tap the menu (top right of Chrome) then Add to Home Screen'
+        'Tap Share then Add to Home Screen';
         if (confirm(msg + '\n\nOpen browser menu now?')) {
           // Can't open menu programmatically, but confirm gives clear CTA
         }
