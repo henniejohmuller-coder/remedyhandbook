@@ -1,4 +1,9 @@
 import 'dart:typed_data';
+import 'dart:ui' as ui;
+import 'package:flutter/rendering.dart';
+import 'package:file_picker/file_picker.dart';
+import 'package:image/image.dart' as img;
+import 'package:supabase_flutter/supabase_flutter.dart' show FileOptions;
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import '../utils/image_search.dart';
@@ -64,6 +69,7 @@ class _AdminRemedyEditScreenState extends State<AdminRemedyEditScreen> {
 
   String _previewUrl = '';
   bool _urlError = false;
+  bool _uploadingImage = false;
   String _selectedComponent = '';
   bool _showCustomComponent = false;
   String _selectedType    = '';
@@ -1145,10 +1151,13 @@ class _AdminRemedyEditScreenState extends State<AdminRemedyEditScreen> {
                         // Upload button
                         Expanded(
                           child: OutlinedButton.icon(
-                            onPressed: _pickImage,
-                            icon: const Icon(Icons.upload_outlined, size: 18, color: AppColors.dark),
-                            label: const Text('Upload photo',
-                                style: TextStyle(color: AppColors.dark, fontWeight: FontWeight.w600, fontSize: 13)),
+                            onPressed: _uploadingImage ? null : _pickImage,
+                            icon: _uploadingImage
+                                ? const SizedBox(width: 16, height: 16,
+                                    child: CircularProgressIndicator(strokeWidth: 2, color: AppColors.dark))
+                                : const Icon(Icons.upload_outlined, size: 18, color: AppColors.dark),
+                            label: Text(_uploadingImage ? 'Uploading...' : 'Upload photo',
+                                style: const TextStyle(color: AppColors.dark, fontWeight: FontWeight.w600, fontSize: 13)),
                             style: OutlinedButton.styleFrom(
                               padding: const EdgeInsets.symmetric(vertical: 12),
                               shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
@@ -1313,30 +1322,204 @@ class _AdminRemedyEditScreenState extends State<AdminRemedyEditScreen> {
 
   // ── Upload Photo (web: shows dialog; mobile: would use image_picker) ──
 
-  void _pickImage() {
-    // On web Flutter, file picking requires dart:html
-    // Show a helpful message directing to URL option
-    showDialog(
+  Future<void> _pickImage() async {
+    final result = await FilePicker.platform.pickFiles(type: FileType.image, withData: true);
+    if (result == null || result.files.isEmpty) return;
+    final file = result.files.first;
+    if (file.bytes == null) return;
+
+    final size = await showDialog<int>(
       context: context,
       builder: (ctx) => AlertDialog(
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-        title: const Text('Upload photo', style: AppTextStyles.heading3),
-        content: const Text(
-          'File upload works on mobile devices.\n\nFor the web version, please paste an image URL instead.',
-          style: AppTextStyles.body,
-        ),
-        actions: [
-          TextButton(
-            onPressed: () { Navigator.pop(ctx); _showUrlDialog(); },
-            child: const Text('Paste URL instead', style: TextStyle(color: AppColors.primary, fontWeight: FontWeight.w600)),
-          ),
-          TextButton(
-            onPressed: () => Navigator.pop(ctx),
-            child: const Text('OK', style: TextStyle(color: AppColors.dark)),
-          ),
-        ],
+        title: const Text('Choose image size'),
+        content: Column(mainAxisSize: MainAxisSize.min, children: [
+          _sizeOption(ctx, 250, 'Small (250x250)', 'Thumbnail size'),
+          const SizedBox(height: 8),
+          _sizeOption(ctx, 512, 'Medium (512x512)', 'Recommended'),
+          const SizedBox(height: 8),
+          _sizeOption(ctx, 800, 'Large (800x800)', 'High quality'),
+        ]),
+        actions: [TextButton(onPressed: () => Navigator.pop(ctx), child: const Text('Cancel'))],
       ),
     );
+    if (size == null) return;
+
+    setState(() => _uploadingImage = true);
+    try {
+      final decoded = img.decodeImage(file.bytes!);
+      if (decoded == null) throw Exception('Could not decode image');
+      final resized = img.copyResize(decoded,
+          width: decoded.width > decoded.height ? size : null,
+          height: decoded.height >= decoded.width ? size : null);
+      final bytes = Uint8List.fromList(img.encodeJpg(resized, quality: 90));
+      final ts = DateTime.now().millisecondsSinceEpoch;
+      final fileName = 'remedy_' + ts.toString() + '.jpg';
+      await SupabaseService.supabase.storage.from('remedy-images')
+          .uploadBinary(fileName, bytes,
+              fileOptions: FileOptions(contentType: 'image/jpeg', upsert: true));
+      final url = SupabaseService.supabase.storage
+          .from('remedy-images').getPublicUrl(fileName);
+      setState(() {
+        _previewUrl = url;
+        _imageUrlController.text = url;
+        _uploadingImage = false;
+      });
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Image uploaded (' + size.toString() + ' px)'), backgroundColor: Colors.green));
+        await Future.delayed(const Duration(milliseconds: 500));
+        if (mounted) _showZoomPreview();
+      }
+    } catch (e) {
+      setState(() => _uploadingImage = false);
+      if (mounted) ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Upload failed: ' + e.toString()), backgroundColor: Colors.red));
+    }
+  }
+
+  Widget _sizeOption(BuildContext ctx, int size, String label, String desc) =>
+      InkWell(
+        onTap: () => Navigator.pop(ctx, size),
+        borderRadius: BorderRadius.circular(10),
+        child: Container(
+          padding: const EdgeInsets.all(12),
+          decoration: BoxDecoration(
+            border: Border.all(color: Colors.grey.shade200),
+            borderRadius: BorderRadius.circular(10),
+          ),
+          child: Row(children: [
+            Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+              Text(label, style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 13)),
+              Text(desc, style: AppTextStyles.caption),
+            ])),
+            const Icon(Icons.chevron_right, size: 18, color: AppColors.textSecondary),
+          ]),
+        ),
+      );
+
+  void _showZoomPreview() {
+    final url = _previewUrl.trim();
+    if (url.isEmpty) return;
+    double zoom = 5.0;
+    final repaintKey = GlobalKey();
+    const cropSize = 300.0;
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (ctx) => StatefulBuilder(
+        builder: (ctx, setModal) => Dialog(
+          backgroundColor: Colors.black87,
+          insetPadding: const EdgeInsets.all(16),
+          child: Column(mainAxisSize: MainAxisSize.min, children: [
+            const Padding(
+              padding: EdgeInsets.fromLTRB(16, 14, 16, 6),
+              child: Text('Adjust zoom and tap Save.',
+                  style: TextStyle(color: Colors.white70, fontSize: 11),
+                  textAlign: TextAlign.center),
+            ),
+            RepaintBoundary(
+              key: repaintKey,
+              child: SizedBox(
+                width: cropSize, height: cropSize,
+                child: ClipRect(
+                  child: Container(
+                    color: Colors.white,
+                    child: Center(
+                      child: Transform.scale(
+                        scale: 0.2 + (zoom / 10) * 1.6,
+                        child: Image.network(url,
+                          width: cropSize, height: cropSize, fit: BoxFit.contain,
+                          errorBuilder: (_, __, ___) => const Icon(
+                              Icons.broken_image, color: Colors.grey, size: 48)),
+                      ),
+                    ),
+                  ),
+                ),
+              ),
+            ),
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+              child: Column(children: [
+                Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [
+                  const Text('Zoom', style: TextStyle(color: Colors.white70, fontSize: 12)),
+                  Text(zoom.round().toString() + ' / 10',
+                      style: const TextStyle(color: Colors.white, fontWeight: FontWeight.w700, fontSize: 14)),
+                ]),
+                Row(children: [
+                  IconButton(
+                    onPressed: () { if (zoom > 0) setModal(() => zoom = (zoom - 1).clamp(0, 10)); },
+                    icon: const Icon(Icons.remove_circle_outline, color: Colors.white70)),
+                  Expanded(child: Slider(
+                    value: zoom, min: 0, max: 10, divisions: 10,
+                    activeColor: AppColors.primary, inactiveColor: Colors.white24,
+                    label: zoom.round().toString(),
+                    onChanged: (v) => setModal(() => zoom = v.roundToDouble()),
+                  )),
+                  IconButton(
+                    onPressed: () { if (zoom < 10) setModal(() => zoom = (zoom + 1).clamp(0, 10)); },
+                    icon: const Icon(Icons.add_circle_outline, color: Colors.white70)),
+                ]),
+              ]),
+            ),
+            Padding(
+              padding: const EdgeInsets.fromLTRB(12, 0, 12, 12),
+              child: Row(children: [
+                TextButton(onPressed: () => setModal(() => zoom = 5.0),
+                    child: const Text('Reset', style: TextStyle(color: Colors.white54))),
+                const Spacer(),
+                TextButton(onPressed: () => Navigator.pop(ctx),
+                    child: const Text('Cancel', style: TextStyle(color: Colors.white54))),
+                const SizedBox(width: 8),
+                ElevatedButton.icon(
+                  onPressed: () async {
+                    try {
+                      final boundary = repaintKey.currentContext?.findRenderObject() as RenderRepaintBoundary?;
+                      if (boundary == null) { Navigator.pop(ctx); return; }
+                      final image = await boundary.toImage(pixelRatio: 2.0);
+                      final byteData = await image.toByteData(format: ui.ImageByteFormat.png);
+                      Navigator.pop(ctx);
+                      if (byteData == null) return;
+                      await _uploadCapturedImage(byteData.buffer.asUint8List());
+                    } catch (e) {
+                      Navigator.pop(ctx);
+                      if (mounted) ScaffoldMessenger.of(context).showSnackBar(
+                        SnackBar(content: Text('Capture failed: ' + e.toString()), backgroundColor: Colors.red));
+                    }
+                  },
+                  icon: const Icon(Icons.save, size: 16),
+                  label: const Text('Save'),
+                  style: ElevatedButton.styleFrom(
+                      backgroundColor: AppColors.primary, foregroundColor: AppColors.dark)),
+              ]),
+            ),
+          ]),
+        ),
+      ),
+    );
+  }
+
+  Future<void> _uploadCapturedImage(Uint8List bytes) async {
+    setState(() => _uploadingImage = true);
+    try {
+      final ts = DateTime.now().millisecondsSinceEpoch;
+      final fileName = 'remedy_crop_' + ts.toString() + '.png';
+      await SupabaseService.supabase.storage.from('remedy-images')
+          .uploadBinary(fileName, bytes,
+              fileOptions: FileOptions(contentType: 'image/png', upsert: true));
+      final newUrl = SupabaseService.supabase.storage.from('remedy-images').getPublicUrl(fileName);
+      setState(() {
+        _previewUrl = newUrl;
+        _imageUrlController.text = newUrl;
+        _uploadingImage = false;
+      });
+      if (mounted) ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Image saved!'), backgroundColor: Colors.green));
+    } catch (e) {
+      setState(() => _uploadingImage = false);
+      if (mounted) ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Save failed: ' + e.toString()), backgroundColor: Colors.red));
+    }
   }
 
   // ── Paste URL Dialog ──────────────────────────────────────────────────
