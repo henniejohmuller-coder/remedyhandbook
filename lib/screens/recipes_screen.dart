@@ -1,4 +1,4 @@
-import 'package:flutter/material.dart';
+﻿import 'package:flutter/material.dart';
 import '../theme/app_theme.dart';
 import '../widgets/shared_widgets.dart';
 import '../services/supabase_service.dart';
@@ -84,7 +84,7 @@ class _RecipesScreenState extends State<RecipesScreen>
     }
   }
 
-  // Lightweight refresh — only reload remedies, keep filters/lookups cached
+  // Lightweight refresh â€” only reload remedies, keep filters/lookups cached
   Future<void> _refreshRemediesOnly() async {
     try {
       final remedies = await SupabaseService.getRemedies();
@@ -181,7 +181,7 @@ class _RecipesScreenState extends State<RecipesScreen>
       final component   = (r['component'] ?? '').toString().toLowerCase();
       final category    = (r['category_name'] ?? '').toString();
 
-      // Live search field — filters as you type
+      // Live search field â€” filters as you type
       if (_searchQuery.isNotEmpty) {
         final terms = _searchQuery.split(RegExp(r'[;\s]+')).map((t) => t.trim().toLowerCase()).where((t) => t.isNotEmpty).toList();
         final fields = [r['name'], component, r['illness_name'], r['category_name'], r['sub_category_name'], r['symptom_name'], r['organ_name'], r['origin'], r['function'], r['mechanism'], r['constituent']]
@@ -189,7 +189,7 @@ class _RecipesScreenState extends State<RecipesScreen>
         final matches = terms.any((term) => fields.any((field) => field.contains(term)));
         if (!matches) return false;
       }
-      // Committed search terms — ALL must match (AND logic)
+      // Committed search terms â€” ALL must match (AND logic)
       for (final term in _searchTerms) {
         final q = term.toLowerCase();
         final matches =
@@ -228,21 +228,21 @@ class _RecipesScreenState extends State<RecipesScreen>
 
   List<String> get _activeChips {
     final chips = <String>[];
-    for (final t in _searchTerms) chips.add('🔍 "$t" ×');
-    if (_searchQuery.isNotEmpty) chips.add('🔍 "$_searchQuery" ×');
-    // One chip per individually selected item — not per field
-    for (final v in _splitCsv(_selectedType))        chips.add('$v ×');
-    for (final v in _splitCsv(_selectedIllness))     chips.add('$v ×');
-    for (final v in _splitCsv(_selectedHerb))        chips.add('$v ×');
-    for (final v in _splitCsv(_selectedCategory))    chips.add('$v ×');
-    for (final v in _splitCsv(_selectedSubCategory)) chips.add('$v ×');
-    for (final v in _splitCsv(_selectedSymptom))     chips.add('$v ×');
-    for (final v in _splitCsv(_selectedOrgan))       chips.add('$v ×');
-    for (final v in _splitCsv(_selectedCountry))     chips.add('$v ×');
-    if (_minValidation > 0) chips.add('Validation $_minValidation+ ×');
-    if (_minTraditional > 0) chips.add('Traditional $_minTraditional+ ×');
-    if (_minUserRating > 0) chips.add('Rating $_minUserRating+ ×');
-    if (_difficulty != 'All') chips.add('$_difficulty ×');
+    for (final t in _searchTerms) chips.add('ðŸ” "$t" Ã—');
+    if (_searchQuery.isNotEmpty) chips.add('ðŸ” "$_searchQuery" Ã—');
+    // One chip per individually selected item â€” not per field
+    for (final v in _splitCsv(_selectedType))        chips.add('$v Ã—');
+    for (final v in _splitCsv(_selectedIllness))     chips.add('$v Ã—');
+    for (final v in _splitCsv(_selectedHerb))        chips.add('$v Ã—');
+    for (final v in _splitCsv(_selectedCategory))    chips.add('$v Ã—');
+    for (final v in _splitCsv(_selectedSubCategory)) chips.add('$v Ã—');
+    for (final v in _splitCsv(_selectedSymptom))     chips.add('$v Ã—');
+    for (final v in _splitCsv(_selectedOrgan))       chips.add('$v Ã—');
+    for (final v in _splitCsv(_selectedCountry))     chips.add('$v Ã—');
+    if (_minValidation > 0) chips.add('Validation $_minValidation+ Ã—');
+    if (_minTraditional > 0) chips.add('Traditional $_minTraditional+ Ã—');
+    if (_minUserRating > 0) chips.add('Rating $_minUserRating+ Ã—');
+    if (_difficulty != 'All') chips.add('$_difficulty Ã—');
     return chips;
   }
 
@@ -258,7 +258,7 @@ class _RecipesScreenState extends State<RecipesScreen>
   void _removeChip(String chip) {
     if (!mounted) return;
     setState(() {
-      if (chip.startsWith('🔍 "') && chip.endsWith('" ×')) {
+      if (chip.startsWith('ðŸ” "') && chip.endsWith('" Ã—')) {
         final term = chip.substring(4, chip.length - 3);
         if (_searchTerms.contains(term)) _searchTerms.remove(term);
         else { _searchQuery = ''; _searchController.clear(); }
@@ -267,9 +267,9 @@ class _RecipesScreenState extends State<RecipesScreen>
       if (chip.startsWith('Validation'))  { _minValidation = 0; return; }
       if (chip.startsWith('Traditional')) { _minTraditional = 0; return; }
       if (chip.startsWith('Rating'))      { _minUserRating = 0; return; }
-      if (chip == '$_difficulty ×')       { _difficulty = 'All'; return; }
+      if (chip == '$_difficulty Ã—')       { _difficulty = 'All'; return; }
 
-      // Strip trailing ' ×' to get the raw item text, then remove it from
+      // Strip trailing ' Ã—' to get the raw item text, then remove it from
       // whichever multi-select field currently contains it.
       final item = chip.substring(0, chip.length - 2);
       if (_splitCsv(_selectedType).contains(item))        { _selectedType        = _removeFromCsv(_selectedType, item);        return; }
@@ -305,7 +305,7 @@ class _RecipesScreenState extends State<RecipesScreen>
           children: [
             YellowAppBar(
               title: 'Recipes',
-              subtitle: '${_filtered.length} remedies · evidence-rated',
+              subtitle: '${_filtered.length} remedies Â· evidence-rated',
             ),
             if (_encouragement.isNotEmpty)
               EncouragementBanner(text: _encouragement),
@@ -316,7 +316,11 @@ class _RecipesScreenState extends State<RecipesScreen>
               child: Row(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  // Filter Remedies button — pulsing glow, words stacked vertically
+                  // Filter Remedies button â€” pulsing glow, words stacked vertically
+                  Column(
+                    mainAxisSize: MainAxisSize.min,
+                    crossAxisAlignment: CrossAxisAlignment.center,
+                    children: [
                   AnimatedBuilder(
                     animation: _pulseAnimation,
                     builder: (context, child) {
@@ -367,6 +371,17 @@ class _RecipesScreenState extends State<RecipesScreen>
                       );
                     },
                   ),
+                  if (_filtersExpanded)
+                    GestureDetector(
+                      onTap: () => setState(() => _filtersExpanded = false),
+                      child: const Padding(
+                        padding: EdgeInsets.only(top: 4),
+                        child: Text('Close Filter',
+                            style: TextStyle(fontSize: 10, color: Colors.red, fontWeight: FontWeight.w700)),
+                      ),
+                    ),
+                  ],
+                ),
                   const SizedBox(width: 10),
                   // Search bar + guideline stacked on the right
                   Expanded(
@@ -399,8 +414,8 @@ class _RecipesScreenState extends State<RecipesScreen>
                             },
                             decoration: InputDecoration(
                               hintText: _searchTerms.isEmpty
-                                  ? 'Search, press Enter to pin filter…'
-                                  : 'Add another filter…',
+                                  ? 'Search, press Enter to pin filterâ€¦'
+                                  : 'Add another filterâ€¦',
                               hintStyle: const TextStyle(fontSize: 12, color: AppColors.textSecondary),
                               prefixIcon: const Icon(Icons.search, color: AppColors.textSecondary, size: 20),
                               suffixIcon: _searchQuery.isNotEmpty
@@ -417,7 +432,7 @@ class _RecipesScreenState extends State<RecipesScreen>
                           Padding(
                             padding: const EdgeInsets.only(top: 4, left: 2),
                             child: Text(
-                              'Type a keyword · press Enter to pin · tap chip to remove',
+                              'Type a keyword Â· press Enter to pin Â· tap chip to remove',
                               style: TextStyle(fontSize: 10, color: AppColors.textSecondary),
                             ),
                           ),
@@ -427,7 +442,7 @@ class _RecipesScreenState extends State<RecipesScreen>
                 ],
               ),
             ),
-            // Active chips — always visible
+            // Active chips â€” always visible
             if (_activeChips.isNotEmpty) ...[
               const SizedBox(height: 10),
               SingleChildScrollView(
@@ -438,7 +453,7 @@ class _RecipesScreenState extends State<RecipesScreen>
                     padding: const EdgeInsets.only(right: 6),
                     child: InputChip(
                       label: Text(
-                        chip.endsWith(' ×') ? chip.substring(0, chip.length - 2) : chip,
+                        chip.endsWith(' Ã—') ? chip.substring(0, chip.length - 2) : chip,
                         style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: AppColors.dark),
                       ),
                       backgroundColor: AppColors.primary,
@@ -473,7 +488,7 @@ class _RecipesScreenState extends State<RecipesScreen>
                                 ),
                               ),
                             const SliverToBoxAdapter(child: SizedBox(height: 12)),
-                            // Results count — always shows total and filtered
+                            // Results count â€” always shows total and filtered
                             SliverToBoxAdapter(
                               child: Padding(
                                 padding: const EdgeInsets.symmetric(horizontal: 16),
@@ -758,7 +773,7 @@ class _RecipesScreenState extends State<RecipesScreen>
             ],
           ),
           const Divider(height: 16),
-          // ── Count + Clear ─────────────────────────────────────────────────
+          // â”€â”€ Count + Clear â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
           Row(
             children: [
               Expanded(
@@ -808,7 +823,7 @@ class _RecipesScreenState extends State<RecipesScreen>
   }
 }
 
-// ── Tappable Star Filter Row ──────────────────────────────────────────────
+// â”€â”€ Tappable Star Filter Row â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 class _StarFilterRow extends StatelessWidget {
   final String label;
@@ -924,7 +939,7 @@ class _RemedyCardDB extends StatelessWidget {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // Name always on top — full width so long names wrap freely
+            // Name always on top â€” full width so long names wrap freely
             Text(name,
                 style: AppTextStyles.heading3,
                 softWrap: true),
@@ -933,19 +948,19 @@ class _RemedyCardDB extends StatelessWidget {
               child: Row(
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
-                  // Left — description
+                  // Left â€” description
                   Expanded(
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        Text('$component${origin.isNotEmpty ? ' · $origin' : ''}', style: AppTextStyles.caption),
+                        Text('$component${origin.isNotEmpty ? ' Â· $origin' : ''}', style: AppTextStyles.caption),
                         const SizedBox(height: 8),
                         _buildRatingRow('Traditional', tradition),
                         const SizedBox(height: 4),
                         _buildRatingRow('Validation', validation),
                         const SizedBox(height: 4),
                         _buildRatingRow('User rating', rating.round(),
-                            showNumber: true, number: '${rating.toStringAsFixed(1)} · $votes votes'),
+                            showNumber: true, number: '${rating.toStringAsFixed(1)} Â· $votes votes'),
                         const SizedBox(height: 8),
                         Wrap(spacing: 6, runSpacing: 4, children: [
                           TagBadge(label: 'Level $validation', color: AppColors.levelBadge),
@@ -968,7 +983,7 @@ class _RemedyCardDB extends StatelessWidget {
                     ),
                   ),
                   const SizedBox(width: 12),
-                  // Right — image stretches full height
+                  // Right â€” image stretches full height
                   RemedyImage(
                     url: imageUrl,
                     width: 120,
@@ -1014,7 +1029,7 @@ class _RemedyCardDB extends StatelessWidget {
   }
 }
 
-// ── Rating Row ────────────────────────────────────────────────────────────
+// â”€â”€ Rating Row â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 class _RatingRow extends StatelessWidget {
   final String label;
