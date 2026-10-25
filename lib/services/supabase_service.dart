@@ -1,4 +1,4 @@
-import 'package:supabase_flutter/supabase_flutter.dart';
+﻿import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 final supabase = Supabase.instance.client;
@@ -6,7 +6,7 @@ final supabase = Supabase.instance.client;
 class SupabaseService {
   // Expose client for direct access when needed
   static final supabase = Supabase.instance.client;
-  // ── Auth ──────────────────────────────────────────────────────
+  // â”€â”€ Auth â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
   static Future<AuthResponse> signIn(String email, String password) async {
     return await supabase.auth.signInWithPassword(email: email, password: password);
   }
@@ -32,7 +32,7 @@ class SupabaseService {
   static User? get currentUser => supabase.auth.currentUser;
   static bool get isLoggedIn => supabase.auth.currentUser != null;
 
-  // ── Profile ───────────────────────────────────────────────────
+  // â”€â”€ Profile â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
   static Future<String> getAppContent(String key) async {
     try {
       final data = await supabase.from('app_content').select('content').eq('key', key).single();
@@ -53,7 +53,7 @@ class SupabaseService {
     return profile?['role'] == 'admin' || profile?['role'] == 'moderator';
   }
 
-  // ── Remedies ──────────────────────────────────────────────────
+  // â”€â”€ Remedies â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
   // Simple products cache to avoid repeated fetches
   static List<Map<String, dynamic>>? _productsCache;
   static DateTime? _productsCacheTime;
@@ -116,7 +116,7 @@ class SupabaseService {
         .eq('id', id).single();
   }
 
-  // ── Reviews ───────────────────────────────────────────────────
+  // â”€â”€ Reviews â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
   static Future<void> _recalcAverageRating(String remedyId) async {
     try {
       print('_recalcAverageRating calling RPC for remedyId=$remedyId');
@@ -163,7 +163,7 @@ class SupabaseService {
     }
   }
 
-  // ── Saved Remedies ────────────────────────────────────────────
+  // â”€â”€ Saved Remedies â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
   static Future<List<Map<String, dynamic>>> getSavedRemedies() async {
     final userId = currentUser?.id;
     if (userId == null) return [];
@@ -192,8 +192,8 @@ class SupabaseService {
     return (response as List).isNotEmpty;
   }
 
-  // ── Products ──────────────────────────────────────────────────
-  // ── Cart ──────────────────────────────────────────────────────
+  // â”€â”€ Products â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+  // â”€â”€ Cart â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
   static Future<List<Map<String, dynamic>>> getCart() async {
     final userId = currentUser?.id;
     if (userId == null) return [];
@@ -243,7 +243,7 @@ class SupabaseService {
     await supabase.from('cart_items').delete().eq('user_id', userId);
   }
 
-  // ── Orders ────────────────────────────────────────────────────
+  // â”€â”€ Orders â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
   static Future<Map<String, dynamic>> placeOrder({
     required Map<String, dynamic> deliveryDetails,
     required List<Map<String, dynamic>> cartItems,
@@ -289,7 +289,7 @@ class SupabaseService {
     return List<Map<String, dynamic>>.from(response);
   }
 
-  // ── Admin shop report ─────────────────────────────────────────
+  // â”€â”€ Admin shop report â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
   static Future<List<Map<String, dynamic>>> getAllOrders() async {
     final response = await supabase
         .from('orders')
@@ -298,7 +298,7 @@ class SupabaseService {
     return List<Map<String, dynamic>>.from(response);
   }
 
-  // ── Submissions ───────────────────────────────────────────────
+  // â”€â”€ Submissions â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
   static Future<void> submitRemedy(Map<String, dynamic> data) async {
     final userId = currentUser?.id;
     if (userId == null) return;
@@ -316,7 +316,7 @@ class SupabaseService {
     return List<Map<String, dynamic>>.from(response);
   }
 
-  // ── Admin ─────────────────────────────────────────────────────
+  // â”€â”€ Admin â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
   static Future<List<Map<String, dynamic>>> getSubmissionsForReview() async {
     final response = await supabase.from('admin_submissions')
         .select().order('submitted_at', ascending: false);
@@ -331,7 +331,7 @@ class SupabaseService {
     }).eq('id', id);
   }
 
-  // ── Dropdowns ─────────────────────────────────────────────────
+  // â”€â”€ Dropdowns â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
   static Future<List<String>> getIllnesses() async {
     final r = await supabase.from('illnesses').select('name').eq('active', true).order('name');
     // Split any combined values (legacy rows like "Cancer, Diabetes") into atomic items
@@ -418,7 +418,7 @@ class SupabaseService {
 
   static Future<List<String>> getDifficulties() async {
     final r = await supabase.from('difficulties').select('name').eq('active', true).order('name');
-    // Dedup — legacy CSV import may have created duplicate/garbage rows
+    // Dedup â€” legacy CSV import may have created duplicate/garbage rows
     final flat = <String>{};
     for (final e in (r as List)) {
       final raw = (e['name'] as String?) ?? '';
@@ -437,7 +437,7 @@ class SupabaseService {
     final r = await supabase.from('prep_types').select('name').eq('active', true).order('name');
     return (r as List).map((e) => e['name'] as String).toList();
   }
-  // ── Filter Matrix ─────────────────────────────────────────────────────────
+  // â”€â”€ Filter Matrix â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
   /// Autocomplete search across all 4 tiers of the filter matrix
   static Future<List<Map<String, dynamic>>> searchFilterMatrix(String query) async {
@@ -511,20 +511,20 @@ class SupabaseService {
     String? symptom,
   }) async {
     try {
-      var query = supabase
-          .from('remedies')
-          .select('id')
-          .eq('status', 'approved');
-      if (category != null)    query = query.eq('filter_category', category);
-      if (subcategory != null) query = query.eq('filter_subcategory', subcategory);
-      if (illness != null)     query = query.eq('filter_illness', illness);
-      if (symptom != null)     query = query.contains('filter_symptoms', [symptom]);
-      final response = await query;
-      return (response as List).length;
+      final response = await supabase.rpc('get_filtered_remedy_count', params: {
+        'p_category': category,
+        'p_subcategory': subcategory,
+        'p_illness': illness,
+        'p_symptom': symptom,
+      });
+      return (response as int?) ?? 0;
     } catch (_) {
       return 0;
     }
   }
+
+
+
 
   /// Get remedies filtered by the 4-tier filter state
   static Future<List<Map<String, dynamic>>> getFilteredRemedies({
