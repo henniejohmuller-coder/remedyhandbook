@@ -28,7 +28,6 @@ if (keystorePropertiesFile.exists()) {
 android {
     namespace "com.myherb.remedy_handbook"
     compileSdk 36
-    ndkVersion "30.0.16248370"
 
     compileOptions {
         sourceCompatibility JavaVersion.VERSION_17
