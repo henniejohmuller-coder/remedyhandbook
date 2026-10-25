@@ -3,6 +3,7 @@ import '../theme/app_theme.dart';
 import '../widgets/shared_widgets.dart';
 import '../widgets/navigation_guard.dart';
 import '../services/supabase_service.dart';
+import '../main.dart' show appFontScale;
 import 'admin_content_screen.dart';
 import 'admin_csv_upload_screen.dart';
 import 'admin_ratings_screen.dart';
@@ -30,6 +31,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
   bool _editing = false;
   bool _saving  = false;
   bool _isAdmin = false;
+  double _fontScale = 1.0;
 
   late TextEditingController _nameController;
   late TextEditingController _phoneController;
@@ -82,6 +84,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
         _cityController.text      = profile?['city'] ?? '';
         _countryController.text   = profile?['country'] ?? 'South Africa';
         _avatarUrlController.text = profile?['avatar_url'] ?? '';
+        _fontScale           = (profile?['font_scale'] as num?)?.toDouble() ?? 1.0;
         _loading             = false;
       });
     } catch (e) {
@@ -105,6 +108,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
         'country':    _countryController.text.trim(),
         'avatar_url': _avatarUrlController.text.trim(),
         'updated_at': DateTime.now().toIso8601String(),
+        'font_scale': _fontScale,
       });
       if (!mounted) return;
       setState(() { _editing = false; _saving = false; });
@@ -322,6 +326,59 @@ class _ProfileScreenState extends State<ProfileScreen> {
                     Material(
                       color: Colors.white, borderRadius: BorderRadius.circular(12), elevation: 1, shadowColor: Colors.black12,
                       child: Column(children: [
+                        // Font size slider
+                        Padding(
+                          padding: const EdgeInsets.fromLTRB(16, 12, 16, 8),
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Row(
+                                children: [
+                                  const Icon(Icons.text_fields, size: 18, color: AppColors.dark),
+                                  const SizedBox(width: 10),
+                                  const Text('Text size',
+                                      style: TextStyle(fontSize: 14, color: AppColors.dark)),
+                                  const Spacer(),
+                                  Text(
+                                    _fontScale <= 0.9 ? 'Small'
+                                      : _fontScale <= 1.05 ? 'Normal'
+                                      : _fontScale <= 1.2 ? 'Large'
+                                      : 'Extra Large',
+                                    style: const TextStyle(fontSize: 12, color: AppColors.textSecondary),
+                                  ),
+                                ],
+                              ),
+                              Slider(
+                                value: _fontScale,
+                                min: 0.8,
+                                max: 1.4,
+                                divisions: 6,
+                                activeColor: AppColors.primary,
+                                inactiveColor: Colors.grey.shade200,
+                                onChanged: (val) {
+                                  setState(() => _fontScale = val);
+                                  appFontScale.value = val;
+                                },
+                                onChangeEnd: (val) async {
+                                  final userId = SupabaseService.currentUser?.id;
+                                  if (userId != null) {
+                                    await SupabaseService.updateProfile(userId, {
+                                      'font_scale': val,
+                                    });
+                                  }
+                                },
+                              ),
+                              Row(
+                                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                children: const [
+                                  Text('A', style: TextStyle(fontSize: 10, color: AppColors.textSecondary)),
+                                  Text('A', style: TextStyle(fontSize: 18, color: AppColors.textSecondary)),
+                                ],
+                              ),
+                            ],
+                          ),
+                        ),
+                        const Divider(height: 1, indent: 48),
                         _MenuRow(icon: Icons.lock_outline, label: 'Change password',
                               onTap: () => Navigator.push(context,
                                   MaterialPageRoute(builder: (_) => const ChangePasswordScreen()))),

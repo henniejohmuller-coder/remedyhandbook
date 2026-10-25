@@ -3,6 +3,7 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 import '../theme/app_theme.dart';
 import '../widgets/shared_widgets.dart';
 import '../services/supabase_service.dart';
+import '../main.dart' show appFontScale;
 import '../main.dart';
 import 'policy_screen.dart';
 
@@ -115,6 +116,58 @@ class _LoginScreenState extends State<LoginScreen> {
   }
 
 
+
+  void _showFontSizeDialog() {
+    double tempScale = appFontScale.value;
+    showDialog(
+      context: context,
+      builder: (ctx) => StatefulBuilder(
+        builder: (ctx, setDlg) => AlertDialog(
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+          title: const Row(children: [
+            Icon(Icons.text_fields, color: AppColors.dark),
+            SizedBox(width: 8),
+            Text('Text size', style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600)),
+          ]),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Text('Aa', style: TextStyle(fontSize: 24 * tempScale,
+                  fontWeight: FontWeight.w500, color: AppColors.dark)),
+              const SizedBox(height: 8),
+              Text(
+                tempScale <= 0.9 ? 'Small' : tempScale <= 1.05 ? 'Normal'
+                    : tempScale <= 1.2 ? 'Large' : 'Extra Large',
+                style: const TextStyle(fontSize: 12, color: AppColors.textSecondary),
+              ),
+              Slider(
+                value: tempScale,
+                min: 0.8, max: 1.4, divisions: 6,
+                activeColor: AppColors.primary,
+                inactiveColor: Colors.grey.shade200,
+                onChanged: (val) {
+                  setDlg(() => tempScale = val);
+                  appFontScale.value = val;
+                },
+              ),
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: const [
+                  Text('A', style: TextStyle(fontSize: 10, color: AppColors.textSecondary)),
+                  Text('A', style: TextStyle(fontSize: 18, color: AppColors.textSecondary)),
+                ],
+              ),
+            ],
+          ),
+          actions: [TextButton(
+            onPressed: () => Navigator.pop(ctx),
+            child: const Text('Done',
+                style: TextStyle(color: AppColors.primary, fontWeight: FontWeight.w600)),
+          )],
+        ),
+      ),
+    );
+  }
 
   Future<void> _submit() async {
     setState(() { _loading = true; _error = null; });
@@ -792,22 +845,40 @@ class _LoginScreenState extends State<LoginScreen> {
               const SizedBox(height: 16),
               // Stay logged in — only show on sign in, not sign up
               if (!_isSignUp)
-                GestureDetector(
-                  onTap: () => setState(() => _stayLoggedIn = !_stayLoggedIn),
-                  child: Row(children: [
-                    SizedBox(
-                      width: 24, height: 24,
-                      child: Checkbox(
-                        value: _stayLoggedIn,
-                        onChanged: (v) => setState(() => _stayLoggedIn = v ?? true),
-                        activeColor: AppColors.primary,
-                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(4)),
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    GestureDetector(
+                      onTap: () => setState(() => _stayLoggedIn = !_stayLoggedIn),
+                      child: Row(children: [
+                        SizedBox(
+                          width: 24, height: 24,
+                          child: Checkbox(
+                            value: _stayLoggedIn,
+                            onChanged: (v) => setState(() => _stayLoggedIn = v ?? true),
+                            activeColor: AppColors.primary,
+                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(4)),
+                          ),
+                        ),
+                        const SizedBox(width: 8),
+                        const Text('Stay logged in', style: TextStyle(
+                            fontSize: 13, color: AppColors.dark, fontWeight: FontWeight.w500)),
+                      ]),
+                    ),
+                    GestureDetector(
+                      onTap: () => _showFontSizeDialog(),
+                      child: const Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Icon(Icons.text_fields, size: 18, color: AppColors.dark),
+                          SizedBox(width: 4),
+                          Text('Text size',
+                              style: TextStyle(fontWeight: FontWeight.w600,
+                                  fontSize: 13, color: AppColors.dark)),
+                        ],
                       ),
                     ),
-                    const SizedBox(width: 8),
-                    const Text('Stay logged in', style: TextStyle(
-                        fontSize: 13, color: AppColors.dark, fontWeight: FontWeight.w500)),
-                  ]),
+                  ],
                 ),
               const SizedBox(height: 16),
               // Submit button

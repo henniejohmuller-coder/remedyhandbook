@@ -14,6 +14,8 @@ import 'widgets/navigation_guard.dart';
 import 'screens/login_screen.dart';
 import 'screens/home_screen.dart';
 import 'screens/recipes_screen.dart';
+import 'screens/category_screen.dart';
+import 'models/filter_state.dart';
 import 'screens/shop_screen.dart';
 import 'screens/cart_screen.dart';
 import 'screens/checkout_screen.dart';
@@ -74,6 +76,9 @@ final _router = GoRouter(
 );
 
 // â”€â”€ App â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// Global font scale — updated when user changes it in profile
+final ValueNotifier<double> appFontScale = ValueNotifier<double>(1.0);
+
 class HerbalRemedyApp extends StatelessWidget {
   const HerbalRemedyApp({super.key});
   @override
@@ -84,11 +89,15 @@ class HerbalRemedyApp extends StatelessWidget {
       theme: appTheme(),
       routerConfig: _router,
       builder: (context, child) {
-        final mq = MediaQuery.of(context);
-        final scale = mq.textScaler.scale(1.0).clamp(1.0, 1.2);
-        return MediaQuery(
-          data: mq.copyWith(textScaler: TextScaler.linear(scale)),
-          child: child!,
+        return ValueListenableBuilder<double>(
+          valueListenable: appFontScale,
+          builder: (context, scale, _) {
+            final mq = MediaQuery.of(context);
+            return MediaQuery(
+              data: mq.copyWith(textScaler: TextScaler.linear(scale.clamp(0.8, 1.4))),
+              child: child!,
+            );
+          },
         );
       },
     );
@@ -119,6 +128,13 @@ class _AuthGateState extends State<_AuthGate> {
     final session    = Supabase.instance.client.auth.currentSession;
     final stayIn     = await SupabaseService.shouldStayLoggedIn();
     if (!stayIn) await SupabaseService.signOut();
+    if (stayIn && session != null) {
+      try {
+        final profile = await SupabaseService.getProfile(session.user.id);
+        final scale = (profile?['font_scale'] as num?)?.toDouble() ?? 1.0;
+        appFontScale.value = scale.clamp(0.8, 1.4);
+      } catch (_) {}
+    }
     if (mounted) setState(() { _loggedIn = stayIn && session != null; _checked = true; });
   }
 
@@ -127,7 +143,7 @@ class _AuthGateState extends State<_AuthGate> {
     if (!_checked) return const Scaffold(
       body: Center(child: CircularProgressIndicator(color: AppColors.primary)));
     if (!_loggedIn) return const LoginScreen();
-    return AppShell(initialIndex: 0);
+    return AppShell(initialIndex: 1);
   }
 }
 
@@ -142,7 +158,7 @@ class AppShell extends StatefulWidget {
 class _AppShellState extends State<AppShell> {
   late int _currentIndex;
   final List<GlobalKey<NavigatorState>> _navigatorKeys =
-      List.generate(6, (_) => GlobalKey<NavigatorState>());
+      List.generate(7, (_) => GlobalKey<NavigatorState>());
 
   @override
   void initState() {
@@ -223,6 +239,7 @@ class _AppShellState extends State<AppShell> {
   Widget build(BuildContext context) {
     final screens = [
       HomeScreen(onTabSwitch: _switchTab),
+      _DirectCategoryScreen(switchTab: _switchTab),
       const RecipesScreen(),
       const ShopScreen(),
       const SubmitRemedyScreen(),
@@ -470,3 +487,104 @@ class _PaymentCancelPage extends StatelessWidget {
 
 
 
+
+
+// ── Direct Category Screen (no landing page) ────────────────────────────────
+class _DirectCategoryScreen extends StatefulWidget {
+  final Function(int)? switchTab;
+  const _DirectCategoryScreen({required this.switchTab});
+
+  @override
+  State<_DirectCategoryScreen> createState() => _DirectCategoryScreenState();
+}
+
+class _DirectCategoryScreenState extends State<_DirectCategoryScreen>
+    with AutomaticKeepAliveClientMixin {
+  @override
+  bool get wantKeepAlive => true;
+
+  @override
+  Widget build(BuildContext context) {
+    super.build(context);
+    return CategoryScreen(
+      onResult: (FilterState result) async {
+        if (widget.switchTab != null) {
+          widget.switchTab!(2);
+          await Future.delayed(const Duration(milliseconds: 500));
+          RecipesScreen.applyFilters(result);
+        }
+      },
+    );
+  }
+}
+
+// ── Category Tab Wrapper (old — kept for reference) ──────────────────────────
+// Opens CategoryScreen as a modal and passes result to RecipesScreen (tab 2)
+class _CategoryTabWrapper extends StatelessWidget {
+  final Function(int)? switchTab;
+  const _CategoryTabWrapper({required this.switchTab});
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      backgroundColor: AppColors.background,
+      body: SafeArea(
+        child: Center(
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Container(
+                width: 80, height: 80,
+                decoration: BoxDecoration(
+                  color: AppColors.dark,
+                  borderRadius: BorderRadius.circular(20),
+                ),
+                child: const Icon(Icons.search, color: AppColors.primary, size: 40),
+              ),
+              const SizedBox(height: 20),
+              const Text('Find a Remedy',
+                  style: TextStyle(fontSize: 20, fontWeight: FontWeight.w600, color: AppColors.dark)),
+              const SizedBox(height: 8),
+              const Text('Search by symptom, illness or category',
+                  style: TextStyle(fontSize: 13, color: AppColors.textSecondary)),
+              const SizedBox(height: 32),
+              GestureDetector(
+                onTap: () async {
+                  final result = await Navigator.of(context).push<FilterState>(
+                    MaterialPageRoute(builder: (_) => const CategoryScreen()),
+                  );
+                  if (result != null && context.mounted && switchTab != null) {
+                    // Navigate to Recipes tab (index 2) with filter state
+                    switchTab!(2);
+                    // Small delay to let tab switch complete
+                    await Future.delayed(const Duration(milliseconds: 100));
+                    RecipesScreen.applyFilters(result);
+                  }
+                },
+                child: Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 14),
+                  decoration: BoxDecoration(
+                    color: AppColors.dark,
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  child: const Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Icon(Icons.search, color: AppColors.primary, size: 18),
+                      SizedBox(width: 10),
+                      Text('Start searching',
+                          style: TextStyle(fontSize: 15, fontWeight: FontWeight.w600,
+                              color: AppColors.primary)),
+                      SizedBox(width: 10),
+                      Icon(Icons.arrow_forward, color: AppColors.primary, size: 16),
+                    ],
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}

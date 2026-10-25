@@ -53,11 +53,12 @@ class AppBottomNavBar extends StatelessWidget {
       elevation: 8,
       items: [
         _navItem(Icons.home_outlined, Icons.home, 'Home', 0),
-        _navItem(Icons.menu_book_outlined, Icons.menu_book, 'Recipes', 1),
-        _navItem(Icons.storefront_outlined, Icons.storefront, 'Shop', 2),
-        _navItem(Icons.add_circle_outline, Icons.add_circle, 'Submit', 3),
-        _navItem(Icons.bookmark_border, Icons.bookmark, 'My Recipes', 4),
-        _navItem(Icons.person_outline, Icons.person, 'Profile', 5),
+        _navItem(Icons.search_outlined, Icons.search, 'Find', 1),
+        _navItem(Icons.menu_book_outlined, Icons.menu_book, 'Recipes', 2),
+        _navItem(Icons.storefront_outlined, Icons.storefront, 'Shop', 3),
+        _navItem(Icons.add_circle_outline, Icons.add_circle, 'Submit', 4),
+        _navItem(Icons.bookmark_border, Icons.bookmark, 'My Recipes', 5),
+        _navItem(Icons.person_outline, Icons.person, 'Profile', 6),
       ],
     );
   }

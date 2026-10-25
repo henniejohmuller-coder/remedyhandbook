@@ -437,9 +437,115 @@ class SupabaseService {
     final r = await supabase.from('prep_types').select('name').eq('active', true).order('name');
     return (r as List).map((e) => e['name'] as String).toList();
   }
+  // ── Filter Matrix ─────────────────────────────────────────────────────────
+
+  /// Autocomplete search across all 4 tiers of the filter matrix
+  static Future<List<Map<String, dynamic>>> searchFilterMatrix(String query) async {
+    if (query.trim().isEmpty) return [];
+    try {
+      final response = await supabase.rpc('search_filter_matrix', params: {'query': query});
+      return List<Map<String, dynamic>>.from(response);
+    } catch (_) {
+      return [];
+    }
+  }
+
+  /// Get all unique categories from filter_matrix
+  static Future<List<String>> getFilterCategories() async {
+    final response = await supabase
+        .from('filter_matrix')
+        .select('category')
+        .order('category');
+    final all = List<Map<String, dynamic>>.from(response);
+    return all.map((r) => r['category'].toString()).toSet().toList()..sort();
+  }
+
+  /// Get subcategories for a given category
+  static Future<List<String>> getFilterSubcategories(String category) async {
+    final response = await supabase
+        .from('filter_matrix')
+        .select('subcategory')
+        .eq('category', category)
+        .order('subcategory');
+    final all = List<Map<String, dynamic>>.from(response);
+    return all.map((r) => r['subcategory'].toString()).toSet().toList()..sort();
+  }
+
+  /// Get illnesses for a given subcategory (optionally filtered by category)
+  static Future<List<String>> getFilterIllnesses(String subcategory, {String? category}) async {
+    var query = supabase
+        .from('filter_matrix')
+        .select('illness')
+        .eq('subcategory', subcategory);
+    if (category != null) query = query.eq('category', category);
+    final response = await query.order('illness');
+    final all = List<Map<String, dynamic>>.from(response);
+    return all.map((r) => r['illness'].toString()).toSet().toList()..sort();
+  }
+
+  /// Get symptoms for a given illness
+  static Future<List<String>> getFilterSymptoms(String illness) async {
+    final response = await supabase
+        .from('filter_matrix')
+        .select('symptom')
+        .eq('illness', illness)
+        .order('symptom');
+    final all = List<Map<String, dynamic>>.from(response);
+    return all.map((r) => r['symptom'].toString()).toSet().toList()..sort();
+  }
+
+  /// Get categories that contain a specific symptom (bottom-up)
+  static Future<List<Map<String, dynamic>>> getCategoriesForSymptom(String symptom) async {
+    final response = await supabase
+        .from('filter_matrix')
+        .select('category, subcategory, illness')
+        .eq('symptom', symptom);
+    return List<Map<String, dynamic>>.from(response);
+  }
+
+  /// Count remedies matching the current filter state
+  static Future<int> getFilteredRemedyCount({
+    String? category,
+    String? subcategory,
+    String? illness,
+    String? symptom,
+  }) async {
+    try {
+      var query = supabase
+          .from('remedies')
+          .select('id')
+          .eq('status', 'approved');
+      if (category != null)    query = query.eq('filter_category', category);
+      if (subcategory != null) query = query.eq('filter_subcategory', subcategory);
+      if (illness != null)     query = query.eq('filter_illness', illness);
+      if (symptom != null)     query = query.contains('filter_symptoms', [symptom]);
+      final response = await query;
+      return (response as List).length;
+    } catch (_) {
+      return 0;
+    }
+  }
+
+  /// Get remedies filtered by the 4-tier filter state
+  static Future<List<Map<String, dynamic>>> getFilteredRemedies({
+    String? category,
+    String? subcategory,
+    String? illness,
+    String? symptom,
+    String? search,
+  }) async {
+    var query = supabase
+        .from('remedies_full')
+        .select('*')
+        .eq('status', 'approved');
+    if (category != null)    query = query.eq('filter_category', category);
+    if (subcategory != null) query = query.eq('filter_subcategory', subcategory);
+    if (illness != null)     query = query.eq('filter_illness', illness);
+    if (symptom != null)     query = query.contains('filter_symptoms', [symptom]);
+    if (search != null && search.isNotEmpty)
+      query = query.or('name.ilike.%$search%,component.ilike.%$search%');
+    final response = await query.order('name');
+    return List<Map<String, dynamic>>.from(response);
+  }
+
 }
-
-
-
-
-

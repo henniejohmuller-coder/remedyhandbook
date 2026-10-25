@@ -1,7 +1,9 @@
-﻿import 'package:flutter/material.dart';
+import 'package:flutter/material.dart';
 import '../theme/app_theme.dart';
 import '../widgets/shared_widgets.dart';
 import '../services/supabase_service.dart';
+import '../models/filter_state.dart';
+import 'category_screen.dart';
 import 'recipe_detail_screen.dart';
 import 'shop_screen.dart';
 import 'product_detail_screen.dart';
@@ -11,6 +13,10 @@ class RecipesScreen extends StatefulWidget {
   // Static callback so other screens can trigger a reload
   static VoidCallback? _reloadCallback;
   static void reload() => _reloadCallback?.call();
+
+  // Static callback for applying filters from Category screen
+  static void Function(FilterState)? _applyFiltersCallback;
+  static void applyFilters(FilterState fs) => _applyFiltersCallback?.call(fs);
 
   @override
   State<RecipesScreen> createState() => _RecipesScreenState();
@@ -33,12 +39,10 @@ class _RecipesScreenState extends State<RecipesScreen>
   String _searchQuery = '';          // live text in the search field
   final ScrollController _scrollController = ScrollController();
   List<String> _searchTerms = [];    // committed search chips (AND logic)
-  bool _filtersExpanded = false;
+  FilterState _activeFilters = const FilterState();
   bool _loading = true;
   String _encouragement = '';
   final TextEditingController _searchController = TextEditingController();
-  late AnimationController _pulseController;
-  late Animation<double> _pulseAnimation;
 
   // Data from Supabase
   List<Map<String, dynamic>> _allRemedies = [];
@@ -55,10 +59,10 @@ class _RecipesScreenState extends State<RecipesScreen>
   @override
   void initState() {
     super.initState();
+    RecipesScreen._applyFiltersCallback = (fs) {
+      if (mounted) setState(() => _activeFilters = fs);
+    };
     RecipesScreen._reloadCallback = _loadData;
-    _pulseController = AnimationController(vsync: this, duration: const Duration(milliseconds: 900));
-    _pulseAnimation  = Tween<double>(begin: 0.0, end: 6.0).animate(
-      CurvedAnimation(parent: _pulseController, curve: Curves.easeInOut));
     _runPulse();
     _loadData();
     SupabaseService.getAppContent('home_encouragement').then((text) {
@@ -69,7 +73,6 @@ class _RecipesScreenState extends State<RecipesScreen>
   @override
   void dispose() {
     RecipesScreen._reloadCallback = null;
-    _pulseController.dispose();
     _searchController.dispose();
     _scrollController.dispose();
     super.dispose();
@@ -78,13 +81,11 @@ class _RecipesScreenState extends State<RecipesScreen>
   Future<void> _runPulse() async {
     for (int i = 0; i < 2; i++) {
       if (!mounted) return;
-      await _pulseController.forward();
       if (!mounted) return;
-      await _pulseController.reverse();
     }
   }
 
-  // Lightweight refresh â€” only reload remedies, keep filters/lookups cached
+  // Lightweight refresh â”€â€ only reload remedies, keep filters/lookups cached
   Future<void> _refreshRemediesOnly() async {
     try {
       final remedies = await SupabaseService.getRemedies();
@@ -181,6 +182,25 @@ class _RecipesScreenState extends State<RecipesScreen>
       final component   = (r['component'] ?? '').toString().toLowerCase();
       final category    = (r['category_name'] ?? '').toString();
 
+      // â”€â”€ Filter matrix filters from Category screen â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+
+      if (!_activeFilters.isEmpty) {
+        if (_activeFilters.category != null &&
+            (r['filter_category'] ?? '').toString().toLowerCase() != _activeFilters.category!.toLowerCase()) return false;
+        if (_activeFilters.subcategory != null &&
+            (r['filter_subcategory'] ?? '').toString().toLowerCase() != _activeFilters.subcategory!.toLowerCase()) return false;
+        if (_activeFilters.illness != null &&
+            (r['filter_illness'] ?? '').toString().toLowerCase() != _activeFilters.illness!.toLowerCase()) return false;
+        if (_activeFilters.symptom != null) {
+          final rawSyms = r['filter_symptoms'];
+          List<String> syms = [];
+          if (rawSyms is List) {
+            syms = rawSyms.map((s) => s.toString().toLowerCase().trim()).toList();
+          }
+          if (!syms.any((s) => s == _activeFilters.symptom!.toLowerCase().trim())) return false;
+        }
+      }
+
       // Live search field â€” filters as you type
       if (_searchQuery.isNotEmpty) {
         final terms = _searchQuery.split(RegExp(r'[;\s]+')).map((t) => t.trim().toLowerCase()).where((t) => t.isNotEmpty).toList();
@@ -228,21 +248,21 @@ class _RecipesScreenState extends State<RecipesScreen>
 
   List<String> get _activeChips {
     final chips = <String>[];
-    for (final t in _searchTerms) chips.add('ðŸ” "$t" Ã—');
-    if (_searchQuery.isNotEmpty) chips.add('ðŸ” "$_searchQuery" Ã—');
-    // One chip per individually selected item â€” not per field
-    for (final v in _splitCsv(_selectedType))        chips.add('$v Ã—');
-    for (final v in _splitCsv(_selectedIllness))     chips.add('$v Ã—');
-    for (final v in _splitCsv(_selectedHerb))        chips.add('$v Ã—');
-    for (final v in _splitCsv(_selectedCategory))    chips.add('$v Ã—');
-    for (final v in _splitCsv(_selectedSubCategory)) chips.add('$v Ã—');
-    for (final v in _splitCsv(_selectedSymptom))     chips.add('$v Ã—');
-    for (final v in _splitCsv(_selectedOrgan))       chips.add('$v Ã—');
-    for (final v in _splitCsv(_selectedCountry))     chips.add('$v Ã—');
-    if (_minValidation > 0) chips.add('Validation $_minValidation+ Ã—');
-    if (_minTraditional > 0) chips.add('Traditional $_minTraditional+ Ã—');
-    if (_minUserRating > 0) chips.add('Rating $_minUserRating+ Ã—');
-    if (_difficulty != 'All') chips.add('$_difficulty Ã—');
+    for (final t in _searchTerms) chips.add('Search: $t x');
+    if (_searchQuery.isNotEmpty) chips.add('Search: $_searchQuery x');
+    // One chip per individually selected item â”€â€ not per field
+    for (final v in _splitCsv(_selectedType))        chips.add('$v x');
+    for (final v in _splitCsv(_selectedIllness))     chips.add('$v x');
+    for (final v in _splitCsv(_selectedHerb))        chips.add('$v x');
+    for (final v in _splitCsv(_selectedCategory))    chips.add('$v x');
+    for (final v in _splitCsv(_selectedSubCategory)) chips.add('$v x');
+    for (final v in _splitCsv(_selectedSymptom))     chips.add('$v x');
+    for (final v in _splitCsv(_selectedOrgan))       chips.add('$v x');
+    for (final v in _splitCsv(_selectedCountry))     chips.add('$v x');
+    if (_minValidation > 0) chips.add('Validation $_minValidation+ x');
+    if (_minTraditional > 0) chips.add('Traditional $_minTraditional+ x');
+    if (_minUserRating > 0) chips.add('Rating $_minUserRating+ x');
+    if (_difficulty != 'All') chips.add('$_difficulty x');
     return chips;
   }
 
@@ -258,7 +278,7 @@ class _RecipesScreenState extends State<RecipesScreen>
   void _removeChip(String chip) {
     if (!mounted) return;
     setState(() {
-      if (chip.startsWith('ðŸ” "') && chip.endsWith('" Ã—')) {
+      if (chip.startsWith('ðÅ¸â€ â”€') && chip.endsWith('â”€ x')) {
         final term = chip.substring(4, chip.length - 3);
         if (_searchTerms.contains(term)) _searchTerms.remove(term);
         else { _searchQuery = ''; _searchController.clear(); }
@@ -267,9 +287,9 @@ class _RecipesScreenState extends State<RecipesScreen>
       if (chip.startsWith('Validation'))  { _minValidation = 0; return; }
       if (chip.startsWith('Traditional')) { _minTraditional = 0; return; }
       if (chip.startsWith('Rating'))      { _minUserRating = 0; return; }
-      if (chip == '$_difficulty Ã—')       { _difficulty = 'All'; return; }
+      if (chip == '$_difficulty x')       { _difficulty = 'All'; return; }
 
-      // Strip trailing ' Ã—' to get the raw item text, then remove it from
+      // Strip trailing ' ×' to get the raw item text, then remove it from
       // whichever multi-select field currently contains it.
       final item = chip.substring(0, chip.length - 2);
       if (_splitCsv(_selectedType).contains(item))        { _selectedType        = _removeFromCsv(_selectedType, item);        return; }
@@ -305,144 +325,90 @@ class _RecipesScreenState extends State<RecipesScreen>
           children: [
             YellowAppBar(
               title: 'Recipes',
-              subtitle: '${_filtered.length} remedies Â· evidence-rated',
+              subtitle: '${_filtered.length} remedies · evidence-rated',
             ),
             if (_encouragement.isNotEmpty)
               EncouragementBanner(text: _encouragement),
             const SizedBox(height: 12),
-            // Filter Remedies button (left) + Search bar (right)
+            // Active filter chips from Category screen
+            if (!_activeFilters.isEmpty)
+              _ActiveFilterBar(
+                filters: _activeFilters,
+                onEdit: () async {
+                  final result = await Navigator.of(context).push<FilterState>(
+                    MaterialPageRoute(builder: (_) => CategoryScreen(initialFilters: _activeFilters)),
+                  );
+                  if (result != null && mounted) setState(() => _activeFilters = result);
+                },
+                onClear: () => setState(() => _activeFilters = const FilterState()),
+                onRemoveTier: (tier) {
+                  setState(() {
+                    switch (tier) {
+                      case 1: _activeFilters = _activeFilters.withoutBelow(0); break;
+                      case 2: _activeFilters = _activeFilters.copyWith(clearSubcategory: true, clearIllness: true, clearSymptom: true); break;
+                      case 3: _activeFilters = _activeFilters.copyWith(clearIllness: true, clearSymptom: true); break;
+                      case 4: _activeFilters = _activeFilters.copyWith(clearSymptom: true); break;
+                    }
+                  });
+                },
+              ),
             Padding(
               padding: const EdgeInsets.symmetric(horizontal: 16),
-              child: Row(
+              child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  // Filter Remedies button â€” pulsing glow, words stacked vertically
-                  Column(
-                    mainAxisSize: MainAxisSize.min,
-                    crossAxisAlignment: CrossAxisAlignment.center,
-                    children: [
-                  AnimatedBuilder(
-                    animation: _pulseAnimation,
-                    builder: (context, child) {
-                      return GestureDetector(
-                        onTap: () {
-                          if (!mounted) return;
-                          setState(() => _filtersExpanded = !_filtersExpanded);
-                          if (_pulseController.isAnimating) _pulseController.stop();
-                        },
-                        child: Container(
-                          height: 44,
-                          padding: const EdgeInsets.symmetric(horizontal: 10),
-                          decoration: BoxDecoration(
-                            color: AppColors.dark,
-                            borderRadius: BorderRadius.circular(10),
-                            boxShadow: _filtersExpanded
-                                ? [BoxShadow(color: AppColors.primary.withOpacity(0.8), blurRadius: 0, spreadRadius: 2)]
-                                : [
-                                    BoxShadow(
-                                      color: AppColors.primary.withOpacity(0.6),
-                                      blurRadius: _pulseAnimation.value,
-                                      spreadRadius: _pulseAnimation.value * 0.5,
-                                    ),
-                                  ],
-                          ),
-                          child: Row(
-                            mainAxisSize: MainAxisSize.min,
-                            children: [
-                              Icon(Icons.tune, size: 16, color: AppColors.primary),
-                              const SizedBox(width: 5),
-                              Column(
-                                mainAxisAlignment: MainAxisAlignment.center,
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  Text(
-                                    _filtersExpanded ? 'Hide' : 'Filter',
-                                    style: const TextStyle(fontSize: 11, fontWeight: FontWeight.w700, color: AppColors.primary, height: 1.2),
-                                  ),
-                                  Text(
-                                    _filtersExpanded ? 'Filters' : 'Remedies',
-                                    style: const TextStyle(fontSize: 11, fontWeight: FontWeight.w700, color: AppColors.primary, height: 1.2),
-                                  ),
-                                ],
-                              ),
-                            ],
-                          ),
-                        ),
-                      );
-                    },
-                  ),
-                  if (_filtersExpanded)
-                    GestureDetector(
-                      onTap: () => setState(() => _filtersExpanded = false),
-                      child: const Padding(
-                        padding: EdgeInsets.only(top: 4),
-                        child: Text('Close Filter',
-                            style: TextStyle(fontSize: 10, color: Colors.red, fontWeight: FontWeight.w700)),
+                  Container(
+                    height: 44,
+                    decoration: BoxDecoration(
+                      color: Colors.white,
+                      borderRadius: BorderRadius.circular(10),
+                      border: Border.all(color: Colors.grey.shade200),
+                    ),
+                    child: TextField(
+                      controller: _searchController,
+                      onChanged: (v) => setState(() => _searchQuery = v),
+                      textInputAction: TextInputAction.search,
+                      onSubmitted: (v) {
+                        final term = v.trim();
+                        if (term.isNotEmpty && !_searchTerms.contains(term)) {
+                          setState(() {
+                            _searchTerms.add(term);
+                            _searchQuery = '';
+                            _searchController.clear();
+                          });
+                        } else {
+                          _searchController.clear();
+                          setState(() => _searchQuery = '');
+                        }
+                      },
+                      decoration: InputDecoration(
+                        hintText: _searchTerms.isEmpty
+                            ? 'Search, press Enter to pin filterâ€¦'
+                            : 'Add another filterâ€¦',
+                        hintStyle: const TextStyle(fontSize: 12, color: AppColors.textSecondary),
+                        prefixIcon: const Icon(Icons.search, color: AppColors.textSecondary, size: 20),
+                        suffixIcon: _searchQuery.isNotEmpty
+                            ? GestureDetector(
+                                onTap: () => setState(() { _searchQuery = ''; _searchController.clear(); }),
+                                child: const Icon(Icons.close, size: 16, color: AppColors.textSecondary))
+                            : null,
+                        border: InputBorder.none,
+                        contentPadding: const EdgeInsets.symmetric(vertical: 12),
                       ),
                     ),
-                  ],
-                ),
-                  const SizedBox(width: 10),
-                  // Search bar + guideline stacked on the right
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Container(
-                          height: 44,
-                          decoration: BoxDecoration(
-                            color: Colors.white,
-                            borderRadius: BorderRadius.circular(10),
-                            border: Border.all(color: Colors.grey.shade200),
-                          ),
-                          child: TextField(
-                            controller: _searchController,
-                            onChanged: (v) => setState(() => _searchQuery = v),
-                            textInputAction: TextInputAction.search,
-                            onSubmitted: (v) {
-                              final term = v.trim();
-                              if (term.isNotEmpty && !_searchTerms.contains(term)) {
-                                setState(() {
-                                  _searchTerms.add(term);
-                                  _searchQuery = '';
-                                  _searchController.clear();
-                                });
-                              } else {
-                                _searchController.clear();
-                                setState(() => _searchQuery = '');
-                              }
-                            },
-                            decoration: InputDecoration(
-                              hintText: _searchTerms.isEmpty
-                                  ? 'Search, press Enter to pin filterâ€¦'
-                                  : 'Add another filterâ€¦',
-                              hintStyle: const TextStyle(fontSize: 12, color: AppColors.textSecondary),
-                              prefixIcon: const Icon(Icons.search, color: AppColors.textSecondary, size: 20),
-                              suffixIcon: _searchQuery.isNotEmpty
-                                  ? GestureDetector(
-                                      onTap: () => setState(() { _searchQuery = ''; _searchController.clear(); }),
-                                      child: const Icon(Icons.close, size: 16, color: AppColors.textSecondary))
-                                  : null,
-                              border: InputBorder.none,
-                              contentPadding: const EdgeInsets.symmetric(vertical: 12),
-                            ),
-                          ),
-                        ),
-                        if (_activeChips.isEmpty)
-                          Padding(
-                            padding: const EdgeInsets.only(top: 4, left: 2),
-                            child: Text(
-                              'Type a keyword Â· press Enter to pin Â· tap chip to remove',
-                              style: TextStyle(fontSize: 10, color: AppColors.textSecondary),
-                            ),
-                          ),
-                      ],
-                    ),
                   ),
+                  if (_activeChips.isEmpty)
+                    Padding(
+                      padding: const EdgeInsets.only(top: 4, left: 2),
+                      child: Text(
+                        'Type a keyword · press Enter to pin · tap chip to remove',
+                        style: TextStyle(fontSize: 10, color: AppColors.textSecondary),
+                      ),
+                    ),
                 ],
               ),
             ),
-            // Active chips â€” always visible
+            // Active chips â”€â€ always visible
             if (_activeChips.isNotEmpty) ...[
               const SizedBox(height: 10),
               SingleChildScrollView(
@@ -453,7 +419,7 @@ class _RecipesScreenState extends State<RecipesScreen>
                     padding: const EdgeInsets.only(right: 6),
                     child: InputChip(
                       label: Text(
-                        chip.endsWith(' Ã—') ? chip.substring(0, chip.length - 2) : chip,
+                        chip.endsWith(' x') ? chip.substring(0, chip.length - 2) : chip,
                         style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: AppColors.dark),
                       ),
                       backgroundColor: AppColors.primary,
@@ -479,16 +445,8 @@ class _RecipesScreenState extends State<RecipesScreen>
                           child: CustomScrollView(
                             controller: _scrollController,
                             slivers: [
-                            // Filter panel
-                            if (_filtersExpanded)
-                              SliverToBoxAdapter(
-                                child: Padding(
-                                  padding: const EdgeInsets.fromLTRB(16, 10, 16, 0),
-                                  child: _buildFilterRows(),
-                                ),
-                              ),
                             const SliverToBoxAdapter(child: SizedBox(height: 12)),
-                            // Results count â€” always shows total and filtered
+                            // Results count â”€â€ always shows total and filtered
                             SliverToBoxAdapter(
                               child: Padding(
                                 padding: const EdgeInsets.symmetric(horizontal: 16),
@@ -634,256 +592,10 @@ class _RecipesScreenState extends State<RecipesScreen>
     );
   }
 
-  Widget _buildFilterRows() {
-    return Container(
-      padding: const EdgeInsets.all(12),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(12),
-        boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.04), blurRadius: 6)],
-      ),
-      child: Column(
-        children: [
-          // Type
-          MultiPickField(
-            label: 'Type',
-            value: _selectedType,
-            options: const ['Medicinal', 'Lifestyle'],
-            customHint: '',
-            onChanged: (v) => setState(() => _selectedType = v),
-            allowCustom: false,
-          ),
-          const Divider(height: 16),
-          // Primary Component
-          MultiPickField(
-            label: 'Primary component',
-            value: _selectedHerb,
-            options: _herbs,
-            customHint: '',
-            onChanged: (v) => setState(() => _selectedHerb = v),
-            allowCustom: false,
-          ),
-          const Divider(height: 16),
-          // Illness
-          MultiPickField(
-            label: 'Illness',
-            value: _selectedIllness,
-            options: _illnesses,
-            customHint: '',
-            onChanged: (v) => setState(() => _selectedIllness = v),
-            allowCustom: false,
-          ),
-          const Divider(height: 16),
-          // Category
-          MultiPickField(
-            label: 'Category',
-            value: _selectedCategory,
-            options: _categories,
-            customHint: '',
-            onChanged: (v) => setState(() => _selectedCategory = v),
-            allowCustom: false,
-          ),
-          const Divider(height: 16),
-          // Sub-Category
-          MultiPickField(
-            label: 'Sub-category',
-            value: _selectedSubCategory,
-            options: _subCategories,
-            customHint: '',
-            onChanged: (v) => setState(() => _selectedSubCategory = v),
-            allowCustom: false,
-          ),
-          const Divider(height: 16),
-          // Symptoms
-          MultiPickField(
-            label: 'Symptoms',
-            value: _selectedSymptom,
-            options: _symptoms,
-            customHint: '',
-            onChanged: (v) => setState(() => _selectedSymptom = v),
-            allowCustom: false,
-          ),
-          const Divider(height: 16),
-          // Organ
-          MultiPickField(
-            label: 'Organ',
-            value: _selectedOrgan,
-            options: _organs,
-            customHint: '',
-            onChanged: (v) => setState(() => _selectedOrgan = v),
-            allowCustom: false,
-          ),
-          const Divider(height: 16),
-          // Country
-          MultiPickField(
-            label: 'Country of origin',
-            value: _selectedCountry,
-            options: _countries,
-            customHint: '',
-            onChanged: (v) => setState(() => _selectedCountry = v),
-            allowCustom: false,
-          ),
-          const Divider(height: 16),
-          _StarFilterRow(
-            label: 'Traditional',
-            value: _minTraditional,
-            tooltip: 'Historical & cultural use',
-            descriptions: const ['Any', 'Rarely used', 'Some tradition', 'Moderate use', 'Widely used', 'Deep-rooted tradition'],
-            onChanged: (v) => setState(() => _minTraditional = v),
-          ),
-          const SizedBox(height: 10),
-          _StarFilterRow(
-            label: 'Validation',
-            value: _minValidation,
-            tooltip: 'Scientific evidence level',
-            descriptions: const ['Any', 'Folk knowledge only', 'Anecdotal evidence', 'Small studies exist', 'Clinical studies', 'Strong peer-reviewed'],
-            onChanged: (v) => setState(() => _minValidation = v),
-          ),
-          const SizedBox(height: 10),
-          _StarFilterRow(
-            label: 'User rating',
-            value: _minUserRating,
-            tooltip: 'Community rating',
-            descriptions: const ['Any', '1+ stars', '2+ stars', '3+ stars', '4+ stars', '5 stars only'],
-            onChanged: (v) => setState(() => _minUserRating = v),
-          ),
-          const Divider(height: 16),
-          // Difficulty
-          Row(
-            children: [
-              const SizedBox(width: 90, child: Text('Difficulty', style: AppTextStyles.caption)),
-              ..._difficulties.map((d) => Padding(
-                padding: const EdgeInsets.only(right: 8),
-                child: GestureDetector(
-                  onTap: () => setState(() => _difficulty = d),
-                  child: Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-                    decoration: BoxDecoration(
-                      color: _difficulty == d ? AppColors.primary : AppColors.background,
-                      borderRadius: BorderRadius.circular(20),
-                    ),
-                    child: Text(d, style: TextStyle(
-                      fontSize: 12,
-                      fontWeight: FontWeight.w600,
-                      color: _difficulty == d ? AppColors.dark : AppColors.textSecondary,
-                    )),
-                  ),
-                ),
-              )).toList(),
-            ],
-          ),
-          const Divider(height: 16),
-          // â”€â”€ Count + Clear â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
-          Row(
-            children: [
-              Expanded(
-                child: Text(
-                  _filtered.length == _allRemedies.length
-                      ? '${_allRemedies.length} remedies available'
-                      : '${_filtered.length} of ${_allRemedies.length} remedies found',
-                  style: const TextStyle(
-                      fontSize: 13, fontWeight: FontWeight.w700, color: AppColors.dark),
-                ),
-              ),
-              if (_activeChips.isNotEmpty)
-                TextButton.icon(
-                  onPressed: () => setState(() {
-                    _selectedType        = '';
-                    _selectedIllness     = '';
-                    _selectedHerb        = '';
-                    _selectedCategory    = '';
-                    _selectedSubCategory = '';
-                    _selectedSymptom     = '';
-                    _selectedOrgan       = '';
-                    _selectedCountry     = '';
-                    _difficulty          = 'All';
-                    _minValidation       = 0;
-                    _minTraditional      = 0;
-                    _minUserRating       = 0;
-                    _searchTerms         = [];
-                    _searchQuery         = '';
-                    _searchController.clear();
-                  }),
-                  icon: const Icon(Icons.clear_all, size: 16, color: AppColors.dark),
-                  label: const Text('Clear all',
-                      style: TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: AppColors.dark)),
-                  style: TextButton.styleFrom(
-                    backgroundColor: AppColors.primary,
-                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
-                    padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-                    tapTargetSize: MaterialTapTargetSize.shrinkWrap,
-                    minimumSize: Size.zero,
-                  ),
-                ),
-            ],
-          ),
-        ],
-      ),
-    );
-  }
 }
 
-// â”€â”€ Tappable Star Filter Row â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// â”€â€â”€â€â”€ Tappable Star Filter Row â”€â€â”€â€â”€â€â”€â€â”€â€â”€â€â”€â€â”€â€â”€â€â”€â€â”€â€â”€â€â”€â€â”€â€â”€â€â”€â€â”€â€â”€â€â”€â€â”€â€â”€â€â”€â€â”€â€â”€â€â”€â€â”€â€â”€â€â”€â€â”€â€â”€â€â”€â€â”€â€â”€â€â”€â€â”€â€â”€â€â”€â€â”€â€â”€â€â”€â€â”€â€â”€â€â”€â€â”€â€â”€â€â”€â€â”€
 
-class _StarFilterRow extends StatelessWidget {
-  final String label;
-  final int value;
-  final String tooltip;
-  final List<String> descriptions;
-  final Function(int) onChanged;
-
-  const _StarFilterRow({
-    required this.label,
-    required this.value,
-    required this.tooltip,
-    required this.descriptions,
-    required this.onChanged,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Row(
-          children: [
-            SizedBox(
-              width: 90,
-              child: Row(children: [
-                Text(label, style: AppTextStyles.caption),
-                const SizedBox(width: 4),
-                Tooltip(message: tooltip, child: const Icon(Icons.info_outline, size: 12, color: AppColors.textSecondary)),
-              ]),
-            ),
-            ...List.generate(5, (i) => GestureDetector(
-              onTap: () => onChanged(value == i + 1 ? 0 : i + 1),
-              child: Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 2),
-                child: Icon(
-                  i < value ? Icons.star : Icons.star_border,
-                  size: 22,
-                  color: i < value ? AppColors.starColor : Colors.grey.shade300,
-                ),
-              ),
-            )),
-            const SizedBox(width: 8),
-            Text(
-              value == 0 ? 'Any' : '$value+',
-              style: TextStyle(fontSize: 11, fontWeight: FontWeight.w600,
-                  color: value > 0 ? AppColors.dark : AppColors.textSecondary),
-            ),
-          ],
-        ),
-        if (value > 0)
-          Padding(
-            padding: const EdgeInsets.only(left: 90, top: 2),
-            child: Text(descriptions[value],
-                style: const TextStyle(fontSize: 11, color: AppColors.primary, fontStyle: FontStyle.italic)),
-          ),
-      ],
-    );
-  }
-}
 
 class _RemedyCardDB extends StatelessWidget {
   final Map<String, dynamic> remedy;
@@ -939,7 +651,7 @@ class _RemedyCardDB extends StatelessWidget {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // Name always on top â€” full width so long names wrap freely
+            // Name always on top â”€â€ full width so long names wrap freely
             Text(name,
                 style: AppTextStyles.heading3,
                 softWrap: true),
@@ -948,19 +660,19 @@ class _RemedyCardDB extends StatelessWidget {
               child: Row(
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
-                  // Left â€” description
+                  // Left â”€â€ description
                   Expanded(
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        Text('$component${origin.isNotEmpty ? ' Â· $origin' : ''}', style: AppTextStyles.caption),
+                        Text('$component${origin.isNotEmpty ? ' · $origin' : ''}', style: AppTextStyles.caption),
                         const SizedBox(height: 8),
                         _buildRatingRow('Traditional', tradition),
                         const SizedBox(height: 4),
                         _buildRatingRow('Validation', validation),
                         const SizedBox(height: 4),
                         _buildRatingRow('User rating', rating.round(),
-                            showNumber: true, number: '${rating.toStringAsFixed(1)} Â· $votes votes'),
+                            showNumber: true, number: '${rating.toStringAsFixed(1)} · $votes votes'),
                         const SizedBox(height: 8),
                         Wrap(spacing: 6, runSpacing: 4, children: [
                           TagBadge(label: 'Level $validation', color: AppColors.levelBadge),
@@ -983,7 +695,7 @@ class _RemedyCardDB extends StatelessWidget {
                     ),
                   ),
                   const SizedBox(width: 12),
-                  // Right â€” image stretches full height
+                  // Right â”€â€ image stretches full height
                   RemedyImage(
                     url: imageUrl,
                     width: 120,
@@ -1029,7 +741,7 @@ class _RemedyCardDB extends StatelessWidget {
   }
 }
 
-// â”€â”€ Rating Row â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// â”€â€â”€â€â”€ Rating Row â”€â€â”€â€â”€â€â”€â€â”€â€â”€â€â”€â€â”€â€â”€â€â”€â€â”€â€â”€â€â”€â€â”€â€â”€â€â”€â€â”€â€â”€â€â”€â€â”€â€â”€â€â”€â€â”€â€â”€â€â”€â€â”€â€â”€â€â”€â€â”€â€â”€â€â”€â€â”€â€â”€â€â”€â€â”€â€â”€â€â”€â€â”€â€â”€â€â”€â€â”€â€â”€â€â”€â€â”€â€â”€â€â”€â€â”€â€â”€â€â”€â€â”€â€â”€â€â”€â€â”€â€â”€â€â”€â€â”€â€â”€â€â”€â€â”€â€â”€â€â”€
 
 class _RatingRow extends StatelessWidget {
   final String label;
@@ -1074,3 +786,79 @@ class _RatingRow extends StatelessWidget {
 
 
 
+
+
+// â”€â”€ Active Filter Bar â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+class _ActiveFilterBar extends StatelessWidget {
+  final FilterState filters;
+  final VoidCallback onEdit;
+  final VoidCallback onClear;
+  final ValueChanged<int> onRemoveTier;
+
+  const _ActiveFilterBar({
+    required this.filters,
+    required this.onEdit,
+    required this.onClear,
+    required this.onRemoveTier,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      margin: const EdgeInsets.fromLTRB(12, 0, 12, 8),
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+      decoration: BoxDecoration(
+        color: AppColors.dark,
+        borderRadius: BorderRadius.circular(10),
+      ),
+      child: Row(
+        children: [
+          Expanded(
+            child: Wrap(
+              spacing: 6,
+              runSpacing: 4,
+              children: [
+                if (filters.category != null)
+                  _chip(filters.category!, () => onRemoveTier(1)),
+                if (filters.subcategory != null)
+                  _chip(filters.subcategory!, () => onRemoveTier(2)),
+                if (filters.illness != null)
+                  _chip(filters.illness!, () => onRemoveTier(3)),
+                if (filters.symptom != null)
+                  _chip(filters.symptom!, () => onRemoveTier(4)),
+              ],
+            ),
+          ),
+          const SizedBox(width: 8),
+          GestureDetector(
+            onTap: onEdit,
+            child: const Text('Edit',
+                style: TextStyle(fontSize: 11, color: AppColors.primary, fontWeight: FontWeight.w500)),
+          ),
+          const SizedBox(width: 8),
+          GestureDetector(
+            onTap: onClear,
+            child: const Icon(Icons.close, size: 14, color: AppColors.primary),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _chip(String label, VoidCallback onRemove) => Container(
+    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+    decoration: BoxDecoration(
+      color: AppColors.primary.withOpacity(0.15),
+      borderRadius: BorderRadius.circular(12),
+      border: Border.all(color: AppColors.primary.withOpacity(0.4)),
+    ),
+    child: Row(mainAxisSize: MainAxisSize.min, children: [
+      Text(label, style: const TextStyle(fontSize: 10, color: AppColors.primary)),
+      const SizedBox(width: 4),
+      GestureDetector(
+        onTap: onRemove,
+        child: const Icon(Icons.close, size: 10, color: AppColors.primary),
+      ),
+    ]),
+  );
+}
