@@ -593,11 +593,21 @@ class _AdminCsvUploadScreenState extends State<AdminCsvUploadScreen> {
     if (_fmExporting) return;
     setState(() => _fmExporting = true);
     try {
-      final data = await SupabaseService.supabase
-          .from('filter_matrix')
-          .select('category, subcategory, illness, symptom')
-          .order('category').order('subcategory').order('illness').order('symptom');
-      final rows = List<Map<String, dynamic>>.from(data);
+      // Paginate to get all rows past Supabase 1000-row limit
+      final List<Map<String, dynamic>> rows = [];
+      int from = 0;
+      const pageSize = 1000;
+      while (true) {
+        final page = await SupabaseService.supabase
+            .from('filter_matrix')
+            .select('category, subcategory, illness, symptom')
+            .order('category').order('subcategory').order('illness').order('symptom')
+            .range(from, from + pageSize - 1);
+        final pageList = List<Map<String, dynamic>>.from(page);
+        rows.addAll(pageList);
+        if (pageList.length < pageSize) break;
+        from += pageSize;
+      }
       String q(dynamic v) {
         final s = (v ?? '').toString();
         return (s.contains(',') || s.contains('"') || s.contains('\n'))

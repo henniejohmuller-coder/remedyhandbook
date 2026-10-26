@@ -104,6 +104,73 @@ class _SubmitRemedyScreenState extends State<SubmitRemedyScreen> {
     } catch (e) {
       if (mounted) setState(() => _lookupsLoading = false);
     }
+    // Load filter matrix for cascading dropdowns
+    try {
+      final List<Map<String,dynamic>> allRows = [];
+      int from = 0;
+      while (true) {
+        final page = await SupabaseService.supabase
+            .from('filter_matrix')
+            .select('category, subcategory, illness, symptom')
+            .order('category').order('subcategory').order('illness').order('symptom')
+            .range(from, from + 999);
+        final pageList = List<Map<String,dynamic>>.from(page);
+        allRows.addAll(pageList);
+        if (pageList.length < 1000) break;
+        from += 1000;
+      }
+      if (!mounted) return;
+      setState(() {
+        _allFmRows = allRows;
+        _fmCategoryList = allRows.map((r) => r['category'].toString()).toSet().toList()..sort();
+      });
+    } catch (_) {}
+  }
+
+  void _onFmCategoryChanged(String cat) {
+    setState(() {
+      _filterCategory    = cat;
+      _filterSubcategory = '';
+      _filterIllness     = '';
+      _filterSymptoms    = [];
+      _fmSubcategoryList = _allFmRows.where((r) => r['category'] == cat)
+          .map((r) => r['subcategory'].toString()).toSet().toList()..sort();
+      _fmIllnessList  = [];
+      _fmSymptomList  = [];
+    });
+  }
+
+  void _onFmSubcategoryChanged(String sub) {
+    setState(() {
+      _filterSubcategory = sub;
+      _filterIllness     = '';
+      _filterSymptoms    = [];
+      _fmIllnessList = _allFmRows
+          .where((r) => r['category'] == _filterCategory && r['subcategory'] == sub)
+          .map((r) => r['illness'].toString()).toSet().toList()..sort();
+      _fmSymptomList = [];
+    });
+  }
+
+  void _onFmIllnessChanged(String ill) {
+    setState(() {
+      _filterIllness  = ill;
+      _filterSymptoms = [];
+      _fmSymptomList  = _allFmRows
+          .where((r) => r['category'] == _filterCategory &&
+              r['subcategory'] == _filterSubcategory && r['illness'] == ill)
+          .map((r) => r['symptom'].toString()).toSet().toList()..sort();
+    });
+  }
+
+  void _toggleFmSymptom(String sym) {
+    setState(() {
+      if (_filterSymptoms.contains(sym)) {
+        _filterSymptoms.remove(sym);
+      } else {
+        _filterSymptoms.add(sym);
+      }
+    });
   }
 
   String _previewUrl = '';
@@ -111,6 +178,23 @@ class _SubmitRemedyScreenState extends State<SubmitRemedyScreen> {
   String _selectedHerb = '';
   bool _showCustomHerb = false;
   String _selectedType    = '';
+  // Filter matrix state (auto-populated from selections)
+  String _filterCategory    = '';
+  String _filterSubcategory = '';
+  String _filterIllness     = '';
+  List<String> _filterSymptoms = [];
+  // Filter matrix dropdown options
+  List<String> _fmCategoryList    = [];
+  List<String> _fmSubcategoryList = [];
+  List<String> _fmIllnessList     = [];
+  List<String> _fmSymptomList     = [];
+  List<Map<String,dynamic>> _allFmRows = [];
+  // Rating fields
+  int _traditionRating  = 0;
+  int _validationLevel  = 0;
+  // Extra fields
+  final _servingsController     = TextEditingController();
+  final _encouragementController = TextEditingController();
   String _selectedIllness = '';
   bool _showCustomIllness = false;
   String _selectedCategory = '';
@@ -177,6 +261,8 @@ class _SubmitRemedyScreenState extends State<SubmitRemedyScreen> {
     _prepTimeController.dispose();
     _difficultyController.dispose();
     for (final c in _stepControllers) c.dispose();
+    _servingsController.dispose();
+    _encouragementController.dispose();
     super.dispose();
   }
 
@@ -258,6 +344,14 @@ class _SubmitRemedyScreenState extends State<SubmitRemedyScreen> {
         'clinical_study_url': _clinicalUrlController.text.trim(),
         'image_url':         _previewUrl.isNotEmpty ? _previewUrl : null,
         'status':            'pending',
+        'filter_category':    _filterCategory.isNotEmpty ? _filterCategory : null,
+        'filter_subcategory': _filterSubcategory.isNotEmpty ? _filterSubcategory : null,
+        'filter_illness':     _filterIllness.isNotEmpty ? _filterIllness : null,
+        'filter_symptoms':    _filterSymptoms.isNotEmpty ? _filterSymptoms : null,
+        'tradition_rating':   _traditionRating > 0 ? _traditionRating : null,
+        'validation_level':   _validationLevel > 0 ? _validationLevel : null,
+        'servings':           _servingsController.text.trim().isNotEmpty ? _servingsController.text.trim() : null,
+        'encouragement':      _encouragementController.text.trim().isNotEmpty ? _encouragementController.text.trim() : null,
       });
 
       setState(() { _submitted = true; _loading = false; });
@@ -535,7 +629,103 @@ class _SubmitRemedyScreenState extends State<SubmitRemedyScreen> {
                     const SizedBox(height: 10),
                     TextField(controller: _cautionsController, decoration: const InputDecoration(labelText: 'Cautions *', hintText: 'Safety warnings...', labelStyle: AppTextStyles.caption)),
                     const SizedBox(height: 10),
-                    TextField(controller: _clinicalUrlController, decoration: const InputDecoration(labelText: 'Clinical study URL', hintText: 'https://pubmed...', labelStyle: AppTextStyles.caption)),
+                    // ── Filter Matrix Section (drives Find page search) ─────────
+              const SizedBox(height: 16),
+              const Text('Filter Matrix (Find Page)', style: TextStyle(fontWeight: FontWeight.w600, fontSize: 14)),
+              const SizedBox(height: 4),
+              const Text('These fields link this remedy to the search system', style: AppTextStyles.caption),
+              const SizedBox(height: 8),
+              // Category dropdown
+              if (_fmCategoryList.isNotEmpty) ...[
+                DropdownButtonFormField<String>(
+                  value: _filterCategory.isNotEmpty ? _filterCategory : null,
+                  decoration: const InputDecoration(labelText: 'Filter Category'),
+                  hint: const Text('Select category'),
+                  items: _fmCategoryList.map((c) => DropdownMenuItem(value: c, child: Text(c))).toList(),
+                  onChanged: (v) { if (v != null) _onFmCategoryChanged(v); },
+                ),
+                const SizedBox(height: 8),
+              ],
+              if (_fmSubcategoryList.isNotEmpty) ...[
+                DropdownButtonFormField<String>(
+                  value: _filterSubcategory.isNotEmpty ? _filterSubcategory : null,
+                  decoration: const InputDecoration(labelText: 'Filter Subcategory'),
+                  hint: const Text('Select subcategory'),
+                  items: _fmSubcategoryList.map((c) => DropdownMenuItem(value: c, child: Text(c))).toList(),
+                  onChanged: (v) { if (v != null) _onFmSubcategoryChanged(v); },
+                ),
+                const SizedBox(height: 8),
+              ],
+              if (_fmIllnessList.isNotEmpty) ...[
+                DropdownButtonFormField<String>(
+                  value: _filterIllness.isNotEmpty ? _filterIllness : null,
+                  decoration: const InputDecoration(labelText: 'Filter Illness'),
+                  hint: const Text('Select illness'),
+                  items: _fmIllnessList.map((c) => DropdownMenuItem(value: c, child: Text(c))).toList(),
+                  onChanged: (v) { if (v != null) _onFmIllnessChanged(v); },
+                ),
+                const SizedBox(height: 8),
+              ],
+              if (_fmSymptomList.isNotEmpty) ...[
+                const Text('Filter Symptoms (tap to select)', style: AppTextStyles.caption),
+                const SizedBox(height: 6),
+                Wrap(
+                  spacing: 6, runSpacing: 6,
+                  children: _fmSymptomList.map((sym) {
+                    final selected = _filterSymptoms.contains(sym);
+                    return GestureDetector(
+                      onTap: () => _toggleFmSymptom(sym),
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+                        decoration: BoxDecoration(
+                          color: selected ? AppColors.dark : Colors.white,
+                          border: Border.all(color: selected ? AppColors.primary : Colors.grey.shade300),
+                          borderRadius: BorderRadius.circular(20),
+                        ),
+                        child: Text(sym, style: TextStyle(
+                          fontSize: 11,
+                          color: selected ? AppColors.primary : AppColors.dark,
+                          fontWeight: selected ? FontWeight.w600 : FontWeight.normal,
+                        )),
+                      ),
+                    );
+                  }).toList(),
+                ),
+                const SizedBox(height: 8),
+              ],
+              // ── Rating fields ──────────────────────────────────────────────
+              const SizedBox(height: 16),
+              const Text('Ratings', style: TextStyle(fontWeight: FontWeight.w600, fontSize: 14)),
+              const SizedBox(height: 8),
+              Row(children: [
+                const Text('Traditional rating: ', style: AppTextStyles.caption),
+                Expanded(child: Slider(
+                  value: _traditionRating.toDouble(),
+                  min: 0, max: 5, divisions: 5,
+                  label: '$_traditionRating',
+                  activeColor: AppColors.primary,
+                  onChanged: (v) => setState(() => _traditionRating = v.toInt()),
+                )),
+                Text('$_traditionRating/5', style: AppTextStyles.caption),
+              ]),
+              Row(children: [
+                const Text('Validation level: ', style: AppTextStyles.caption),
+                Expanded(child: Slider(
+                  value: _validationLevel.toDouble(),
+                  min: 0, max: 5, divisions: 5,
+                  label: '$_validationLevel',
+                  activeColor: AppColors.primary,
+                  onChanged: (v) => setState(() => _validationLevel = v.toInt()),
+                )),
+                Text('$_validationLevel/5', style: AppTextStyles.caption),
+              ]),
+              // ── Extra fields ───────────────────────────────────────────────
+              const SizedBox(height: 8),
+              TextField(controller: _servingsController, decoration: const InputDecoration(labelText: 'Servings', hintText: 'e.g. 2 cups per day')),
+              const SizedBox(height: 8),
+              TextField(controller: _encouragementController, maxLines: 2, decoration: const InputDecoration(labelText: 'Encouragement quote', hintText: 'Optional inspirational quote')),
+              const SizedBox(height: 8),
+              TextField(controller: _clinicalUrlController, decoration: const InputDecoration(labelText: 'Clinical study URL', hintText: 'https://pubmed...', labelStyle: AppTextStyles.caption)),
                     const SizedBox(height: 16),
 
                     // ── Image Section ─────────────────────────────────────
