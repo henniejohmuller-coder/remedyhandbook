@@ -443,7 +443,7 @@ class _SubmitRemedyScreenState extends State<SubmitRemedyScreen> {
                       value: _selectedIllness,
                       options: _illnessList,
                       customHint: 'e.g. Chronic fatigue syndrome',
-                      onChanged: (v) => setState(() => _selectedIllness = v),
+                      onChanged: (v) => setState(() { _selectedIllness = v; _filterIllness = v; }),
                     ),
                     const SizedBox(height: 10),
                     // Category — multi-select
@@ -452,7 +452,7 @@ class _SubmitRemedyScreenState extends State<SubmitRemedyScreen> {
                       value: _selectedCategory,
                       options: _categoryList,
                       customHint: 'e.g. Autoimmune support',
-                      onChanged: (v) => setState(() => _selectedCategory = v),
+                      onChanged: (v) => setState(() { _selectedCategory = v; _filterCategory = v; }),
                     ),
                     const SizedBox(height: 10),
                     // Sub-category — multi-select
@@ -461,7 +461,7 @@ class _SubmitRemedyScreenState extends State<SubmitRemedyScreen> {
                       value: _selectedSubCategory,
                       options: _subCategoryList,
                       customHint: 'e.g. Small intestine',
-                      onChanged: (v) => setState(() => _selectedSubCategory = v),
+                      onChanged: (v) => setState(() { _selectedSubCategory = v; _filterSubcategory = v; }),
                     ),
                     const SizedBox(height: 10),
                     // Symptoms — multi-select
@@ -470,7 +470,7 @@ class _SubmitRemedyScreenState extends State<SubmitRemedyScreen> {
                       value: _selectedSymptom,
                       options: _symptomList,
                       customHint: 'e.g. Night sweats',
-                      onChanged: (v) => setState(() => _selectedSymptom = v),
+                      onChanged: (v) => setState(() { _selectedSymptom = v; _filterSymptoms = v.split(', ').where((s) => s.isNotEmpty).toList(); }),
                     ),
                     const SizedBox(height: 10),
                     // Organ — multi-select
@@ -628,71 +628,6 @@ class _SubmitRemedyScreenState extends State<SubmitRemedyScreen> {
                     TextField(controller: _constituentController, decoration: const InputDecoration(labelText: 'Main constituent', hintText: 'e.g. Silymarin', labelStyle: AppTextStyles.caption)),
                     const SizedBox(height: 10),
                     TextField(controller: _cautionsController, decoration: const InputDecoration(labelText: 'Cautions *', hintText: 'Safety warnings...', labelStyle: AppTextStyles.caption)),
-                    const SizedBox(height: 10),
-                    // ── Filter Matrix Section (drives Find page search) ─────────
-              const SizedBox(height: 16),
-              const Text('Filter Matrix (Find Page)', style: TextStyle(fontWeight: FontWeight.w600, fontSize: 14)),
-              const SizedBox(height: 4),
-              const Text('These fields link this remedy to the search system', style: AppTextStyles.caption),
-              const SizedBox(height: 8),
-              // Category dropdown
-              if (_fmCategoryList.isNotEmpty) ...[
-                DropdownButtonFormField<String>(
-                  value: _filterCategory.isNotEmpty ? _filterCategory : null,
-                  decoration: const InputDecoration(labelText: 'Filter Category'),
-                  hint: const Text('Select category'),
-                  items: _fmCategoryList.map((c) => DropdownMenuItem(value: c, child: Text(c))).toList(),
-                  onChanged: (v) { if (v != null) _onFmCategoryChanged(v); },
-                ),
-                const SizedBox(height: 8),
-              ],
-              if (_fmSubcategoryList.isNotEmpty) ...[
-                DropdownButtonFormField<String>(
-                  value: _filterSubcategory.isNotEmpty ? _filterSubcategory : null,
-                  decoration: const InputDecoration(labelText: 'Filter Subcategory'),
-                  hint: const Text('Select subcategory'),
-                  items: _fmSubcategoryList.map((c) => DropdownMenuItem(value: c, child: Text(c))).toList(),
-                  onChanged: (v) { if (v != null) _onFmSubcategoryChanged(v); },
-                ),
-                const SizedBox(height: 8),
-              ],
-              if (_fmIllnessList.isNotEmpty) ...[
-                DropdownButtonFormField<String>(
-                  value: _filterIllness.isNotEmpty ? _filterIllness : null,
-                  decoration: const InputDecoration(labelText: 'Filter Illness'),
-                  hint: const Text('Select illness'),
-                  items: _fmIllnessList.map((c) => DropdownMenuItem(value: c, child: Text(c))).toList(),
-                  onChanged: (v) { if (v != null) _onFmIllnessChanged(v); },
-                ),
-                const SizedBox(height: 8),
-              ],
-              if (_fmSymptomList.isNotEmpty) ...[
-                const Text('Filter Symptoms (tap to select)', style: AppTextStyles.caption),
-                const SizedBox(height: 6),
-                Wrap(
-                  spacing: 6, runSpacing: 6,
-                  children: _fmSymptomList.map((sym) {
-                    final selected = _filterSymptoms.contains(sym);
-                    return GestureDetector(
-                      onTap: () => _toggleFmSymptom(sym),
-                      child: Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
-                        decoration: BoxDecoration(
-                          color: selected ? AppColors.dark : Colors.white,
-                          border: Border.all(color: selected ? AppColors.primary : Colors.grey.shade300),
-                          borderRadius: BorderRadius.circular(20),
-                        ),
-                        child: Text(sym, style: TextStyle(
-                          fontSize: 11,
-                          color: selected ? AppColors.primary : AppColors.dark,
-                          fontWeight: selected ? FontWeight.w600 : FontWeight.normal,
-                        )),
-                      ),
-                    );
-                  }).toList(),
-                ),
-                const SizedBox(height: 8),
-              ],
               // ── Rating fields ──────────────────────────────────────────────
               const SizedBox(height: 16),
               const Text('Ratings', style: TextStyle(fontWeight: FontWeight.w600, fontSize: 14)),

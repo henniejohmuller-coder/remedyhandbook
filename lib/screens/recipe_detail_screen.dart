@@ -54,7 +54,7 @@ class _RecipeDetailScreenState extends State<RecipeDetailScreen> {
           children: [
             YellowAppBar(
               title: remedy.name,
-              subtitle: '${remedy.herb} · ${remedy.origin}',
+              subtitle: '${remedy.herb}  -  ${remedy.origin}',
               showBack: true,
             ),
             Expanded(
@@ -71,7 +71,7 @@ class _RecipeDetailScreenState extends State<RecipeDetailScreen> {
                       StarRating(rating: remedy.rating, votes: remedy.votes),
                       const SizedBox(width: 8),
                       if (remedy.efficacy > 0)
-                        Text('· ${remedy.efficacy}%', style: AppTextStyles.caption),
+                        Text(' -  ${remedy.efficacy}%', style: AppTextStyles.caption),
                     ]),
                     const SizedBox(height: 16),
                     // Buy buttons card
@@ -95,7 +95,7 @@ class _RecipeDetailScreenState extends State<RecipeDetailScreen> {
                             Expanded(
                               child: _BuyCard(
                                 title: 'Buy Herb',
-                                subtitle: '${remedy.herb}\n${herb.type.replaceAll('Raw herb · ', '')}',
+                                subtitle: '${remedy.herb}\n${herb.type.replaceAll('Raw herb  -  ', '')}',
                                 price: 'R${herb.price.toInt()}',
                                 onTap: () => _goToProduct(context, true),
                               ),
@@ -144,7 +144,7 @@ class _RecipeDetailScreenState extends State<RecipeDetailScreen> {
                       InfoRow(label: 'Prep time', value: remedy.prepTimeDisplay),
                     ]),
                     const SizedBox(height: 10),
-                    // Preparation guide button — right under preparation block
+                    // Preparation guide button â€” right under preparation block
                     OutlinedButton(
                       onPressed: () => Navigator.push(context, MaterialPageRoute(builder: (_) => PreparationScreen(remedy: remedy))),
                       style: OutlinedButton.styleFrom(
@@ -187,7 +187,7 @@ class _RecipeDetailScreenState extends State<RecipeDetailScreen> {
                       InfoRow(label: 'Efficacy', value: remedy.efficacy > 0 ? '${remedy.efficacy}%' : '-'),
                     ]),
                     const SizedBox(height: 8),
-                    // Static model — clinical study text in black
+                    // Static model â€” clinical study text in black
                     const Text(
                       'Clinical study reference available',
                       style: TextStyle(fontSize: 12, color: Colors.black),
@@ -311,7 +311,7 @@ class _RecipeDetailScreenState extends State<RecipeDetailScreen> {
 }
 
 
-// ── Shop product card (recipe detail — up to 3 per type) ─────────────────────
+// â”€â”€ Shop product card (recipe detail â€” up to 3 per type) â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 class _ShopProductCard extends StatelessWidget {
   final Map<String, dynamic> product;
   final bool isYellow;
@@ -410,9 +410,9 @@ class _BuyCard extends StatelessWidget {
   }
 }
 
-// ═══════════════════════════════════════════════════════════════════════════
-// DB VERSION — uses Map<String, dynamic> from Supabase
-// ═══════════════════════════════════════════════════════════════════════════
+// â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+// DB VERSION â€” uses Map<String, dynamic> from Supabase
+// â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
 
 class RecipeDetailScreenDB extends StatefulWidget {
   final Map<String, dynamic> remedy;
@@ -470,7 +470,7 @@ class _RecipeDetailScreenDBState extends State<RecipeDetailScreenDB> {
           .eq('remedy_id', remedyId)
           .order('step_number', ascending: true);
       if (mounted) {
-        // Deduplicate by step_number — keep first occurrence only
+        // Deduplicate by step_number â€” keep first occurrence only
         final seen = <int>{};
         final deduped = (data as List).where((s) {
           final n = (s['step_number'] ?? 0) as int;
@@ -500,7 +500,7 @@ class _RecipeDetailScreenDBState extends State<RecipeDetailScreenDB> {
   @override
   void didChangeDependencies() {
     super.didChangeDependencies();
-    // Intentionally empty — initState microtask handles initial load.
+    // Intentionally empty â€” initState microtask handles initial load.
     // Reloading here cascades rebuilds to PreparationScreenDB causing duplicate steps.
   }
 
@@ -587,7 +587,7 @@ class _RecipeDetailScreenDBState extends State<RecipeDetailScreenDB> {
       RecipesScreen.reload();
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('✅ Review saved!'),
+          const SnackBar(content: Text('âœ… Review saved!'),
               backgroundColor: Colors.green, duration: Duration(seconds: 2)));
       }
     } catch (e) {
@@ -601,25 +601,58 @@ class _RecipeDetailScreenDBState extends State<RecipeDetailScreenDB> {
 
   Future<void> _checkProducts() async {
     try {
-      final remedyId = _remedy['id']?.toString() ?? '';
+      final remedyId    = _remedy['id']?.toString() ?? '';
+      final primaryHerb = (_remedy['primary_herb'] ?? _remedy['component'] ?? '').toString().trim();
       if (remedyId.isEmpty) return;
-      // Query directly — getProducts() may filter out already-linked items
+
+      // 1. Products linked by remedy_id
       final data = await SupabaseService.supabase
-          .from('products')
-          .select()
-          .eq('linked_remedy_id', remedyId)
-          .order('name');
-      // Also get products from remedy_products junction table
+          .from('products').select().eq('linked_remedy_id', remedyId).order('name');
+
+      // 2. Products from junction table
       final rpData = await SupabaseService.supabase
-          .from('remedy_products')
-          .select('products(*)')
-          .eq('remedy_id', remedyId);
+          .from('remedy_products').select('products(*)').eq('remedy_id', remedyId);
       final rpProducts = (rpData as List)
-          .map((e) => e['products'] as Map<String, dynamic>)
-          .toList();
+          .map((e) => e['products'] as Map<String, dynamic>).toList();
+
+      // 3. Products matching primary_herb/component name
+      final List<Map<String, dynamic>> nameMatched = [];
+      if (primaryHerb.isNotEmpty) {
+        // Build search terms: full string + each word/phrase split by comma/space
+        final skip = {'and', 'or', 'the', 'with', 'of', 'for', 'a', 'an'};
+        final termSet = <String>{};
+        // Add full primary herb as one search term
+        termSet.add(primaryHerb.replaceAll('-', ' '));
+        // Split by comma or semicolon for multi-herb fields
+        for (final part in primaryHerb.split(RegExp(r'[,;]+'))) {
+          final p = part.trim();
+          if (p.isNotEmpty) termSet.add(p.replaceAll('-', ' '));
+          // Also add individual words
+          for (final w in p.split(' ')) {
+            final word = w.trim().replaceAll('-', ' ');
+            if (word.length > 1 && !skip.contains(word.toLowerCase())) {
+              termSet.add(word);
+            }
+          }
+        }
+        for (final term in termSet) {
+          if (term.length < 2) continue;
+          try {
+            final res = await SupabaseService.supabase
+                .from('products').select()
+                .ilike('name', '%' + term + '%')
+                .eq('active', true).order('name');
+            nameMatched.addAll((res as List).cast<Map<String, dynamic>>());
+          } catch (_) {}
+        }
+      }
+
       final all = [...(data as List).cast<Map<String, dynamic>>()];
       for (final rp in rpProducts) {
         if (!all.any((p) => p['id'] == rp['id'])) all.add(rp);
+      }
+      for (final nm in nameMatched) {
+        if (!all.any((p) => p['id'] == nm['id'])) all.add(nm);
       }
       setState(() {
         _linkedComponents = all.where((p) => p['type'] == 'Component').toList();
@@ -629,7 +662,6 @@ class _RecipeDetailScreenDBState extends State<RecipeDetailScreenDB> {
       });
     } catch (_) {}
   }
-
   @override
   void dispose() {
     _reviewController.dispose();
@@ -750,7 +782,7 @@ class _RecipeDetailScreenDBState extends State<RecipeDetailScreenDB> {
           children: [
             YellowAppBar(
               title: name,
-              subtitle: '$component · $origin',
+              subtitle: '$component  -  $origin',
               showBack: true,
               actions: [
                 if (!widget.isGuest)
@@ -789,7 +821,7 @@ class _RecipeDetailScreenDBState extends State<RecipeDetailScreenDB> {
                       child: Row(
                         crossAxisAlignment: CrossAxisAlignment.stretch,
                         children: [
-                          // Left — component image
+                          // Left â€” component image
                           RemedyImage(
                             url: imageUrl,
                             width: 160,
@@ -797,7 +829,7 @@ class _RecipeDetailScreenDBState extends State<RecipeDetailScreenDB> {
                             borderRadius: BorderRadius.circular(12),
                           ),
                           const SizedBox(width: 12),
-                          // Right — encouragement or placeholder
+                          // Right â€” encouragement or placeholder
                           Expanded(
                             child: Container(
                               padding: const EdgeInsets.all(14),
@@ -848,10 +880,10 @@ class _RecipeDetailScreenDBState extends State<RecipeDetailScreenDB> {
                       StarRating(rating: rating, votes: votes),
                       const SizedBox(width: 8),
                       if (efficacy > 0)
-                        Text('· $efficacy%', style: AppTextStyles.caption),
+                        Text(' -  $efficacy%', style: AppTextStyles.caption),
                     ]),
                     const SizedBox(height: 12),
-                    // ── Buy buttons ──────────────────────────────────
+                    // â”€â”€ Buy buttons â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
                     Row(children: [
                       Expanded(child: OutlinedButton(
                         onPressed: widget.isGuest ? () => _showGuestPopup(context) : () => _goToProduct(context, true),
@@ -1074,7 +1106,7 @@ class _RecipeDetailScreenDBState extends State<RecipeDetailScreenDB> {
                         ]),
                       ),
                     ],
-                    // ── Community reviews — tabbed ─────────────────────
+                    // â”€â”€ Community reviews â€” tabbed â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
                     const SizedBox(height: 8),
                     Row(children: [
                       // Tab 1: Community Review (write)
@@ -1119,7 +1151,7 @@ class _RecipeDetailScreenDBState extends State<RecipeDetailScreenDB> {
                       ),
                     ]),
                     const SizedBox(height: 12),
-                    // ── Tab 2: All reviews list ──────────────────────────
+                    // â”€â”€ Tab 2: All reviews list â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
                     if (_reviewTab == 1) ...[
                       if (_reviewsLoading)
                         const Center(child: Padding(
@@ -1129,7 +1161,7 @@ class _RecipeDetailScreenDBState extends State<RecipeDetailScreenDB> {
                       else if (_allReviews.isEmpty)
                         const Padding(
                           padding: EdgeInsets.symmetric(vertical: 24),
-                          child: Center(child: Text('No reviews yet — be the first!',
+                          child: Center(child: Text('No reviews yet â€” be the first!',
                               style: AppTextStyles.caption)),
                         )
                       else
@@ -1165,7 +1197,7 @@ class _RecipeDetailScreenDBState extends State<RecipeDetailScreenDB> {
                           },
                         ),
                     ],
-                    // ── Tab 1: Write / edit review ───────────────────────
+                    // â”€â”€ Tab 1: Write / edit review â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
                     if (_reviewTab == 0) ...[
                     if (_submitted && !_isEditing)
                       Container(
@@ -1270,7 +1302,7 @@ class _RecipeDetailScreenDBState extends State<RecipeDetailScreenDB> {
   }
 }
 
-// ── Preparation Screen DB version ─────────────────────────────────────────
+// â”€â”€ Preparation Screen DB version â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 class PreparationScreenDB extends StatefulWidget {
   final Map<String, dynamic> remedy;
@@ -1495,7 +1527,7 @@ class _PreparationScreenDBState extends State<PreparationScreenDB> {
                           child: Row(crossAxisAlignment: CrossAxisAlignment.start, children: [
                             const Icon(Icons.lightbulb_outline, size: 18, color: Colors.green),
                             const SizedBox(width: 10),
-                            Expanded(child: Text('💡 Tip: ${widget.remedy['tip']}', style: const TextStyle(fontSize: 12, color: AppColors.dark, height: 1.4))),
+                            Expanded(child: Text('ðŸ’¡ Tip: ${widget.remedy['tip']}', style: const TextStyle(fontSize: 12, color: AppColors.dark, height: 1.4))),
                           ]),
                         ),
                       ],
