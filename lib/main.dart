@@ -253,7 +253,7 @@ class _AppShellState extends State<AppShell> {
       },
       child: Scaffold(
         backgroundColor: AppColors.background,
-        body: _buildTab(screens[_currentIndex]),
+        body: Column(children: [const InstallBanner(), Expanded(child: _buildTab(screens[_currentIndex]))]),
         bottomNavigationBar: AppBottomNavBar(
           currentIndex: _currentIndex,
           onTap: (i) async {

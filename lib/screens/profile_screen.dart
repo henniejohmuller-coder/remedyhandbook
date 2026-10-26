@@ -1,10 +1,12 @@
-import 'package:flutter/material.dart';
+﻿import 'package:flutter/material.dart';
 import '../theme/app_theme.dart';
 import '../widgets/shared_widgets.dart';
 import '../widgets/navigation_guard.dart';
 import '../services/supabase_service.dart';
 import '../main.dart' show appFontScale;
 import 'admin_content_screen.dart';
+import 'package:file_picker/file_picker.dart';
+import 'package:supabase_flutter/supabase_flutter.dart' show FileOptions;
 import 'admin_csv_upload_screen.dart';
 import 'admin_ratings_screen.dart';
 import 'admin_user_management_screen.dart';
@@ -114,7 +116,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
       setState(() { _editing = false; _saving = false; });
       if (context.mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('✅ Profile updated!'), backgroundColor: Colors.green));
+          const SnackBar(content: Text('Ã¢Å“â€¦ Profile updated!'), backgroundColor: Colors.green));
       }
     } catch (e) {
       if (!mounted) return;
@@ -168,6 +170,45 @@ class _ProfileScreenState extends State<ProfileScreen> {
     const months = ['January','February','March','April','May','June',
                     'July','August','September','October','November','December'];
     return '${months[date.month - 1]} ${date.year}';
+  }
+
+  Future<void> _uploadHeroBanner() async {
+    try {
+      final result = await FilePicker.platform.pickFiles(
+        type: FileType.image,
+        withData: true,
+      );
+      if (result == null || result.files.isEmpty) return;
+      final file = result.files.first;
+      if (file.bytes == null) return;
+
+      final ext = file.extension ?? 'jpg';
+      final path = 'hero/hero_banner_${DateTime.now().millisecondsSinceEpoch}.$ext';
+
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Uploading hero banner...')));
+
+      await SupabaseService.supabase.storage
+          .from('app-images')
+          .uploadBinary(path, file.bytes!,
+              fileOptions: FileOptions(upsert: true));
+
+      final url = SupabaseService.supabase.storage
+          .from('app-images')
+          .getPublicUrl(path);
+
+      await SupabaseService.supabase.from('app_content')
+          .upsert({'key': 'home_hero_url', 'content': url});
+
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Hero banner updated!')));
+    } catch (e) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Upload failed: $e')));
+    }
   }
 
   @override
@@ -455,7 +496,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                                           textAlign: TextAlign.center),
                                       const SizedBox(height: 16),
                                       const Text('Version 1.0.0', style: AppTextStyles.caption),
-                                      const Text('© 2026 RemedyHandbook.com', style: AppTextStyles.caption),
+                                      const Text('Â© 2026 RemedyHandbook.com', style: AppTextStyles.caption),
                                     ])),
                                     actions: [ElevatedButton(
                                       onPressed: () => Navigator.pop(ctx),
@@ -528,6 +569,12 @@ class _ProfileScreenState extends State<ProfileScreen> {
                               label: 'Edit app content',
                               onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const AdminContentScreen())),
                             ),
+                             const Divider(height: 1, indent: 48),
+                             _MenuRow(
+                               icon: Icons.image_outlined,
+                               label: 'Upload hero banner',
+                               onTap: () => _uploadHeroBanner(),
+                             ),
                           ]),
                         ),
                       ),
@@ -570,7 +617,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
   }
 }
 
-// ── Profile Field ─────────────────────────────────────────────────────────
+// Ã¢â€â‚¬Ã¢â€â‚¬ Profile Field Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬
 class _ProfileField extends StatelessWidget {
   final IconData icon;
   final String label;
@@ -603,7 +650,7 @@ class _ProfileField extends StatelessWidget {
                     focusedBorder: UnderlineInputBorder(borderSide: BorderSide(color: AppColors.primary)),
                   ),
                 )
-              : Text(value.isNotEmpty ? value : '—', style: AppTextStyles.body),
+              : Text(value.isNotEmpty ? value : 'Ã¢â‚¬â€', style: AppTextStyles.body),
         ]),
       ),
       if (isLocked) const Icon(Icons.lock_outline, size: 14, color: AppColors.textSecondary),
@@ -611,7 +658,7 @@ class _ProfileField extends StatelessWidget {
   }
 }
 
-// ── Menu Row ──────────────────────────────────────────────────────────────
+// Ã¢â€â‚¬Ã¢â€â‚¬ Menu Row Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬
 class _MenuRow extends StatelessWidget {
   final IconData icon;
   final String label;
