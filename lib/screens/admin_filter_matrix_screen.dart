@@ -1,4 +1,4 @@
-﻿import 'package:flutter/material.dart';
+import 'package:flutter/material.dart';
 import '../services/supabase_service.dart';
 import '../widgets/filter_matrix_picker.dart';
 import '../theme/app_theme.dart';
@@ -12,19 +12,19 @@ class AdminFilterMatrixScreen extends StatefulWidget {
 }
 
 class _AdminFilterMatrixScreenState extends State<AdminFilterMatrixScreen> {
-  // â”€â”€ All filter_matrix rows â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+  // ”” All filter_matrix rows ”””””””””””””””””””””””””””””””””””””””””””””””””
   List<Map<String, dynamic>> _allRows = [];
   List<Map<String, dynamic>> _filtered = [];
   bool _loading = true;
   final _searchController = TextEditingController();
 
-  // â”€â”€ Lookup lists (independent â€” not cascading) â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+  // ”” Lookup lists (independent ” not cascading) ”””””””””””””””””””””””””””””
   List<String> _categoryList    = [];
   List<String> _subcategoryList = [];
   List<String> _illnessList     = [];
   List<String> _symptomList     = [];
 
-  // â”€â”€ New row selections â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+  // ”” New row selections ”””””””””””””””””””””””””””””””””””””””””””””””””””””
   String? _newCategory;
   String? _newSubcategory;
   String? _newIllness;
@@ -175,7 +175,7 @@ class _AdminFilterMatrixScreenState extends State<AdminFilterMatrixScreen> {
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          // â”€â”€ Add new row â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+                          // ”” Add new row ””””””””””””””””””””””””””””””””””
                           Container(
                             padding: const EdgeInsets.all(14),
                             decoration: BoxDecoration(
@@ -191,7 +191,7 @@ class _AdminFilterMatrixScreenState extends State<AdminFilterMatrixScreen> {
                                         fontWeight: FontWeight.w600, color: AppColors.dark)),
                                 const SizedBox(height: 4),
                                 const Text(
-                                  'All 4 dropdowns are independent â€” select any combination or add new values.',
+                                  'All 4 dropdowns are independent ” select any combination or add new values.',
                                   style: TextStyle(fontSize: 11, color: AppColors.textSecondary),
                                 ),
                                 const SizedBox(height: 10),
@@ -253,7 +253,7 @@ class _AdminFilterMatrixScreenState extends State<AdminFilterMatrixScreen> {
                                       borderRadius: BorderRadius.circular(6),
                                     ),
                                     child: Text(
-                                      '${_newCategory ?? '?'} â€º ${_newSubcategory ?? '?'} â€º ${_newIllness ?? '?'} â€º ${_newSymptom ?? '?'}',
+                                      '${_newCategory ?? '?'} > ${_newSubcategory ?? '?'} > ${_newIllness ?? '?'} > ${_newSymptom ?? '?'}',
                                       style: const TextStyle(fontSize: 11,
                                           color: AppColors.dark, fontWeight: FontWeight.w500),
                                     ),
@@ -281,7 +281,7 @@ class _AdminFilterMatrixScreenState extends State<AdminFilterMatrixScreen> {
                           ),
                           const SizedBox(height: 16),
 
-                          // â”€â”€ Search â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+                          // ”” Search ”””””””””””””””””””””””””””””””””””””””
                           TextField(
                             controller: _searchController,
                             decoration: InputDecoration(
@@ -301,7 +301,7 @@ class _AdminFilterMatrixScreenState extends State<AdminFilterMatrixScreen> {
                                   color: AppColors.textSecondary)),
                           const SizedBox(height: 8),
 
-                          // â”€â”€ Table rows â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+                          // ”” Table rows ”””””””””””””””””””””””””””””””””””
                           ..._filtered.take(200).map((row) => Container(
                             margin: const EdgeInsets.only(bottom: 4),
                             padding: const EdgeInsets.symmetric(
@@ -318,7 +318,7 @@ class _AdminFilterMatrixScreenState extends State<AdminFilterMatrixScreen> {
                                     crossAxisAlignment: CrossAxisAlignment.start,
                                     children: [
                                       Text(
-                                        '${row['category']} â€º ${row['subcategory']}',
+                                        '${row['category']} > ${row['subcategory']}',
                                         style: const TextStyle(fontSize: 10,
                                             color: AppColors.textSecondary),
                                       ),
@@ -345,7 +345,7 @@ class _AdminFilterMatrixScreenState extends State<AdminFilterMatrixScreen> {
                                       title: const Text('Delete row?',
                                           style: TextStyle(fontSize: 14)),
                                       content: Text(
-                                          '${row['illness']} â€º ${row['symptom']}',
+                                          '${row['illness']} > ${row['symptom']}',
                                           style: const TextStyle(fontSize: 12)),
                                       actions: [
                                         TextButton(
@@ -371,7 +371,7 @@ class _AdminFilterMatrixScreenState extends State<AdminFilterMatrixScreen> {
                             Padding(
                               padding: const EdgeInsets.only(top: 8),
                               child: Text(
-                                'Showing first 200 â€” use search to narrow down.',
+                                'Showing first 200 ” use search to narrow down.',
                                 style: const TextStyle(fontSize: 11,
                                     color: AppColors.textSecondary),
                               ),
@@ -387,7 +387,7 @@ class _AdminFilterMatrixScreenState extends State<AdminFilterMatrixScreen> {
   }
 }
 
-// â”€â”€ Independent dropdown with + button to add new value â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// ”” Independent dropdown with + button to add new value ””””””””””””””””””””””
 class _IndependentDropdown extends StatefulWidget {
   final String label;
   final String? value;
