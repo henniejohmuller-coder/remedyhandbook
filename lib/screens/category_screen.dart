@@ -111,10 +111,10 @@ class _CategoryScreenState extends State<CategoryScreen> {
         final page = await SupabaseService.supabase
             .from('filter_matrix')
             .select('category, subcategory, illness, symptom')
-            .order('category')
-            .order('subcategory')
-            .order('illness')
-            .order('symptom')
+            .order('category', ascending: true)
+            .order('subcategory', ascending: true)
+            .order('illness', ascending: true)
+            .order('symptom', ascending: true)
             .range(from, from + pageSize - 1);
         final pageList = List<Map<String, dynamic>>.from(page);
         all.addAll(pageList);
