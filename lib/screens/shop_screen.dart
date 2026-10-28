@@ -1,4 +1,4 @@
-﻿import 'package:flutter/material.dart';
+import 'package:flutter/material.dart';
 import '../theme/app_theme.dart';
 import '../widgets/shared_widgets.dart';
 import '../services/supabase_service.dart';
@@ -157,6 +157,63 @@ class _ShopScreenState extends State<ShopScreen> {
     }).toList();
   }
 
+  void _showSearchDropdown(BuildContext context, String label, List<String> options,
+      String current, ValueChanged<String> onChanged) {
+    final searchCtrl = TextEditingController();
+    List<String> filtered = List.from(options);
+    showDialog(
+      context: context,
+      builder: (ctx) => StatefulBuilder(
+        builder: (ctx, setDlg) => AlertDialog(
+          contentPadding: const EdgeInsets.fromLTRB(16, 16, 16, 0),
+          title: Text('Select $label',
+              style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w600)),
+          content: SizedBox(
+            width: double.maxFinite, height: 400,
+            child: Column(children: [
+              TextField(
+                controller: searchCtrl, autofocus: true,
+                decoration: InputDecoration(
+                  hintText: 'Search $label...',
+                  prefixIcon: const Icon(Icons.search, size: 18),
+                  border: OutlineInputBorder(borderRadius: BorderRadius.circular(8)),
+                  contentPadding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+                  isDense: true,
+                ),
+                style: const TextStyle(fontSize: 12),
+                onChanged: (q) => setDlg(() {
+                  filtered = options.where((s) => s.toLowerCase().contains(q.toLowerCase())).toList();
+                }),
+              ),
+              const SizedBox(height: 8),
+              Expanded(child: ListView.builder(
+                itemCount: filtered.length,
+                itemBuilder: (_, i) => InkWell(
+                  onTap: () { onChanged(filtered[i]); Navigator.pop(ctx); },
+                  child: Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 10),
+                    child: Row(children: [
+                      if (current == filtered[i]) ...[
+                        const Icon(Icons.check, size: 14, color: AppColors.primary),
+                        const SizedBox(width: 4),
+                      ],
+                      Expanded(child: Text(filtered[i], style: TextStyle(
+                        fontSize: 12,
+                        color: current == filtered[i] ? AppColors.primary : AppColors.dark,
+                        fontWeight: current == filtered[i] ? FontWeight.w600 : FontWeight.normal,
+                      ))),
+                    ]),
+                  ),
+                ),
+              )),
+            ]),
+          ),
+          actions: [TextButton(onPressed: () => Navigator.pop(ctx), child: const Text('Cancel'))],
+        ),
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -299,19 +356,22 @@ class _ShopScreenState extends State<ShopScreen> {
                         boxShadow: [BoxShadow(
                             color: Colors.black.withOpacity(0.03), blurRadius: 4)],
                       ),
-                      child: DropdownButtonHideUnderline(
-                        child: DropdownButton<String>(
-                          value: _catOptions.contains(_catFilter) ? _catFilter : 'All',
-                          isExpanded: true,
-                          style: const TextStyle(fontSize: 12, color: AppColors.dark),
-                          hint: const Text('Category', style: TextStyle(fontSize: 12)),
-                          icon: const Icon(Icons.arrow_drop_down, size: 18),
-                          onChanged: (v) => setState(() => _catFilter = v ?? 'All'),
-                          items: _catOptions.map((c) => DropdownMenuItem(
-                            value: c,
-                            child: Text(c, overflow: TextOverflow.ellipsis,
-                                style: const TextStyle(fontSize: 12)),
-                          )).toList(),
+                      child: GestureDetector(
+                        onTap: () => _showSearchDropdown(
+                          context, 'Category', _catOptions, _catFilter,
+                          (v) => setState(() => _catFilter = v)),
+                        child: Padding(
+                          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 10),
+                          child: Row(children: [
+                            Expanded(child: Text(
+                              _catFilter,
+                              style: TextStyle(fontSize: 12,
+                                  color: _catFilter != 'All' ? AppColors.dark : AppColors.textSecondary,
+                                  fontWeight: _catFilter != 'All' ? FontWeight.w500 : FontWeight.normal),
+                              overflow: TextOverflow.ellipsis,
+                            )),
+                            const Icon(Icons.keyboard_arrow_down, size: 16),
+                          ]),
                         ),
                       ),
                     ),
@@ -330,19 +390,22 @@ class _ShopScreenState extends State<ShopScreen> {
                         boxShadow: [BoxShadow(
                             color: Colors.black.withOpacity(0.03), blurRadius: 4)],
                       ),
-                      child: DropdownButtonHideUnderline(
-                        child: DropdownButton<String>(
-                          value: _brandOptions.contains(_brandFilter) ? _brandFilter : 'All',
-                          isExpanded: true,
-                          style: const TextStyle(fontSize: 12, color: AppColors.dark),
-                          hint: const Text('Brand', style: TextStyle(fontSize: 12)),
-                          icon: const Icon(Icons.arrow_drop_down, size: 18),
-                          onChanged: (v) => setState(() => _brandFilter = v ?? 'All'),
-                          items: _brandOptions.map((b) => DropdownMenuItem(
-                            value: b,
-                            child: Text(b, overflow: TextOverflow.ellipsis,
-                                style: const TextStyle(fontSize: 12)),
-                          )).toList(),
+                      child: GestureDetector(
+                        onTap: () => _showSearchDropdown(
+                          context, 'Brand', _brandOptions, _brandFilter,
+                          (v) => setState(() => _brandFilter = v)),
+                        child: Padding(
+                          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 10),
+                          child: Row(children: [
+                            Expanded(child: Text(
+                              _brandFilter,
+                              style: TextStyle(fontSize: 12,
+                                  color: _brandFilter != 'All' ? AppColors.dark : AppColors.textSecondary,
+                                  fontWeight: _brandFilter != 'All' ? FontWeight.w500 : FontWeight.normal),
+                              overflow: TextOverflow.ellipsis,
+                            )),
+                            const Icon(Icons.keyboard_arrow_down, size: 16),
+                          ]),
                         ),
                       ),
                     ),

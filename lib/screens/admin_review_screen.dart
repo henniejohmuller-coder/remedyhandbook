@@ -1,4 +1,4 @@
-import 'package:flutter/material.dart';
+﻿import 'package:flutter/material.dart';
 import '../theme/app_theme.dart';
 import '../widgets/shared_widgets.dart';
 import '../services/supabase_service.dart';
@@ -285,7 +285,7 @@ class _AdminReviewScreenState extends State<AdminReviewScreen>
   }
 }
 
-// ── Item List (used for all tabs) ─────────────────────────────────────────
+// Ã¢â€â‚¬Ã¢â€â‚¬ Item List (used for all tabs) Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬
 
 class _ItemList extends StatelessWidget {
   final List<Map<String, dynamic>> items;
@@ -334,7 +334,7 @@ class _ItemList extends StatelessWidget {
         onRefresh();
         if (context.mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text('✅ Deleted successfully'), backgroundColor: Colors.green,
+            const SnackBar(content: Text('Ã¢Å“â€¦ Deleted successfully'), backgroundColor: Colors.green,
                 duration: Duration(seconds: 2)));
         }
       } catch (e) {
@@ -413,6 +413,31 @@ class _ItemList extends StatelessWidget {
                     ),
                     const SizedBox(width: 6),
                     GestureDetector(
+                      onTap: () async {
+                        try {
+                          final copy = Map<String, dynamic>.from(item)
+                              ..remove('id')..remove('created_at')..remove('updated_at');
+                          copy['name'] = (copy['name'] ?? '') + ' (copy)';
+                          copy['status'] = 'pending';
+                          await SupabaseService.supabase.from('remedies').insert(copy);
+                          onRefresh();
+                          if (context.mounted) ScaffoldMessenger.of(context).showSnackBar(
+                            const SnackBar(content: Text('Recipe duplicated!'),
+                                backgroundColor: Colors.green));
+                        } catch (e) {
+                          if (context.mounted) ScaffoldMessenger.of(context).showSnackBar(
+                            SnackBar(content: Text('Error: $e')));
+                        }
+                      },
+                      child: Container(
+                        padding: const EdgeInsets.all(5),
+                        decoration: BoxDecoration(color: Colors.blue.shade50,
+                            borderRadius: BorderRadius.circular(6)),
+                        child: const Icon(Icons.copy_outlined, size: 15, color: Colors.blue),
+                      ),
+                    ),
+                    const SizedBox(width: 6),
+                    GestureDetector(
                       onTap: () => _confirmDelete(context, item),
                       child: Container(
                         padding: const EdgeInsets.all(5),
@@ -430,7 +455,7 @@ class _ItemList extends StatelessWidget {
   }
 }
 
-// ── Stat Chip ─────────────────────────────────────────────────────────────
+// Ã¢â€â‚¬Ã¢â€â‚¬ Stat Chip Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬
 
 class _StatChip extends StatelessWidget {
   final String value;

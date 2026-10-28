@@ -1,4 +1,4 @@
-﻿import 'package:flutter/material.dart';
+import 'package:flutter/material.dart';
 import '../theme/app_theme.dart';
 import '../services/supabase_service.dart';
 import '../models/filter_state.dart';
@@ -25,20 +25,20 @@ class CategoryScreen extends StatefulWidget {
 }
 
 class _CategoryScreenState extends State<CategoryScreen> {
-  // Ã¢â€â‚¬Ã¢â€â‚¬ All matrix rows loaded once Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬
+  // Ãƒ¢Ãƒ¢ All matrix rows loaded once Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢
   List<Map<String, dynamic>> _allRows   = [];
   bool _loading = true;
 
-  // Ã¢â€â‚¬Ã¢â€â‚¬ Dropdown selections Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬
+  // Ãƒ¢Ãƒ¢ Dropdown selections Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢
   String? _selCategory;
   String? _selSubcategory;
   String? _selIllness;
   String? _selSymptom;
 
-  // Ã¢â€â‚¬Ã¢â€â‚¬ Selected filter set (the row the user tapped) Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬
+  // Ãƒ¢Ãƒ¢ Selected filter set (the row the user tapped) Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢
   Map<String, dynamic>? _selectedRow;
 
-  // Ã¢â€â‚¬Ã¢â€â‚¬ Derived dropdown options Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬
+  // Ãƒ¢Ãƒ¢ Derived dropdown options Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢
   List<String> get _categories =>
       _sorted(_allRows.map((r) => r['category'].toString()).toSet());
 
@@ -63,7 +63,7 @@ class _CategoryScreenState extends State<CategoryScreen> {
     return _sorted(rows.map((r) => r['symptom'].toString()).toSet());
   }
 
-  // Ã¢â€â‚¬Ã¢â€â‚¬ Filter matrix rows shown in table Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬
+  // Ãƒ¢Ãƒ¢ Filter matrix rows shown in table Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢
   List<Map<String, dynamic>> get _filteredRows {
     var rows = _allRows;
     if (_selCategory    != null) rows = rows.where((r) => r['category']    == _selCategory).toList();
@@ -224,7 +224,7 @@ class _CategoryScreenState extends State<CategoryScreen> {
       body: SafeArea(
         child: Column(
           children: [
-            // Ã¢â€â‚¬Ã¢â€â‚¬ Header Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬
+            // Ãƒ¢Ãƒ¢ Header Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢
             Container(
               color: AppColors.dark,
               padding: const EdgeInsets.fromLTRB(16, 14, 16, 14),
@@ -253,55 +253,8 @@ class _CategoryScreenState extends State<CategoryScreen> {
               ),
             ),
 
-            // Ã¢â€â‚¬Ã¢â€â‚¬ 4 Dropdown filters Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬
-            Container(
-              color: Colors.white,
-              padding: const EdgeInsets.fromLTRB(12, 10, 12, 10),
-              child: _loading
-                  ? const Center(child: Padding(
-                      padding: EdgeInsets.all(12),
-                      child: CircularProgressIndicator(color: AppColors.primary)))
-                  : Column(
-                      children: [
-                        Row(children: [
-                          Expanded(child: _Dropdown(
-                            label: 'Category',
-                            value: _selCategory,
-                            items: _categories,
-                            onChanged: _onCategoryChanged,
-                          )),
-                          const SizedBox(width: 8),
-                          Expanded(child: _Dropdown(
-                            label: 'Subcategory',
-                            value: _selSubcategory,
-                            items: _subcategories,
-                            onChanged: _onSubcategoryChanged,
-                            enabled: _selCategory != null || _subcategories.isNotEmpty,
-                          )),
-                        ]),
-                        const SizedBox(height: 8),
-                        Row(children: [
-                          Expanded(child: _Dropdown(
-                            label: 'Illness',
-                            value: _selIllness,
-                            items: _illnesses,
-                            onChanged: _onIllnessChanged,
-                            enabled: _illnesses.isNotEmpty,
-                          )),
-                          const SizedBox(width: 8),
-                          Expanded(child: _Dropdown(
-                            label: 'Symptom',
-                            value: _selSymptom,
-                            items: _symptoms,
-                            onChanged: _onSymptomChanged,
-                            enabled: _symptoms.isNotEmpty,
-                          )),
-                        ]),
-                      ],
-                    ),
-            ),
 
-            // Ã¢â€â‚¬Ã¢â€â‚¬ Results count Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬
+            // Ãƒ¢Ãƒ¢ Results count Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢
             if (!_loading)
               Container(
                 width: double.infinity,
@@ -331,7 +284,7 @@ class _CategoryScreenState extends State<CategoryScreen> {
                  ),
               ),
 
-            // Ã¢â€â‚¬Ã¢â€â‚¬ Filter matrix table Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬
+            // Ãƒ¢Ãƒ¢ Filter matrix table Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢
             if (!_loading)
               Expanded(
                 child: filtered.isEmpty
@@ -340,24 +293,46 @@ class _CategoryScreenState extends State<CategoryScreen> {
                             style: TextStyle(color: AppColors.textSecondary, fontSize: 13)))
                     : Column(
                         children: [
-                          // Table header
+                          // Table header with dropdowns
                           Container(
                             color: AppColors.dark,
-                            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
-                            child: const Row(
+                            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                            child: Row(
                               children: [
-                                Expanded(flex: 3, child: Text('Category',
-                                    style: TextStyle(color: AppColors.primary, fontSize: 10,
-                                        fontWeight: FontWeight.w700))),
-                                Expanded(flex: 3, child: Text('Subcategory',
-                                    style: TextStyle(color: AppColors.primary, fontSize: 10,
-                                        fontWeight: FontWeight.w700))),
-                                Expanded(flex: 3, child: Text('Illness',
-                                    style: TextStyle(color: AppColors.primary, fontSize: 10,
-                                        fontWeight: FontWeight.w700))),
-                                Expanded(flex: 3, child: Text('Symptom',
-                                    style: TextStyle(color: AppColors.primary, fontSize: 10,
-                                        fontWeight: FontWeight.w700))),
+                                Expanded(flex: 3, child: _Dropdown(
+                                  label: 'Category',
+                                  value: _selCategory,
+                                  items: _categories,
+                                  onChanged: _onCategoryChanged,
+                                  isDark: true,
+                                )),
+                                const SizedBox(width: 4),
+                                Expanded(flex: 3, child: _Dropdown(
+                                  label: 'Subcategory',
+                                  value: _selSubcategory,
+                                  items: _subcategories,
+                                  onChanged: _onSubcategoryChanged,
+                                  enabled: _selCategory != null || _subcategories.isNotEmpty,
+                                  isDark: true,
+                                )),
+                                const SizedBox(width: 4),
+                                Expanded(flex: 3, child: _Dropdown(
+                                  label: 'Illness',
+                                  value: _selIllness,
+                                  items: _illnesses,
+                                  onChanged: _onIllnessChanged,
+                                  enabled: _illnesses.isNotEmpty,
+                                  isDark: true,
+                                )),
+                                const SizedBox(width: 4),
+                                Expanded(flex: 3, child: _Dropdown(
+                                  label: 'Symptom',
+                                  value: _selSymptom,
+                                  items: _symptoms,
+                                  onChanged: _onSymptomChanged,
+                                  enabled: _symptoms.isNotEmpty,
+                                  isDark: true,
+                                )),
                               ],
                             ),
                           ),
@@ -438,7 +413,7 @@ class _CategoryScreenState extends State<CategoryScreen> {
                       ),
               ),
 
-            // Ã¢â€â‚¬Ã¢â€â‚¬ Bottom bar Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬
+            // Ãƒ¢Ãƒ¢ Bottom bar Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢
             Container(
               padding: const EdgeInsets.fromLTRB(14, 10, 14, 14),
               decoration: BoxDecoration(
@@ -523,13 +498,14 @@ class _CategoryScreenState extends State<CategoryScreen> {
   }
 }
 
-// Ã¢â€â‚¬Ã¢â€â‚¬ Dropdown widget Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬
+// Ãƒ¢Ãƒ¢ Dropdown widget Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢
 class _Dropdown extends StatelessWidget {
   final String label;
   final String? value;
   final List<String> items;
   final ValueChanged<String?> onChanged;
   final bool enabled;
+  final bool isDark;
 
   const _Dropdown({
     required this.label,
@@ -537,56 +513,125 @@ class _Dropdown extends StatelessWidget {
     required this.items,
     required this.onChanged,
     this.enabled = true,
+    this.isDark = false,
   });
+
+  void _showSearch(BuildContext context) {
+    final searchCtrl = TextEditingController();
+    List<String> filtered = List.from(items);
+    showDialog(
+      context: context,
+      builder: (ctx) => StatefulBuilder(
+        builder: (ctx, setDlg) => AlertDialog(
+          contentPadding: const EdgeInsets.fromLTRB(16, 16, 16, 0),
+          title: Text('Select $label',
+              style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w600)),
+          content: SizedBox(
+            width: double.maxFinite,
+            height: 400,
+            child: Column(children: [
+              TextField(
+                controller: searchCtrl,
+                autofocus: true,
+                decoration: InputDecoration(
+                  hintText: 'Search $label...',
+                  prefixIcon: const Icon(Icons.search, size: 18),
+                  border: OutlineInputBorder(borderRadius: BorderRadius.circular(8)),
+                  contentPadding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+                  isDense: true,
+                ),
+                style: const TextStyle(fontSize: 12),
+                onChanged: (q) => setDlg(() {
+                  filtered = items
+                      .where((s) => s.toLowerCase().contains(q.toLowerCase()))
+                      .toList();
+                }),
+              ),
+              const SizedBox(height: 4),
+              // Clear option
+              InkWell(
+                onTap: () { onChanged(null); Navigator.pop(ctx); },
+                child: Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 8),
+                  child: Row(children: [
+                    const Icon(Icons.clear, size: 14, color: AppColors.textSecondary),
+                    const SizedBox(width: 6),
+                    Text('All $label',
+                        style: const TextStyle(fontSize: 12, color: AppColors.textSecondary)),
+                  ]),
+                ),
+              ),
+              const Divider(height: 1),
+              Expanded(
+                child: ListView.builder(
+                  itemCount: filtered.length,
+                  itemBuilder: (_, i) => InkWell(
+                    onTap: () { onChanged(filtered[i]); Navigator.pop(ctx); },
+                    child: Padding(
+                      padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 10),
+                      child: Row(children: [
+                        if (value == filtered[i]) ...[
+                          const Icon(Icons.check, size: 14, color: AppColors.primary),
+                          const SizedBox(width: 4),
+                        ],
+                        Expanded(
+                          child: Text(filtered[i],
+                              style: TextStyle(
+                                fontSize: 12,
+                                color: value == filtered[i] ? AppColors.primary : AppColors.dark,
+                                fontWeight: value == filtered[i] ? FontWeight.w600 : FontWeight.normal,
+                              )),
+                        ),
+                      ]),
+                    ),
+                  ),
+                ),
+              ),
+            ]),
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(ctx),
+              child: const Text('Cancel')),
+          ],
+        ),
+      ),
+    );
+  }
 
   @override
   Widget build(BuildContext context) {
     final effectiveValue = (value != null && items.contains(value)) ? value : null;
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 10),
-      decoration: BoxDecoration(
-        color: enabled ? Colors.white : Colors.grey.shade100,
-        border: Border.all(
-            color: effectiveValue != null
-                ? AppColors.primary
-                : Colors.grey.shade300),
-        borderRadius: BorderRadius.circular(8),
-      ),
-      child: DropdownButtonHideUnderline(
-        child: DropdownButton<String>(
-          value: effectiveValue,
-          isExpanded: true,
-          isDense: true,
-          hint: Text(label,
-              style: TextStyle(
-                  fontSize: 11,
-                  color: enabled ? AppColors.textSecondary : Colors.grey.shade400)),
-          style: const TextStyle(fontSize: 11, color: AppColors.dark),
-          icon: Icon(Icons.keyboard_arrow_down,
-              size: 16,
-              color: enabled ? AppColors.dark : Colors.grey.shade400),
-          items: [
-            DropdownMenuItem<String>(
-              value: null,
-              child: Text('All $label',
-                  style: const TextStyle(fontSize: 11, color: AppColors.textSecondary)),
-            ),
-            ...items.map((item) => DropdownMenuItem<String>(
-                  value: item,
-                  child: Text(item,
-                      style: const TextStyle(fontSize: 11),
-                      overflow: TextOverflow.ellipsis),
-                )),
-          ],
-          onChanged: enabled ? onChanged : null,
-          selectedItemBuilder: (context) => [
-            Text('All $label',
-                style: const TextStyle(fontSize: 11), overflow: TextOverflow.ellipsis),
-            ...items.map((item) => Text(item,
-                style: const TextStyle(fontSize: 11, fontWeight: FontWeight.w500),
-                overflow: TextOverflow.ellipsis)),
-          ],
+    final textColor = isDark
+        ? (effectiveValue != null ? AppColors.primary : Colors.white70)
+        : (effectiveValue != null ? AppColors.dark
+            : (enabled ? AppColors.textSecondary : Colors.grey.shade400));
+    return GestureDetector(
+      onTap: enabled ? () => _showSearch(context) : null,
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 6),
+        decoration: isDark ? null : BoxDecoration(
+          color: enabled ? Colors.white : Colors.grey.shade100,
+          border: Border.all(
+              color: effectiveValue != null ? AppColors.primary : Colors.grey.shade300,
+              width: effectiveValue != null ? 1.5 : 0.5),
+          borderRadius: BorderRadius.circular(8),
         ),
+        child: Row(children: [
+          Expanded(
+            child: Text(
+              effectiveValue ?? label,
+              style: TextStyle(
+                fontSize: 10,
+                color: textColor,
+                fontWeight: effectiveValue != null ? FontWeight.w700 : FontWeight.w500,
+              ),
+              overflow: TextOverflow.ellipsis,
+            ),
+          ),
+          Icon(Icons.keyboard_arrow_down, size: 12,
+              color: isDark ? Colors.white70 : (enabled ? AppColors.dark : Colors.grey.shade400)),
+        ]),
       ),
     );
   }
