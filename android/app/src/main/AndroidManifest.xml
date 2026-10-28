@@ -15,7 +15,6 @@
         <activity
 
             android:name=".MainActivity"
-            android:fontScale="1.0"
 
             android:exported="true"
 

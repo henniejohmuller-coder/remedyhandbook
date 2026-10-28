@@ -1,4 +1,4 @@
-import 'package:flutter/services.dart';
+﻿import 'package:flutter/services.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:go_router/go_router.dart';
@@ -44,13 +44,13 @@ void main() async {
   runApp(const HerbalRemedyApp());
 }
 
-// ── Router ────────────────────────────────────────────────────────────────────
+// â”€â”€ Router â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 final _router = GoRouter(
   initialLocation: '/',
   redirect: (context, state) {
     final isLoggedIn = Supabase.instance.client.auth.currentUser != null;
     final isRemedyRoute = state.uri.path.startsWith('/remedy/');
-    // Allow remedy routes for everyone — guests see limited view
+    // Allow remedy routes for everyone â€” guests see limited view
     if (isRemedyRoute) return null;
     return null;
   },
@@ -75,8 +75,8 @@ final _router = GoRouter(
   ],
 );
 
-// ── App ───────────────────────────────────────────────────────────────────────
-// Global font scale � updated when user changes it in profile
+// â”€â”€ App â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// Global font scale — updated when user changes it in profile
 final ValueNotifier<double> appFontScale = ValueNotifier<double>(1.0);
 
 class HerbalRemedyApp extends StatelessWidget {
@@ -104,7 +104,7 @@ class HerbalRemedyApp extends StatelessWidget {
   }
 }
 
-// ── Auth Gate ─────────────────────────────────────────────────────────────────
+// â”€â”€ Auth Gate â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 class _AuthGate extends StatefulWidget {
   const _AuthGate();
   @override
@@ -147,7 +147,7 @@ class _AuthGateState extends State<_AuthGate> {
   }
 }
 
-// ── App Shell ─────────────────────────────────────────────────────────────────
+// â”€â”€ App Shell â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 class AppShell extends StatefulWidget {
   final int initialIndex;
   const AppShell({super.key, required this.initialIndex});
@@ -171,7 +171,7 @@ class _AppShellState extends State<AppShell> {
 
   Future<void> _checkVersion() async {
     try {
-      const currentVersion = '1.0.25';
+      const currentVersion = '1.0.10';
       final data = await Supabase.instance.client
           .from('app_version').select().eq('id', 1).single();
       final latest     = data['version']?.toString() ?? currentVersion;
@@ -253,7 +253,7 @@ class _AppShellState extends State<AppShell> {
       },
       child: Scaffold(
         backgroundColor: AppColors.background,
-        body: Column(children: [const InstallBanner(), Expanded(child: _buildTab(screens[_currentIndex]))]),
+        body: Column(children: [const SizedBox.shrink(), Expanded(child: _buildTab(screens[_currentIndex]))]),
         bottomNavigationBar: AppBottomNavBar(
           currentIndex: _currentIndex,
           onTap: (i) async {
@@ -266,7 +266,7 @@ class _AppShellState extends State<AppShell> {
   }
 }
 
-// ── Logged In Remedy Loader ───────────────────────────────────────────────────
+// â”€â”€ Logged In Remedy Loader â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 class _LoggedInRemedyLoader extends StatefulWidget {
   final String remedyId;
   const _LoggedInRemedyLoader({required this.remedyId});
@@ -326,7 +326,7 @@ class _LoggedInRemedyLoaderState extends State<_LoggedInRemedyLoader> {
   }
 }
 
-// ── Guest Remedy Loader ───────────────────────────────────────────────────────
+// â”€â”€ Guest Remedy Loader â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 class _DownloadScreen extends StatefulWidget {
   const _DownloadScreen();
   @override
@@ -349,7 +349,7 @@ class _DownloadScreenState extends State<_DownloadScreen> {
                 const SizedBox(height: 16),
                 const Text('Get Remedy Handbook', style: AppTextStyles.heading2, textAlign: TextAlign.center),
                 const SizedBox(height: 24),
-                const InstallBanner(),
+                const SizedBox.shrink(),
                 const SizedBox(height: 16),
                 TextButton(onPressed: () => context.go('/'), child: const Text('Continue to Remedy Handbook')),
               ],
@@ -489,7 +489,7 @@ class _PaymentCancelPage extends StatelessWidget {
 
 
 
-// -- Direct Category Screen (no landing page) --------------------------------
+// ── Direct Category Screen (no landing page) ────────────────────────────────
 class _DirectCategoryScreen extends StatefulWidget {
   final Function(int)? switchTab;
   const _DirectCategoryScreen({required this.switchTab});
@@ -518,7 +518,7 @@ class _DirectCategoryScreenState extends State<_DirectCategoryScreen>
   }
 }
 
-// -- Category Tab Wrapper (old � kept for reference) --------------------------
+// ── Category Tab Wrapper (old — kept for reference) ──────────────────────────
 // Opens CategoryScreen as a modal and passes result to RecipesScreen (tab 2)
 class _CategoryTabWrapper extends StatelessWidget {
   final Function(int)? switchTab;
@@ -588,4 +588,3 @@ class _CategoryTabWrapper extends StatelessWidget {
     );
   }
 }
-
