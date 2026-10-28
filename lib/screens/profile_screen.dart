@@ -1,10 +1,11 @@
-import 'package:flutter/material.dart';
+﻿import 'package:flutter/material.dart';
 import '../theme/app_theme.dart';
 import '../widgets/shared_widgets.dart';
 import '../widgets/navigation_guard.dart';
 import '../services/supabase_service.dart';
 import '../main.dart' show appFontScale;
 import 'admin_content_screen.dart';
+import 'admin_review_screen.dart';
 import 'admin_filter_matrix_screen.dart';
 import 'package:file_picker/file_picker.dart';
 import 'package:supabase_flutter/supabase_flutter.dart' show FileOptions;
@@ -117,7 +118,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
       setState(() { _editing = false; _saving = false; });
       if (context.mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Ã¢Å“... Profile updated!'), backgroundColor: Colors.green));
+          const SnackBar(content: Text('ÃƒÂ¢Ã…â€œ... Profile updated!'), backgroundColor: Colors.green));
       }
     } catch (e) {
       if (!mounted) return;
@@ -497,7 +498,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                                           textAlign: TextAlign.center),
                                       const SizedBox(height: 16),
                                       const Text('Version 1.0.0', style: AppTextStyles.caption),
-                                      const Text('© 2026 RemedyHandbook.com', style: AppTextStyles.caption),
+                                      const Text('Â© 2026 RemedyHandbook.com', style: AppTextStyles.caption),
                                     ])),
                                     actions: [ElevatedButton(
                                       onPressed: () => Navigator.pop(ctx),
@@ -623,7 +624,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
   }
 }
 
-// Ã¢Ã¢ Profile Field Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢
+// ÃƒÂ¢ÃƒÂ¢ Profile Field ÃƒÂ¢ÃƒÂ¢ÃƒÂ¢ÃƒÂ¢ÃƒÂ¢ÃƒÂ¢ÃƒÂ¢ÃƒÂ¢ÃƒÂ¢ÃƒÂ¢ÃƒÂ¢ÃƒÂ¢ÃƒÂ¢ÃƒÂ¢ÃƒÂ¢ÃƒÂ¢ÃƒÂ¢ÃƒÂ¢ÃƒÂ¢ÃƒÂ¢ÃƒÂ¢ÃƒÂ¢ÃƒÂ¢ÃƒÂ¢ÃƒÂ¢ÃƒÂ¢ÃƒÂ¢ÃƒÂ¢ÃƒÂ¢ÃƒÂ¢ÃƒÂ¢ÃƒÂ¢ÃƒÂ¢ÃƒÂ¢ÃƒÂ¢ÃƒÂ¢ÃƒÂ¢ÃƒÂ¢ÃƒÂ¢ÃƒÂ¢ÃƒÂ¢ÃƒÂ¢ÃƒÂ¢ÃƒÂ¢ÃƒÂ¢ÃƒÂ¢ÃƒÂ¢ÃƒÂ¢ÃƒÂ¢ÃƒÂ¢ÃƒÂ¢ÃƒÂ¢ÃƒÂ¢ÃƒÂ¢ÃƒÂ¢ÃƒÂ¢ÃƒÂ¢
 class _ProfileField extends StatelessWidget {
   final IconData icon;
   final String label;
@@ -656,7 +657,7 @@ class _ProfileField extends StatelessWidget {
                     focusedBorder: UnderlineInputBorder(borderSide: BorderSide(color: AppColors.primary)),
                   ),
                 )
-              : Text(value.isNotEmpty ? value : 'Ã¢', style: AppTextStyles.body),
+              : Text(value.isNotEmpty ? value : 'ÃƒÂ¢', style: AppTextStyles.body),
         ]),
       ),
       if (isLocked) const Icon(Icons.lock_outline, size: 14, color: AppColors.textSecondary),
@@ -664,7 +665,7 @@ class _ProfileField extends StatelessWidget {
   }
 }
 
-// Ã¢Ã¢ Menu Row Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢
+// ÃƒÂ¢ÃƒÂ¢ Menu Row ÃƒÂ¢ÃƒÂ¢ÃƒÂ¢ÃƒÂ¢ÃƒÂ¢ÃƒÂ¢ÃƒÂ¢ÃƒÂ¢ÃƒÂ¢ÃƒÂ¢ÃƒÂ¢ÃƒÂ¢ÃƒÂ¢ÃƒÂ¢ÃƒÂ¢ÃƒÂ¢ÃƒÂ¢ÃƒÂ¢ÃƒÂ¢ÃƒÂ¢ÃƒÂ¢ÃƒÂ¢ÃƒÂ¢ÃƒÂ¢ÃƒÂ¢ÃƒÂ¢ÃƒÂ¢ÃƒÂ¢ÃƒÂ¢ÃƒÂ¢ÃƒÂ¢ÃƒÂ¢ÃƒÂ¢ÃƒÂ¢ÃƒÂ¢ÃƒÂ¢ÃƒÂ¢ÃƒÂ¢ÃƒÂ¢ÃƒÂ¢ÃƒÂ¢ÃƒÂ¢ÃƒÂ¢ÃƒÂ¢ÃƒÂ¢ÃƒÂ¢ÃƒÂ¢ÃƒÂ¢ÃƒÂ¢ÃƒÂ¢ÃƒÂ¢ÃƒÂ¢ÃƒÂ¢ÃƒÂ¢ÃƒÂ¢ÃƒÂ¢ÃƒÂ¢ÃƒÂ¢ÃƒÂ¢ÃƒÂ¢ÃƒÂ¢ÃƒÂ¢
 class _MenuRow extends StatelessWidget {
   final IconData icon;
   final String label;

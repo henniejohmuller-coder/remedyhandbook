@@ -170,6 +170,33 @@ class _AdminReviewScreenState extends State<AdminReviewScreen>
           children: [
             const YellowAppBar(title: 'Admin review', subtitle: 'Manage all remedies', showBack: true),
 
+
+            // New Recipe button
+            Padding(
+              padding: const EdgeInsets.fromLTRB(16, 10, 16, 0),
+              child: Align(
+                alignment: Alignment.centerLeft,
+                child: GestureDetector(
+                  onTap: () => Navigator.push(context, MaterialPageRoute(
+                    builder: (_) => AdminRemedyEditScreen(
+                      remedy: const {'status': 'pending', 'name': ''},
+                      onSaved: _loadData))).then((_) => _loadData()),
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+                    decoration: BoxDecoration(
+                      color: AppColors.dark,
+                      borderRadius: BorderRadius.circular(8)),
+                    child: const Row(children: [
+                      Icon(Icons.add, color: AppColors.primary, size: 16),
+                      SizedBox(width: 6),
+                      Text('New Recipe', style: TextStyle(
+                          color: AppColors.primary, fontSize: 12,
+                          fontWeight: FontWeight.w600)),
+                    ]),
+                  ),
+                ),
+              ),
+            ),
             // Stats row
             if (!_loading)
               Padding(

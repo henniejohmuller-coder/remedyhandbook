@@ -1,4 +1,4 @@
-﻿import 'dart:typed_data';
+import 'dart:typed_data';
 import 'dart:ui' as ui;
 import 'package:flutter/rendering.dart';
 import 'package:file_picker/file_picker.dart';
@@ -156,13 +156,13 @@ class _AdminRemedyEditScreenState extends State<AdminRemedyEditScreen> {
         SupabaseService.supabase.from('difficulties').select('name').eq('active', true).order('name', ascending: true),
       ]);
       if (mounted) setState(() {
-        _illnessList     = ['Select illness',     ..._flattenValues(results[0] as List, 'name'),     'Not in list Ã¢â‚¬â€ enter manually'];
-        _categoryList    = ['Select category',    ..._flattenValues(results[1] as List, 'name'),    'Not in list Ã¢â‚¬â€ enter manually'];
-        _subCategoryList = ['Select sub-category',..._flattenValues(results[2] as List, 'name'), 'Not in list Ã¢â‚¬â€ enter manually'];
-        _symptomList     = ['Select symptom',     ..._flattenValues(results[3] as List, 'name'),     'Not in list Ã¢â‚¬â€ enter manually'];
-        _organList       = ['Select organ',       ..._flattenValues(results[4] as List, 'name'),       'Not in list Ã¢â‚¬â€ enter manually'];
-        _countryList     = ['Select country',     ..._flattenValues(results[5] as List, 'name'),     'Not in list Ã¢â‚¬â€ enter manually'];
-        _componentList        = ['Select component',   ..._flattenValues(results[6] as List, 'common_name'), 'Not in list Ã¢â‚¬â€ enter manually'];
+        _illnessList     = ['Select illness',     ..._flattenValues(results[0] as List, 'name'),     'Not in list Ã¢ enter manually'];
+        _categoryList    = ['Select category',    ..._flattenValues(results[1] as List, 'name'),    'Not in list Ã¢ enter manually'];
+        _subCategoryList = ['Select sub-category',..._flattenValues(results[2] as List, 'name'), 'Not in list Ã¢ enter manually'];
+        _symptomList     = ['Select symptom',     ..._flattenValues(results[3] as List, 'name'),     'Not in list Ã¢ enter manually'];
+        _organList       = ['Select organ',       ..._flattenValues(results[4] as List, 'name'),       'Not in list Ã¢ enter manually'];
+        _countryList     = ['Select country',     ..._flattenValues(results[5] as List, 'name'),     'Not in list Ã¢ enter manually'];
+        _componentList        = ['Select component',   ..._flattenValues(results[6] as List, 'common_name'), 'Not in list Ã¢ enter manually'];
         if ((results[7] as List).isNotEmpty) _plantPartList = _flattenValues(results[7] as List, 'name');
         if ((results[8] as List).isNotEmpty) _prepTypeList  = _flattenValues(results[8] as List, 'name');
         if ((results[9] as List).isNotEmpty) _difficultyList = _flattenValues(results[9] as List, 'name');
@@ -207,7 +207,7 @@ class _AdminRemedyEditScreenState extends State<AdminRemedyEditScreen> {
         }
       }
     } else {
-      // Submission Ã¢â‚¬â€ use instructions field (JSON array saved in submissions)
+      // Submission Ã¢ use instructions field (JSON array saved in submissions)
       final raw = r['instructions'] as List? ?? r['remedy_instructions'] as List?;
       for (final c in _stepControllers) { c.dispose(); }
       _stepControllers.clear();
@@ -238,7 +238,7 @@ class _AdminRemedyEditScreenState extends State<AdminRemedyEditScreen> {
     _mechanismController.text    = r['mechanism'] ?? '';
     _constituentController.text  = r['constituent'] ?? '';
     _cautionsController.text     = r['cautions'] ?? '';
-    // Normalise to one URL per line Ã¢â‚¬â€ handles both CSV (comma-separated)
+    // Normalise to one URL per line Ã¢ handles both CSV (comma-separated)
     // and DB (newline-separated) formats on load.
     _clinicalUrlController.text  = _normaliseUrls(r['clinical_study_url'] ?? '');
     _prepTimeController.text     = formatPrepTime(r['prep_time']);
@@ -246,7 +246,7 @@ class _AdminRemedyEditScreenState extends State<AdminRemedyEditScreen> {
     _imageUrlController.text     = _previewUrl;
     _encouragementController.text = r['encouragement'] ?? '';
 
-    // Multi-select fields Ã¢â‚¬â€ load raw CSV value directly.
+    // Multi-select fields Ã¢ load raw CSV value directly.
     // MultiPickField parses/splits it; no need to match against the option list.
     _selectedType        = r['type']?.toString() ?? '';
     _selectedComponent   = r['component']?.toString() ?? '';
@@ -276,7 +276,7 @@ class _AdminRemedyEditScreenState extends State<AdminRemedyEditScreen> {
   }
 
   void _openProductPicker({required String type}) async {
-    // Fetch ALL products of this type Ã¢â‚¬â€ not filtered by linked_remedy_id,
+    // Fetch ALL products of this type Ã¢ not filtered by linked_remedy_id,
     // so all 3 slots can be selected regardless of prior linking.
     final data = await SupabaseService.supabase
         .from('products')
@@ -315,7 +315,7 @@ class _AdminRemedyEditScreenState extends State<AdminRemedyEditScreen> {
     setState(() => _linkedProducts.removeWhere((p) => p['id'].toString() == productId));
   }
 
-  // Ã¢â€â‚¬Ã¢â€â‚¬ URL normaliser Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬
+  // Ã¢Ã¢ URL normaliser Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢
   // Accepts URLs separated by commas, semicolons, or newlines and returns
   // them one per line, ready for the multi-line clinical URL field.
   String _normaliseUrls(String raw) {
@@ -419,7 +419,7 @@ class _AdminRemedyEditScreenState extends State<AdminRemedyEditScreen> {
     super.dispose();
   }
 
-  // Ã¢â€â‚¬Ã¢â€â‚¬ Submit to Supabase Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬
+  // Ã¢Ã¢ Submit to Supabase Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢
   Future<void> _saveShopItems() async {
     final remedyId = widget.remedy['id'];
     setState(() => _savingShopItems = true);
@@ -469,7 +469,7 @@ class _AdminRemedyEditScreenState extends State<AdminRemedyEditScreen> {
       ShopScreen.reload();
       if (context.mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Ã¢Å“â€¦ Shop items saved!'), backgroundColor: Colors.green));
+          const SnackBar(content: Text('Ã¢Å“... Shop items saved!'), backgroundColor: Colors.green));
       }
     } catch (e) {
       setState(() => _savingShopItems = false);
@@ -519,7 +519,7 @@ class _AdminRemedyEditScreenState extends State<AdminRemedyEditScreen> {
     final db = SupabaseService.supabase;
 
     // Multi-select fields can now hold several comma-separated values.
-    // Insert any value not already in the lookup table Ã¢â‚¬â€ _safeInsertLookup
+    // Insert any value not already in the lookup table Ã¢ _safeInsertLookup
     // is a no-op for values that already exist, so this is always safe.
     Future<void> insertAll(String table, String col, String csv) async {
       for (final v in csv.split(RegExp(r'[,;]')).map((e) => e.trim()).where((e) => e.isNotEmpty)) {
@@ -556,7 +556,7 @@ class _AdminRemedyEditScreenState extends State<AdminRemedyEditScreen> {
         await db.from(table).insert({col: val.trim(), 'active': true});
       }
     } catch (e) {
-      // Non-critical Ã¢â‚¬â€ lookup tables are supplementary; save still proceeds.
+      // Non-critical Ã¢ lookup tables are supplementary; save still proceeds.
       debugPrint('Lookup insert skipped ($table.$col): $e');
     }
   }
@@ -568,7 +568,7 @@ class _AdminRemedyEditScreenState extends State<AdminRemedyEditScreen> {
       );
       return;
     }
-    // Get component Ã¢â‚¬â€ comma-separated multi-select value
+    // Get component Ã¢ comma-separated multi-select value
     final component = _selectedComponent.trim();
     if (component.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
@@ -624,7 +624,7 @@ class _AdminRemedyEditScreenState extends State<AdminRemedyEditScreen> {
           'instructions':      instructions,
         }).eq('id', remedyId);
 
-        // If approved Ã¢â€ â€™ copy to remedies table + save instructions
+        // If approved Ã¢â€ ' copy to remedies table + save instructions
         if (_status == 'approved') {
           final rawDiff = _difficultyController.text.trim();
           final difficulty = ['Easy', 'Medium', 'Hard'].contains(rawDiff) ? rawDiff : 'Easy';
@@ -675,7 +675,7 @@ class _AdminRemedyEditScreenState extends State<AdminRemedyEditScreen> {
           throw Exception('Remedy ID is missing');
         }
 
-        // Atomically replace all instructions via RPC Ã¢â‚¬â€ prevents duplicates
+        // Atomically replace all instructions via RPC Ã¢ prevents duplicates
         final steps = instructions.map((s) => {
           'step_number': s['step_number'],
           'instruction': s['instruction'],
@@ -729,8 +729,8 @@ class _AdminRemedyEditScreenState extends State<AdminRemedyEditScreen> {
       if (context.mounted) {
         ScaffoldMessenger.of(context).showSnackBar(SnackBar(
           content: Text(_status == 'approved'
-              ? 'Ã¢Å“â€¦ Approved! Recipe is now live on the Recipes page.'
-              : 'Ã¢Å“â€¦ Saved with status: ${_status.replaceAll('_', ' ')}'),
+              ? 'Ã¢Å“... Approved! Recipe is now live on the Recipes page.'
+              : 'Ã¢Å“... Saved with status: ${_status.replaceAll('_', ' ')}'),
           backgroundColor: _status == 'approved' ? Colors.green : AppColors.primary,
           duration: const Duration(seconds: 4),
         ));
@@ -763,7 +763,7 @@ class _AdminRemedyEditScreenState extends State<AdminRemedyEditScreen> {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    // Ã¢â€â‚¬Ã¢â€â‚¬ Ratings Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬
+                    // Ã¢Ã¢ Ratings Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢
                   const SectionLabel('RATINGS'),
                   Container(
                     padding: const EdgeInsets.all(14),
@@ -788,7 +788,7 @@ class _AdminRemedyEditScreenState extends State<AdminRemedyEditScreen> {
                         (v) => setState(() => _validationLevel = v),
                       ),
                       const SizedBox(height: 10),
-                      // Clinical study URLs Ã¢â‚¬â€ up to 10 entries, one per line
+                      // Clinical study URLs Ã¢ up to 10 entries, one per line
                       // keyboardType.multiline + newline action = Enter key adds a new line
                       TextField(
                         controller: _clinicalUrlController,
@@ -824,7 +824,7 @@ class _AdminRemedyEditScreenState extends State<AdminRemedyEditScreen> {
                         isPercent: true,
                       ),
                       const SizedBox(height: 10),
-                      // Efficacy reference URL Ã¢â‚¬â€ single source for this efficacy %
+                      // Efficacy reference URL Ã¢ single source for this efficacy %
                       TextField(
                         controller: _efficacyRefController,
                         maxLines: 1,
@@ -850,7 +850,7 @@ class _AdminRemedyEditScreenState extends State<AdminRemedyEditScreen> {
                   ),
                   const SizedBox(height: 16),
 
-                  // Ã¢â€â‚¬Ã¢â€â‚¬ Encouragement Block Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬
+                  // Ã¢Ã¢ Encouragement Block Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢
                   const SectionLabel('REMEDY ENCOURAGEMENT'),
                   Container(
                     padding: const EdgeInsets.all(12),
@@ -886,7 +886,7 @@ class _AdminRemedyEditScreenState extends State<AdminRemedyEditScreen> {
                   ),
                   const SizedBox(height: 16),
 
-                  // Ã¢â€â‚¬Ã¢â€â‚¬ Status Selector Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬
+                  // Ã¢Ã¢ Status Selector Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢
                   const SectionLabel('STATUS'),
                   Container(
                     padding: const EdgeInsets.all(12),
@@ -897,6 +897,26 @@ class _AdminRemedyEditScreenState extends State<AdminRemedyEditScreen> {
                     ),
                     child: Column(children: [
                       Row(children: [
+                        GestureDetector(
+                          onTap: () => Navigator.pushReplacement(context, MaterialPageRoute(
+                            builder: (_) => AdminRemedyEditScreen(
+                              remedy: const {'status': 'pending', 'name': ''},
+                              onSaved: widget.onSaved))),
+                          child: Container(
+                            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                            decoration: BoxDecoration(
+                              color: AppColors.dark,
+                              borderRadius: BorderRadius.circular(8)),
+                            child: const Row(children: [
+                              Icon(Icons.add, color: AppColors.primary, size: 14),
+                              SizedBox(width: 4),
+                              Text('New Recipe', style: TextStyle(
+                                  color: AppColors.primary, fontSize: 11,
+                                  fontWeight: FontWeight.w600)),
+                            ]),
+                          ),
+                        ),
+                        const SizedBox(width: 8),
                         _statusBtn('pending',   'Pending',   AppColors.levelBadge),
                         const SizedBox(width: 8),
                         _statusBtn('in_review', 'In review', Colors.blue.shade100),
@@ -933,7 +953,7 @@ class _AdminRemedyEditScreenState extends State<AdminRemedyEditScreen> {
                       ),
                     ),
                     const SizedBox(height: 10),
-                    // Type Ã¢â‚¬â€ Medicinal or Lifestyle
+                    // Type Ã¢ Medicinal or Lifestyle
                     MultiPickField(
                       label: 'Type',
                       value: _selectedType,
@@ -942,7 +962,7 @@ class _AdminRemedyEditScreenState extends State<AdminRemedyEditScreen> {
                       onChanged: (v) => setState(() => _selectedType = v),
                     ),
                     const SizedBox(height: 10),
-                    // Ã¢â€â‚¬Ã¢â€â‚¬ Filter Matrix (bidirectional cascading) Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬
+                    // Ã¢Ã¢ Filter Matrix (bidirectional cascading) Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢
                     FilterMatrixPicker(
                       initialCategory:    _filterCategory,
                       initialSubcategory: _filterSubcategory,
@@ -963,8 +983,8 @@ class _AdminRemedyEditScreenState extends State<AdminRemedyEditScreen> {
                       },
                     ),
                     const SizedBox(height: 10),
-                    // Organ Ã¢â‚¬â€ multi-select
-                    // Organ Ã¢â‚¬â€ multi-select
+                    // Organ Ã¢ multi-select
+                    // Organ Ã¢ multi-select
                     MultiPickField(
                       label: 'Organ',
                       value: _selectedOrgan,
@@ -973,7 +993,7 @@ class _AdminRemedyEditScreenState extends State<AdminRemedyEditScreen> {
                       onChanged: (v) => setState(() => _selectedOrgan = v),
                     ),
                     const SizedBox(height: 10),
-                    // Primary herb / component Ã¢â‚¬â€ multi-select
+                    // Primary herb / component Ã¢ multi-select
                     MultiPickField(
                       label: 'Primary herb / component',
                       value: _selectedComponent,
@@ -982,7 +1002,7 @@ class _AdminRemedyEditScreenState extends State<AdminRemedyEditScreen> {
                       onChanged: (v) => setState(() => _selectedComponent = v),
                     ),
                     const SizedBox(height: 10),
-                    // Country Ã¢â‚¬â€ multi-select
+                    // Country Ã¢ multi-select
                     MultiPickField(
                       label: 'Country of origin',
                       value: _selectedCountry,
@@ -1001,7 +1021,7 @@ class _AdminRemedyEditScreenState extends State<AdminRemedyEditScreen> {
                       ),
                     ),
                     const SizedBox(height: 10),
-                    // Plant part Ã¢â‚¬â€ multi-select
+                    // Plant part Ã¢ multi-select
                     MultiPickField(
                       label: 'Plant part',
                       value: _selectedPlantPart,
@@ -1010,7 +1030,7 @@ class _AdminRemedyEditScreenState extends State<AdminRemedyEditScreen> {
                       onChanged: (v) => setState(() => _selectedPlantPart = v),
                     ),
                     const SizedBox(height: 10),
-                    // Prep type Ã¢â‚¬â€ multi-select
+                    // Prep type Ã¢ multi-select
                     MultiPickField(
                       label: 'Prep type',
                       value: _selectedPrepType,
@@ -1020,7 +1040,7 @@ class _AdminRemedyEditScreenState extends State<AdminRemedyEditScreen> {
                     ),
                     const SizedBox(height: 10),
                     DropdownButtonFormField<String>(
-                      // Difficulty is a fixed 3-value enum Ã¢â‚¬â€ no DB lookup,
+                      // Difficulty is a fixed 3-value enum Ã¢ no DB lookup,
                       // so it can never crash from duplicate/garbage data.
                       value: const ['Easy', 'Medium', 'Hard'].contains(_difficultyController.text)
                           ? _difficultyController.text : 'Medium',
@@ -1139,7 +1159,7 @@ class _AdminRemedyEditScreenState extends State<AdminRemedyEditScreen> {
                     const SizedBox(height: 10),
                     const SizedBox(height: 16),
 
-                    // Ã¢â€â‚¬Ã¢â€â‚¬ Image Section Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬
+                    // Ã¢Ã¢ Image Section Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢
                     const Text('Herb image', style: AppTextStyles.heading3),
                     const SizedBox(height: 4),
                     const Text('Upload a photo or paste an image URL', style: AppTextStyles.caption),
@@ -1271,7 +1291,7 @@ class _AdminRemedyEditScreenState extends State<AdminRemedyEditScreen> {
     );
   }
 
-  // Ã¢â€â‚¬Ã¢â€â‚¬ Image Preview Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬
+  // Ã¢Ã¢ Image Preview Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢
 
   Widget _buildImagePreview() {
     return Container(
@@ -1324,7 +1344,7 @@ class _AdminRemedyEditScreenState extends State<AdminRemedyEditScreen> {
     );
   }
 
-  // Ã¢â€â‚¬Ã¢â€â‚¬ Upload Photo (web: shows dialog; mobile: would use image_picker) Ã¢â€â‚¬Ã¢â€â‚¬
+  // Ã¢Ã¢ Upload Photo (web: shows dialog; mobile: would use image_picker) Ã¢Ã¢
 
   Future<void> _pickImage() async {
     final result = await FilePicker.platform.pickFiles(type: FileType.image, withData: true);
@@ -1526,7 +1546,7 @@ class _AdminRemedyEditScreenState extends State<AdminRemedyEditScreen> {
     }
   }
 
-  // Ã¢â€â‚¬Ã¢â€â‚¬ Paste URL Dialog Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬
+  // Ã¢Ã¢ Paste URL Dialog Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢
 
   void _showUrlDialog() {
     final tempController = TextEditingController(text: _previewUrl);
@@ -1550,7 +1570,7 @@ class _AdminRemedyEditScreenState extends State<AdminRemedyEditScreen> {
               mainAxisSize: MainAxisSize.min,
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                // Ã¢â€â‚¬Ã¢â€â‚¬ Wikipedia search section Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬
+                // Ã¢Ã¢ Wikipedia search section Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢
                 Container(
                   padding: const EdgeInsets.all(12),
                   decoration: BoxDecoration(
@@ -1589,7 +1609,7 @@ class _AdminRemedyEditScreenState extends State<AdminRemedyEditScreen> {
                                 foundUrl = url;
                                 tempController.text = url;
                               } else {
-                                searchError = 'No image found Ã¢â‚¬â€ try a different name';
+                                searchError = 'No image found Ã¢ try a different name';
                               }
                             });
                           },
@@ -1677,7 +1697,7 @@ class _AdminRemedyEditScreenState extends State<AdminRemedyEditScreen> {
     );
   }
 
-  // Ã¢â€â‚¬Ã¢â€â‚¬ Smart Dropdown with Manual Entry Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬
+  // Ã¢Ã¢ Smart Dropdown with Manual Entry Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢
 
   Widget _buildSmartDropdown({
     required String label,
@@ -1735,7 +1755,7 @@ class _AdminRemedyEditScreenState extends State<AdminRemedyEditScreen> {
               value: o,
               child: Text(
                 o,
-                style: o == 'Not in list Ã¢â‚¬â€ enter manually'
+                style: o == 'Not in list Ã¢ enter manually'
                     ? const TextStyle(color: AppColors.primary, fontWeight: FontWeight.w600, fontSize: 13)
                     : AppTextStyles.body,
                 overflow: TextOverflow.ellipsis,
@@ -1802,7 +1822,7 @@ class _AdminRemedyEditScreenState extends State<AdminRemedyEditScreen> {
     );
   }
 
-  // Ã¢â€â‚¬Ã¢â€â‚¬ Herb / Component Selector Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬
+  // Ã¢Ã¢ Herb / Component Selector Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢
 
   Widget _buildComponentSelector() {
     final herbs = _componentList.isNotEmpty ? _componentList : [
@@ -1816,7 +1836,7 @@ class _AdminRemedyEditScreenState extends State<AdminRemedyEditScreen> {
       'Moringa oleifera', 'Pelargonium sidoides (Umckaloabo)',
       'Sceletium tortuosum (Kanna)', 'Silybum marianum (Milk Thistle)',
       'Sutherlandia frutescens (Cancer Bush)', 'Withania somnifera (Ashwagandha)',
-      'Zingiber officinale (Ginger)', 'Not in list Ã¢â‚¬â€ enter manually',
+      'Zingiber officinale (Ginger)', 'Not in list Ã¢ enter manually',
     ];
 
     // Confirmed custom value: show chip (same pattern as _buildSmartDropdown)
@@ -1828,7 +1848,7 @@ class _AdminRemedyEditScreenState extends State<AdminRemedyEditScreen> {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         if (isConfirmedCustom) ...[
-          // Confirmed chip Ã¢â‚¬â€ mirrors _buildSmartDropdown confirmed state
+          // Confirmed chip Ã¢ mirrors _buildSmartDropdown confirmed state
           Container(
             padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
             decoration: BoxDecoration(
@@ -1876,7 +1896,7 @@ class _AdminRemedyEditScreenState extends State<AdminRemedyEditScreen> {
             items: herbs.map((h) => DropdownMenuItem(
               value: h,
               child: Text(h,
-                style: h == 'Not in list Ã¢â‚¬â€ enter manually'
+                style: h == 'Not in list Ã¢ enter manually'
                     ? const TextStyle(color: AppColors.primary, fontWeight: FontWeight.w600, fontSize: 13)
                     : AppTextStyles.body,
                 overflow: TextOverflow.ellipsis,
@@ -1885,12 +1905,12 @@ class _AdminRemedyEditScreenState extends State<AdminRemedyEditScreen> {
             onChanged: (v) {
               setState(() {
                 _selectedComponent = v!;
-                _showCustomComponent = v == 'Not in list Ã¢â‚¬â€ enter manually';
+                _showCustomComponent = v == 'Not in list Ã¢ enter manually';
                 if (_showCustomComponent) _customComponentController.clear();
               });
             },
           ),
-          // Manual input Ã¢â‚¬â€ shown when "Not in list" is selected
+          // Manual input Ã¢ shown when "Not in list" is selected
           if (_showCustomComponent) ...[
             const SizedBox(height: 8),
             Container(
@@ -1956,7 +1976,7 @@ class _AdminRemedyEditScreenState extends State<AdminRemedyEditScreen> {
     );
   }
 
-  // Ã¢â€â‚¬Ã¢â€â‚¬ Helpers Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬
+  // Ã¢Ã¢ Helpers Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢
 
   Widget _shopField(String label, String hint, TextEditingController controller, {bool isNumber = false}) {
     return TextField(
@@ -2000,7 +2020,7 @@ class _AdminRemedyEditScreenState extends State<AdminRemedyEditScreen> {
   }
 }
 
-// Ã¢â€â‚¬Ã¢â€â‚¬ Product Picker Sheet Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬
+// Ã¢Ã¢ Product Picker Sheet Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢
 
 class _ProductPickerSheet extends StatefulWidget {
   final List<Map<String, dynamic>> products;

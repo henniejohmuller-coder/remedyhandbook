@@ -1,4 +1,4 @@
-﻿import 'package:flutter/services.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:go_router/go_router.dart';
@@ -20,7 +20,6 @@ import 'screens/shop_screen.dart';
 import 'screens/cart_screen.dart';
 import 'screens/checkout_screen.dart';
 import 'screens/order_confirmation_screen.dart';
-import 'screens/submit_remedy_screen.dart';
 import 'screens/my_recipes_screen.dart';
 import 'screens/profile_screen.dart';
 import 'screens/recipe_detail_screen.dart';
@@ -242,7 +241,6 @@ class _AppShellState extends State<AppShell> {
       _DirectCategoryScreen(switchTab: _switchTab),
       const RecipesScreen(),
       const ShopScreen(),
-      const SubmitRemedyScreen(),
       const MyRecipesScreen(),
       const ProfileScreen(),
     ];
