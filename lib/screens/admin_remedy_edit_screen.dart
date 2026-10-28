@@ -1,4 +1,4 @@
-import 'dart:typed_data';
+﻿import 'dart:typed_data';
 import 'dart:ui' as ui;
 import 'package:flutter/rendering.dart';
 import 'package:file_picker/file_picker.dart';
@@ -10,6 +10,7 @@ import '../utils/image_search.dart';
 import '../theme/app_theme.dart';
 import '../widgets/shared_widgets.dart';
 import '../services/supabase_service.dart';
+import '../widgets/filter_matrix_picker.dart';
 import 'recipes_screen.dart';
 import 'shop_screen.dart';
 
@@ -83,6 +84,11 @@ class _AdminRemedyEditScreenState extends State<AdminRemedyEditScreen> {
   bool _showCustomSubCategory = false;
   String? _confirmedCustomSubCategory;
   String _selectedSymptom = '';
+  // Filter matrix selections
+  String? _filterCategory;
+  String? _filterSubcategory;
+  String? _filterIllness;
+  List<String> _filterSymptoms = [];
   bool _showCustomSymptom = false;
   String? _confirmedCustomSymptom;
   String _selectedOrgan = '';
@@ -150,13 +156,13 @@ class _AdminRemedyEditScreenState extends State<AdminRemedyEditScreen> {
         SupabaseService.supabase.from('difficulties').select('name').eq('active', true).order('name', ascending: true),
       ]);
       if (mounted) setState(() {
-        _illnessList     = ['Select illness',     ..._flattenValues(results[0] as List, 'name'),     'Not in list — enter manually'];
-        _categoryList    = ['Select category',    ..._flattenValues(results[1] as List, 'name'),    'Not in list — enter manually'];
-        _subCategoryList = ['Select sub-category',..._flattenValues(results[2] as List, 'name'), 'Not in list — enter manually'];
-        _symptomList     = ['Select symptom',     ..._flattenValues(results[3] as List, 'name'),     'Not in list — enter manually'];
-        _organList       = ['Select organ',       ..._flattenValues(results[4] as List, 'name'),       'Not in list — enter manually'];
-        _countryList     = ['Select country',     ..._flattenValues(results[5] as List, 'name'),     'Not in list — enter manually'];
-        _componentList        = ['Select component',   ..._flattenValues(results[6] as List, 'common_name'), 'Not in list — enter manually'];
+        _illnessList     = ['Select illness',     ..._flattenValues(results[0] as List, 'name'),     'Not in list Ã¢â‚¬â€ enter manually'];
+        _categoryList    = ['Select category',    ..._flattenValues(results[1] as List, 'name'),    'Not in list Ã¢â‚¬â€ enter manually'];
+        _subCategoryList = ['Select sub-category',..._flattenValues(results[2] as List, 'name'), 'Not in list Ã¢â‚¬â€ enter manually'];
+        _symptomList     = ['Select symptom',     ..._flattenValues(results[3] as List, 'name'),     'Not in list Ã¢â‚¬â€ enter manually'];
+        _organList       = ['Select organ',       ..._flattenValues(results[4] as List, 'name'),       'Not in list Ã¢â‚¬â€ enter manually'];
+        _countryList     = ['Select country',     ..._flattenValues(results[5] as List, 'name'),     'Not in list Ã¢â‚¬â€ enter manually'];
+        _componentList        = ['Select component',   ..._flattenValues(results[6] as List, 'common_name'), 'Not in list Ã¢â‚¬â€ enter manually'];
         if ((results[7] as List).isNotEmpty) _plantPartList = _flattenValues(results[7] as List, 'name');
         if ((results[8] as List).isNotEmpty) _prepTypeList  = _flattenValues(results[8] as List, 'name');
         if ((results[9] as List).isNotEmpty) _difficultyList = _flattenValues(results[9] as List, 'name');
@@ -201,7 +207,7 @@ class _AdminRemedyEditScreenState extends State<AdminRemedyEditScreen> {
         }
       }
     } else {
-      // Submission — use instructions field (JSON array saved in submissions)
+      // Submission Ã¢â‚¬â€ use instructions field (JSON array saved in submissions)
       final raw = r['instructions'] as List? ?? r['remedy_instructions'] as List?;
       for (final c in _stepControllers) { c.dispose(); }
       _stepControllers.clear();
@@ -232,7 +238,7 @@ class _AdminRemedyEditScreenState extends State<AdminRemedyEditScreen> {
     _mechanismController.text    = r['mechanism'] ?? '';
     _constituentController.text  = r['constituent'] ?? '';
     _cautionsController.text     = r['cautions'] ?? '';
-    // Normalise to one URL per line — handles both CSV (comma-separated)
+    // Normalise to one URL per line Ã¢â‚¬â€ handles both CSV (comma-separated)
     // and DB (newline-separated) formats on load.
     _clinicalUrlController.text  = _normaliseUrls(r['clinical_study_url'] ?? '');
     _prepTimeController.text     = formatPrepTime(r['prep_time']);
@@ -240,11 +246,15 @@ class _AdminRemedyEditScreenState extends State<AdminRemedyEditScreen> {
     _imageUrlController.text     = _previewUrl;
     _encouragementController.text = r['encouragement'] ?? '';
 
-    // Multi-select fields — load raw CSV value directly.
+    // Multi-select fields Ã¢â‚¬â€ load raw CSV value directly.
     // MultiPickField parses/splits it; no need to match against the option list.
     _selectedType        = r['type']?.toString() ?? '';
     _selectedComponent   = r['component']?.toString() ?? '';
-    _selectedIllness     = r['illness_name']?.toString() ?? '';
+    _selectedIllness     = r['illness_name'];
+    _filterCategory    = r['filter_category']?.toString();
+    _filterSubcategory = r['filter_subcategory']?.toString();
+    _filterIllness     = r['filter_illness']?.toString();
+    _filterSymptoms    = (r['filter_symptoms'] as List?)?.map((s) => s.toString()).toList() ?? [];
     _selectedCategory    = r['category_name']?.toString() ?? '';
     _selectedSubCategory = r['sub_category_name']?.toString() ?? '';
     _selectedSymptom     = r['symptom_name']?.toString() ?? '';
@@ -266,7 +276,7 @@ class _AdminRemedyEditScreenState extends State<AdminRemedyEditScreen> {
   }
 
   void _openProductPicker({required String type}) async {
-    // Fetch ALL products of this type — not filtered by linked_remedy_id,
+    // Fetch ALL products of this type Ã¢â‚¬â€ not filtered by linked_remedy_id,
     // so all 3 slots can be selected regardless of prior linking.
     final data = await SupabaseService.supabase
         .from('products')
@@ -305,7 +315,7 @@ class _AdminRemedyEditScreenState extends State<AdminRemedyEditScreen> {
     setState(() => _linkedProducts.removeWhere((p) => p['id'].toString() == productId));
   }
 
-  // ── URL normaliser ────────────────────────────────────────────────────────
+  // Ã¢â€â‚¬Ã¢â€â‚¬ URL normaliser Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬
   // Accepts URLs separated by commas, semicolons, or newlines and returns
   // them one per line, ready for the multi-line clinical URL field.
   String _normaliseUrls(String raw) {
@@ -409,7 +419,7 @@ class _AdminRemedyEditScreenState extends State<AdminRemedyEditScreen> {
     super.dispose();
   }
 
-  // ── Submit to Supabase ────────────────────────────────────────
+  // Ã¢â€â‚¬Ã¢â€â‚¬ Submit to Supabase Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬
   Future<void> _saveShopItems() async {
     final remedyId = widget.remedy['id'];
     setState(() => _savingShopItems = true);
@@ -459,7 +469,7 @@ class _AdminRemedyEditScreenState extends State<AdminRemedyEditScreen> {
       ShopScreen.reload();
       if (context.mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('✅ Shop items saved!'), backgroundColor: Colors.green));
+          const SnackBar(content: Text('Ã¢Å“â€¦ Shop items saved!'), backgroundColor: Colors.green));
       }
     } catch (e) {
       setState(() => _savingShopItems = false);
@@ -509,7 +519,7 @@ class _AdminRemedyEditScreenState extends State<AdminRemedyEditScreen> {
     final db = SupabaseService.supabase;
 
     // Multi-select fields can now hold several comma-separated values.
-    // Insert any value not already in the lookup table — _safeInsertLookup
+    // Insert any value not already in the lookup table Ã¢â‚¬â€ _safeInsertLookup
     // is a no-op for values that already exist, so this is always safe.
     Future<void> insertAll(String table, String col, String csv) async {
       for (final v in csv.split(RegExp(r'[,;]')).map((e) => e.trim()).where((e) => e.isNotEmpty)) {
@@ -546,7 +556,7 @@ class _AdminRemedyEditScreenState extends State<AdminRemedyEditScreen> {
         await db.from(table).insert({col: val.trim(), 'active': true});
       }
     } catch (e) {
-      // Non-critical — lookup tables are supplementary; save still proceeds.
+      // Non-critical Ã¢â‚¬â€ lookup tables are supplementary; save still proceeds.
       debugPrint('Lookup insert skipped ($table.$col): $e');
     }
   }
@@ -558,7 +568,7 @@ class _AdminRemedyEditScreenState extends State<AdminRemedyEditScreen> {
       );
       return;
     }
-    // Get component — comma-separated multi-select value
+    // Get component Ã¢â‚¬â€ comma-separated multi-select value
     final component = _selectedComponent.trim();
     if (component.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
@@ -614,7 +624,7 @@ class _AdminRemedyEditScreenState extends State<AdminRemedyEditScreen> {
           'instructions':      instructions,
         }).eq('id', remedyId);
 
-        // If approved → copy to remedies table + save instructions
+        // If approved Ã¢â€ â€™ copy to remedies table + save instructions
         if (_status == 'approved') {
           final rawDiff = _difficultyController.text.trim();
           final difficulty = ['Easy', 'Medium', 'Hard'].contains(rawDiff) ? rawDiff : 'Easy';
@@ -641,7 +651,11 @@ class _AdminRemedyEditScreenState extends State<AdminRemedyEditScreen> {
             'efficacy_ref':       _efficacyRefController.text.trim(),
             'image_url':          _previewUrl.isNotEmpty ? _previewUrl : null,
             'encouragement':      _encouragementController.text.trim(),
-            'tradition_rating':   _traditionRating,
+            'filter_category':    _filterCategory,
+          'filter_subcategory': _filterSubcategory,
+          'filter_illness':     _filterIllness,
+          'filter_symptoms':    _filterSymptoms.isNotEmpty ? _filterSymptoms : null,
+          'tradition_rating':   _traditionRating,
             'validation_level':   _validationLevel,
             'efficacy':           _efficacy,
             'submitted_by':       widget.remedy['user_id'],
@@ -661,7 +675,7 @@ class _AdminRemedyEditScreenState extends State<AdminRemedyEditScreen> {
           throw Exception('Remedy ID is missing');
         }
 
-        // Atomically replace all instructions via RPC — prevents duplicates
+        // Atomically replace all instructions via RPC Ã¢â‚¬â€ prevents duplicates
         final steps = instructions.map((s) => {
           'step_number': s['step_number'],
           'instruction': s['instruction'],
@@ -693,6 +707,10 @@ class _AdminRemedyEditScreenState extends State<AdminRemedyEditScreen> {
           'efficacy_ref':       _efficacyRefController.text.trim(),
           'image_url':          _previewUrl.isNotEmpty ? _previewUrl : null,
           'encouragement':      _encouragementController.text.trim(),
+          'filter_category':    _filterCategory,
+          'filter_subcategory': _filterSubcategory,
+          'filter_illness':     _filterIllness,
+          'filter_symptoms':    _filterSymptoms.isNotEmpty ? _filterSymptoms : null,
           'tradition_rating':   _traditionRating,
           'validation_level':   _validationLevel,
           'efficacy':           _efficacy,
@@ -711,8 +729,8 @@ class _AdminRemedyEditScreenState extends State<AdminRemedyEditScreen> {
       if (context.mounted) {
         ScaffoldMessenger.of(context).showSnackBar(SnackBar(
           content: Text(_status == 'approved'
-              ? '✅ Approved! Recipe is now live on the Recipes page.'
-              : '✅ Saved with status: ${_status.replaceAll('_', ' ')}'),
+              ? 'Ã¢Å“â€¦ Approved! Recipe is now live on the Recipes page.'
+              : 'Ã¢Å“â€¦ Saved with status: ${_status.replaceAll('_', ' ')}'),
           backgroundColor: _status == 'approved' ? Colors.green : AppColors.primary,
           duration: const Duration(seconds: 4),
         ));
@@ -745,7 +763,7 @@ class _AdminRemedyEditScreenState extends State<AdminRemedyEditScreen> {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    // ── Ratings ───────────────────────────────────────
+                    // Ã¢â€â‚¬Ã¢â€â‚¬ Ratings Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬
                   const SectionLabel('RATINGS'),
                   Container(
                     padding: const EdgeInsets.all(14),
@@ -770,7 +788,7 @@ class _AdminRemedyEditScreenState extends State<AdminRemedyEditScreen> {
                         (v) => setState(() => _validationLevel = v),
                       ),
                       const SizedBox(height: 10),
-                      // Clinical study URLs — up to 10 entries, one per line
+                      // Clinical study URLs Ã¢â‚¬â€ up to 10 entries, one per line
                       // keyboardType.multiline + newline action = Enter key adds a new line
                       TextField(
                         controller: _clinicalUrlController,
@@ -806,7 +824,7 @@ class _AdminRemedyEditScreenState extends State<AdminRemedyEditScreen> {
                         isPercent: true,
                       ),
                       const SizedBox(height: 10),
-                      // Efficacy reference URL — single source for this efficacy %
+                      // Efficacy reference URL Ã¢â‚¬â€ single source for this efficacy %
                       TextField(
                         controller: _efficacyRefController,
                         maxLines: 1,
@@ -832,7 +850,7 @@ class _AdminRemedyEditScreenState extends State<AdminRemedyEditScreen> {
                   ),
                   const SizedBox(height: 16),
 
-                  // ── Encouragement Block ───────────────────────────
+                  // Ã¢â€â‚¬Ã¢â€â‚¬ Encouragement Block Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬
                   const SectionLabel('REMEDY ENCOURAGEMENT'),
                   Container(
                     padding: const EdgeInsets.all(12),
@@ -868,7 +886,7 @@ class _AdminRemedyEditScreenState extends State<AdminRemedyEditScreen> {
                   ),
                   const SizedBox(height: 16),
 
-                  // ── Status Selector ───────────────────────────────
+                  // Ã¢â€â‚¬Ã¢â€â‚¬ Status Selector Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬
                   const SectionLabel('STATUS'),
                   Container(
                     padding: const EdgeInsets.all(12),
@@ -915,7 +933,7 @@ class _AdminRemedyEditScreenState extends State<AdminRemedyEditScreen> {
                       ),
                     ),
                     const SizedBox(height: 10),
-                    // Type — Medicinal or Lifestyle
+                    // Type Ã¢â‚¬â€ Medicinal or Lifestyle
                     MultiPickField(
                       label: 'Type',
                       value: _selectedType,
@@ -924,43 +942,29 @@ class _AdminRemedyEditScreenState extends State<AdminRemedyEditScreen> {
                       onChanged: (v) => setState(() => _selectedType = v),
                     ),
                     const SizedBox(height: 10),
-                    // Illness — multi-select
-                    MultiPickField(
-                      label: 'Illness *',
-                      value: _selectedIllness,
-                      options: _illnessList,
-                      customHint: 'e.g. Chronic fatigue syndrome',
-                      onChanged: (v) => setState(() => _selectedIllness = v),
+                    // Ã¢â€â‚¬Ã¢â€â‚¬ Filter Matrix (bidirectional cascading) Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬
+                    FilterMatrixPicker(
+                      initialCategory:    _filterCategory,
+                      initialSubcategory: _filterSubcategory,
+                      initialIllness:     _filterIllness,
+                      initialSymptoms:    _filterSymptoms,
+                      onChanged: (cat, sub, ill, syms) {
+                        setState(() {
+                          _filterCategory    = cat;
+                          _filterSubcategory = sub;
+                          _filterIllness     = ill;
+                          _filterSymptoms    = syms;
+                          // Keep legacy fields in sync
+                          if (cat != null) _selectedCategory    = cat;
+                          if (sub != null) _selectedSubCategory = sub;
+                          if (ill != null) _selectedIllness     = ill;
+                          if (syms.isNotEmpty) _selectedSymptom = syms.join(', ');
+                        });
+                      },
                     ),
                     const SizedBox(height: 10),
-                    // Category — multi-select
-                    MultiPickField(
-                      label: 'Category *',
-                      value: _selectedCategory,
-                      options: _categoryList,
-                      customHint: 'e.g. Autoimmune support',
-                      onChanged: (v) => setState(() => _selectedCategory = v),
-                    ),
-                    const SizedBox(height: 10),
-                    // Sub-category — multi-select
-                    MultiPickField(
-                      label: 'Sub-category',
-                      value: _selectedSubCategory,
-                      options: _subCategoryList,
-                      customHint: 'e.g. Small intestine',
-                      onChanged: (v) => setState(() => _selectedSubCategory = v),
-                    ),
-                    const SizedBox(height: 10),
-                    // Symptoms — multi-select
-                    MultiPickField(
-                      label: 'Symptoms',
-                      value: _selectedSymptom,
-                      options: _symptomList,
-                      customHint: 'e.g. Night sweats',
-                      onChanged: (v) => setState(() => _selectedSymptom = v),
-                    ),
-                    const SizedBox(height: 10),
-                    // Organ — multi-select
+                    // Organ Ã¢â‚¬â€ multi-select
+                    // Organ Ã¢â‚¬â€ multi-select
                     MultiPickField(
                       label: 'Organ',
                       value: _selectedOrgan,
@@ -969,7 +973,7 @@ class _AdminRemedyEditScreenState extends State<AdminRemedyEditScreen> {
                       onChanged: (v) => setState(() => _selectedOrgan = v),
                     ),
                     const SizedBox(height: 10),
-                    // Primary herb / component — multi-select
+                    // Primary herb / component Ã¢â‚¬â€ multi-select
                     MultiPickField(
                       label: 'Primary herb / component',
                       value: _selectedComponent,
@@ -978,7 +982,7 @@ class _AdminRemedyEditScreenState extends State<AdminRemedyEditScreen> {
                       onChanged: (v) => setState(() => _selectedComponent = v),
                     ),
                     const SizedBox(height: 10),
-                    // Country — multi-select
+                    // Country Ã¢â‚¬â€ multi-select
                     MultiPickField(
                       label: 'Country of origin',
                       value: _selectedCountry,
@@ -997,7 +1001,7 @@ class _AdminRemedyEditScreenState extends State<AdminRemedyEditScreen> {
                       ),
                     ),
                     const SizedBox(height: 10),
-                    // Plant part — multi-select
+                    // Plant part Ã¢â‚¬â€ multi-select
                     MultiPickField(
                       label: 'Plant part',
                       value: _selectedPlantPart,
@@ -1006,7 +1010,7 @@ class _AdminRemedyEditScreenState extends State<AdminRemedyEditScreen> {
                       onChanged: (v) => setState(() => _selectedPlantPart = v),
                     ),
                     const SizedBox(height: 10),
-                    // Prep type — multi-select
+                    // Prep type Ã¢â‚¬â€ multi-select
                     MultiPickField(
                       label: 'Prep type',
                       value: _selectedPrepType,
@@ -1016,7 +1020,7 @@ class _AdminRemedyEditScreenState extends State<AdminRemedyEditScreen> {
                     ),
                     const SizedBox(height: 10),
                     DropdownButtonFormField<String>(
-                      // Difficulty is a fixed 3-value enum — no DB lookup,
+                      // Difficulty is a fixed 3-value enum Ã¢â‚¬â€ no DB lookup,
                       // so it can never crash from duplicate/garbage data.
                       value: const ['Easy', 'Medium', 'Hard'].contains(_difficultyController.text)
                           ? _difficultyController.text : 'Medium',
@@ -1135,7 +1139,7 @@ class _AdminRemedyEditScreenState extends State<AdminRemedyEditScreen> {
                     const SizedBox(height: 10),
                     const SizedBox(height: 16),
 
-                    // ── Image Section ─────────────────────────────────────
+                    // Ã¢â€â‚¬Ã¢â€â‚¬ Image Section Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬
                     const Text('Herb image', style: AppTextStyles.heading3),
                     const SizedBox(height: 4),
                     const Text('Upload a photo or paste an image URL', style: AppTextStyles.caption),
@@ -1267,7 +1271,7 @@ class _AdminRemedyEditScreenState extends State<AdminRemedyEditScreen> {
     );
   }
 
-  // ── Image Preview ─────────────────────────────────────────────────────
+  // Ã¢â€â‚¬Ã¢â€â‚¬ Image Preview Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬
 
   Widget _buildImagePreview() {
     return Container(
@@ -1320,7 +1324,7 @@ class _AdminRemedyEditScreenState extends State<AdminRemedyEditScreen> {
     );
   }
 
-  // ── Upload Photo (web: shows dialog; mobile: would use image_picker) ──
+  // Ã¢â€â‚¬Ã¢â€â‚¬ Upload Photo (web: shows dialog; mobile: would use image_picker) Ã¢â€â‚¬Ã¢â€â‚¬
 
   Future<void> _pickImage() async {
     final result = await FilePicker.platform.pickFiles(type: FileType.image, withData: true);
@@ -1522,7 +1526,7 @@ class _AdminRemedyEditScreenState extends State<AdminRemedyEditScreen> {
     }
   }
 
-  // ── Paste URL Dialog ──────────────────────────────────────────────────
+  // Ã¢â€â‚¬Ã¢â€â‚¬ Paste URL Dialog Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬
 
   void _showUrlDialog() {
     final tempController = TextEditingController(text: _previewUrl);
@@ -1546,7 +1550,7 @@ class _AdminRemedyEditScreenState extends State<AdminRemedyEditScreen> {
               mainAxisSize: MainAxisSize.min,
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                // ── Wikipedia search section ─────────────────────────
+                // Ã¢â€â‚¬Ã¢â€â‚¬ Wikipedia search section Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬
                 Container(
                   padding: const EdgeInsets.all(12),
                   decoration: BoxDecoration(
@@ -1585,7 +1589,7 @@ class _AdminRemedyEditScreenState extends State<AdminRemedyEditScreen> {
                                 foundUrl = url;
                                 tempController.text = url;
                               } else {
-                                searchError = 'No image found — try a different name';
+                                searchError = 'No image found Ã¢â‚¬â€ try a different name';
                               }
                             });
                           },
@@ -1673,7 +1677,7 @@ class _AdminRemedyEditScreenState extends State<AdminRemedyEditScreen> {
     );
   }
 
-  // ── Smart Dropdown with Manual Entry ─────────────────────────────────
+  // Ã¢â€â‚¬Ã¢â€â‚¬ Smart Dropdown with Manual Entry Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬
 
   Widget _buildSmartDropdown({
     required String label,
@@ -1731,7 +1735,7 @@ class _AdminRemedyEditScreenState extends State<AdminRemedyEditScreen> {
               value: o,
               child: Text(
                 o,
-                style: o == 'Not in list — enter manually'
+                style: o == 'Not in list Ã¢â‚¬â€ enter manually'
                     ? const TextStyle(color: AppColors.primary, fontWeight: FontWeight.w600, fontSize: 13)
                     : AppTextStyles.body,
                 overflow: TextOverflow.ellipsis,
@@ -1788,7 +1792,7 @@ class _AdminRemedyEditScreenState extends State<AdminRemedyEditScreen> {
             const Padding(
               padding: EdgeInsets.only(left: 4),
               child: Text(
-                'Type your answer and tap ✓ to confirm',
+                'Type your answer and tap Ã¢Å“â€œ to confirm',
                 style: TextStyle(fontSize: 11, color: AppColors.textSecondary, fontStyle: FontStyle.italic),
               ),
             ),
@@ -1798,7 +1802,7 @@ class _AdminRemedyEditScreenState extends State<AdminRemedyEditScreen> {
     );
   }
 
-  // ── Herb / Component Selector ─────────────────────────────────────────
+  // Ã¢â€â‚¬Ã¢â€â‚¬ Herb / Component Selector Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬
 
   Widget _buildComponentSelector() {
     final herbs = _componentList.isNotEmpty ? _componentList : [
@@ -1812,7 +1816,7 @@ class _AdminRemedyEditScreenState extends State<AdminRemedyEditScreen> {
       'Moringa oleifera', 'Pelargonium sidoides (Umckaloabo)',
       'Sceletium tortuosum (Kanna)', 'Silybum marianum (Milk Thistle)',
       'Sutherlandia frutescens (Cancer Bush)', 'Withania somnifera (Ashwagandha)',
-      'Zingiber officinale (Ginger)', 'Not in list — enter manually',
+      'Zingiber officinale (Ginger)', 'Not in list Ã¢â‚¬â€ enter manually',
     ];
 
     // Confirmed custom value: show chip (same pattern as _buildSmartDropdown)
@@ -1824,7 +1828,7 @@ class _AdminRemedyEditScreenState extends State<AdminRemedyEditScreen> {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         if (isConfirmedCustom) ...[
-          // Confirmed chip — mirrors _buildSmartDropdown confirmed state
+          // Confirmed chip Ã¢â‚¬â€ mirrors _buildSmartDropdown confirmed state
           Container(
             padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
             decoration: BoxDecoration(
@@ -1872,7 +1876,7 @@ class _AdminRemedyEditScreenState extends State<AdminRemedyEditScreen> {
             items: herbs.map((h) => DropdownMenuItem(
               value: h,
               child: Text(h,
-                style: h == 'Not in list — enter manually'
+                style: h == 'Not in list Ã¢â‚¬â€ enter manually'
                     ? const TextStyle(color: AppColors.primary, fontWeight: FontWeight.w600, fontSize: 13)
                     : AppTextStyles.body,
                 overflow: TextOverflow.ellipsis,
@@ -1881,12 +1885,12 @@ class _AdminRemedyEditScreenState extends State<AdminRemedyEditScreen> {
             onChanged: (v) {
               setState(() {
                 _selectedComponent = v!;
-                _showCustomComponent = v == 'Not in list — enter manually';
+                _showCustomComponent = v == 'Not in list Ã¢â‚¬â€ enter manually';
                 if (_showCustomComponent) _customComponentController.clear();
               });
             },
           ),
-          // Manual input — shown when "Not in list" is selected
+          // Manual input Ã¢â‚¬â€ shown when "Not in list" is selected
           if (_showCustomComponent) ...[
             const SizedBox(height: 8),
             Container(
@@ -1952,7 +1956,7 @@ class _AdminRemedyEditScreenState extends State<AdminRemedyEditScreen> {
     );
   }
 
-  // ── Helpers ───────────────────────────────────────────────────────────
+  // Ã¢â€â‚¬Ã¢â€â‚¬ Helpers Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬
 
   Widget _shopField(String label, String hint, TextEditingController controller, {bool isNumber = false}) {
     return TextField(
@@ -1996,7 +2000,7 @@ class _AdminRemedyEditScreenState extends State<AdminRemedyEditScreen> {
   }
 }
 
-// ── Product Picker Sheet ──────────────────────────────────────────────────
+// Ã¢â€â‚¬Ã¢â€â‚¬ Product Picker Sheet Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬
 
 class _ProductPickerSheet extends StatefulWidget {
   final List<Map<String, dynamic>> products;
@@ -2095,7 +2099,7 @@ class _ProductPickerSheetState extends State<_ProductPickerSheet> {
                               : const HerbIconPlaceholder(size: 44),
                         ),
                         title: Text(name, style: AppTextStyles.heading3),
-                        subtitle: Text('$type · R${price.toInt()}', style: AppTextStyles.caption),
+                        subtitle: Text('$type  -  R${price.toInt()}', style: AppTextStyles.caption),
                         trailing: isLinked
                             ? const Icon(Icons.check_circle, color: Colors.green, size: 20)
                             : const Icon(Icons.add_circle_outline, color: AppColors.primary, size: 20),
