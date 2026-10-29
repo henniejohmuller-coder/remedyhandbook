@@ -1,6 +1,8 @@
 import 'dart:convert';
 import 'package:flutter/foundation.dart' show kIsWeb, debugPrint;
 import 'package:flutter/material.dart';
+import 'package:excel/excel.dart' as xl;
+import 'dart:html' as html;
 import '../utils/csv_download.dart';
 import 'package:file_picker/file_picker.dart';
 import '../theme/app_theme.dart';
@@ -667,17 +669,30 @@ class _AdminCsvUploadScreenState extends State<AdminCsvUploadScreen> {
       ).order('name');
       final rows = data as List;
       final headers = ['id','sku','name','type','description','price','cost_price','stock','delivery_cost','active','image_url','category','brand','primary_herb','main_constituent'];
-      final csvLines = [headers.join(',')];
+
+      final excel = xl.Excel.createExcel();
+      final sheet = excel['Products'];
+      // Header row
+      sheet.appendRow(headers.map((h) => xl.TextCellValue(h)).toList());
+      // Data rows
       for (final r in rows) {
-        final row = headers.map((h) =>
-          (r[h] ?? '').toString().replaceAll(',', ' ').replaceAll('\t', ' ').replaceAll('\n', ' ').replaceAll('\r', '')
-        ).toList();
-        csvLines.add(row.join(','));
+        sheet.appendRow(headers.map((h) {
+          final val = (r[h] ?? '').toString();
+          return xl.TextCellValue(val);
+        }).toList());
       }
-      final csv = csvLines.join('\n');
-      await downloadCsv(csv, 'shop_items_' + DateTime.now().millisecondsSinceEpoch.toString() + '.csv');
+      excel.delete('Sheet1');
+      final bytes = excel.encode();
+      if (bytes != null) {
+        final blob = html.Blob([bytes], 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
+        final url = html.Url.createObjectUrlFromBlob(blob);
+        final anchor = html.AnchorElement(href: url)
+          ..setAttribute('download', 'shop_items_' + DateTime.now().millisecondsSinceEpoch.toString() + '.xlsx')
+          ..click();
+        html.Url.revokeObjectUrl(url);
+      }
       if (mounted) ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Shop items exported!'), backgroundColor: Colors.green));
+        const SnackBar(content: Text('Shop items exported as Excel!'), backgroundColor: Colors.green));
     } catch (e) {
       if (mounted) ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text('Export failed: ' + e.toString()), backgroundColor: Colors.red));

@@ -17,6 +17,7 @@ dependencies:
   supabase_flutter: ^2.3.0
   go_router: ^14.2.0
   share_plus: ^10.1.4
+  excel: ^4.0.6
 
 dev_dependencies:
   flutter_test:
