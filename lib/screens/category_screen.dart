@@ -25,20 +25,21 @@ class CategoryScreen extends StatefulWidget {
 }
 
 class _CategoryScreenState extends State<CategoryScreen> {
-  // Ãƒ¢Ãƒ¢ All matrix rows loaded once Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢
+  // ÃƒÆ’¢ÃƒÆ’¢ All matrix rows loaded once ÃƒÆ’¢ÃƒÆ’¢ÃƒÆ’¢ÃƒÆ’¢ÃƒÆ’¢ÃƒÆ’¢ÃƒÆ’¢ÃƒÆ’¢ÃƒÆ’¢ÃƒÆ’¢ÃƒÆ’¢ÃƒÆ’¢ÃƒÆ’¢ÃƒÆ’¢ÃƒÆ’¢ÃƒÆ’¢ÃƒÆ’¢ÃƒÆ’¢ÃƒÆ’¢ÃƒÆ’¢ÃƒÆ’¢ÃƒÆ’¢ÃƒÆ’¢ÃƒÆ’¢ÃƒÆ’¢ÃƒÆ’¢ÃƒÆ’¢ÃƒÆ’¢ÃƒÆ’¢ÃƒÆ’¢ÃƒÆ’¢ÃƒÆ’¢ÃƒÆ’¢ÃƒÆ’¢ÃƒÆ’¢ÃƒÆ’¢ÃƒÆ’¢ÃƒÆ’¢ÃƒÆ’¢ÃƒÆ’¢ÃƒÆ’¢ÃƒÆ’¢ÃƒÆ’¢
   List<Map<String, dynamic>> _allRows   = [];
+  List<Map<String, dynamic>> _remedies  = [];
   bool _loading = true;
 
-  // Ãƒ¢Ãƒ¢ Dropdown selections Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢
+  // ÃƒÆ’¢ÃƒÆ’¢ Dropdown selections ÃƒÆ’¢ÃƒÆ’¢ÃƒÆ’¢ÃƒÆ’¢ÃƒÆ’¢ÃƒÆ’¢ÃƒÆ’¢ÃƒÆ’¢ÃƒÆ’¢ÃƒÆ’¢ÃƒÆ’¢ÃƒÆ’¢ÃƒÆ’¢ÃƒÆ’¢ÃƒÆ’¢ÃƒÆ’¢ÃƒÆ’¢ÃƒÆ’¢ÃƒÆ’¢ÃƒÆ’¢ÃƒÆ’¢ÃƒÆ’¢ÃƒÆ’¢ÃƒÆ’¢ÃƒÆ’¢ÃƒÆ’¢ÃƒÆ’¢ÃƒÆ’¢ÃƒÆ’¢ÃƒÆ’¢ÃƒÆ’¢ÃƒÆ’¢ÃƒÆ’¢ÃƒÆ’¢ÃƒÆ’¢ÃƒÆ’¢ÃƒÆ’¢ÃƒÆ’¢ÃƒÆ’¢ÃƒÆ’¢ÃƒÆ’¢ÃƒÆ’¢ÃƒÆ’¢ÃƒÆ’¢ÃƒÆ’¢ÃƒÆ’¢ÃƒÆ’¢ÃƒÆ’¢ÃƒÆ’¢ÃƒÆ’¢ÃƒÆ’¢
   String? _selCategory;
   String? _selSubcategory;
   String? _selIllness;
   String? _selSymptom;
 
-  // Ãƒ¢Ãƒ¢ Selected filter set (the row the user tapped) Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢
+  // ÃƒÆ’¢ÃƒÆ’¢ Selected filter set (the row the user tapped) ÃƒÆ’¢ÃƒÆ’¢ÃƒÆ’¢ÃƒÆ’¢ÃƒÆ’¢ÃƒÆ’¢ÃƒÆ’¢ÃƒÆ’¢ÃƒÆ’¢ÃƒÆ’¢ÃƒÆ’¢ÃƒÆ’¢ÃƒÆ’¢ÃƒÆ’¢ÃƒÆ’¢ÃƒÆ’¢ÃƒÆ’¢ÃƒÆ’¢ÃƒÆ’¢ÃƒÆ’¢ÃƒÆ’¢ÃƒÆ’¢ÃƒÆ’¢ÃƒÆ’¢ÃƒÆ’¢
   Map<String, dynamic>? _selectedRow;
 
-  // Ãƒ¢Ãƒ¢ Derived dropdown options Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢
+  // ÃƒÆ’¢ÃƒÆ’¢ Derived dropdown options ÃƒÆ’¢ÃƒÆ’¢ÃƒÆ’¢ÃƒÆ’¢ÃƒÆ’¢ÃƒÆ’¢ÃƒÆ’¢ÃƒÆ’¢ÃƒÆ’¢ÃƒÆ’¢ÃƒÆ’¢ÃƒÆ’¢ÃƒÆ’¢ÃƒÆ’¢ÃƒÆ’¢ÃƒÆ’¢ÃƒÆ’¢ÃƒÆ’¢ÃƒÆ’¢ÃƒÆ’¢ÃƒÆ’¢ÃƒÆ’¢ÃƒÆ’¢ÃƒÆ’¢ÃƒÆ’¢ÃƒÆ’¢ÃƒÆ’¢ÃƒÆ’¢ÃƒÆ’¢ÃƒÆ’¢ÃƒÆ’¢ÃƒÆ’¢ÃƒÆ’¢ÃƒÆ’¢ÃƒÆ’¢ÃƒÆ’¢ÃƒÆ’¢ÃƒÆ’¢ÃƒÆ’¢ÃƒÆ’¢ÃƒÆ’¢ÃƒÆ’¢ÃƒÆ’¢ÃƒÆ’¢ÃƒÆ’¢ÃƒÆ’¢
   List<String> get _categories =>
       _sorted(_allRows.map((r) => r['category'].toString()).toSet());
 
@@ -63,7 +64,7 @@ class _CategoryScreenState extends State<CategoryScreen> {
     return _sorted(rows.map((r) => r['symptom'].toString()).toSet());
   }
 
-  // Ãƒ¢Ãƒ¢ Filter matrix rows shown in table Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢
+  // ÃƒÆ’¢ÃƒÆ’¢ Filter matrix rows shown in table ÃƒÆ’¢ÃƒÆ’¢ÃƒÆ’¢ÃƒÆ’¢ÃƒÆ’¢ÃƒÆ’¢ÃƒÆ’¢ÃƒÆ’¢ÃƒÆ’¢ÃƒÆ’¢ÃƒÆ’¢ÃƒÆ’¢ÃƒÆ’¢ÃƒÆ’¢ÃƒÆ’¢ÃƒÆ’¢ÃƒÆ’¢ÃƒÆ’¢ÃƒÆ’¢ÃƒÆ’¢ÃƒÆ’¢ÃƒÆ’¢ÃƒÆ’¢ÃƒÆ’¢ÃƒÆ’¢ÃƒÆ’¢ÃƒÆ’¢ÃƒÆ’¢ÃƒÆ’¢ÃƒÆ’¢ÃƒÆ’¢ÃƒÆ’¢ÃƒÆ’¢ÃƒÆ’¢ÃƒÆ’¢ÃƒÆ’¢
   List<Map<String, dynamic>> get _filteredRows {
     var rows = _allRows;
     if (_selCategory    != null) rows = rows.where((r) => r['category']    == _selCategory).toList();
@@ -71,6 +72,50 @@ class _CategoryScreenState extends State<CategoryScreen> {
     if (_selIllness     != null) rows = rows.where((r) => r['illness']     == _selIllness).toList();
     if (_selSymptom     != null) rows = rows.where((r) => r['symptom']     == _selSymptom).toList();
     return rows;
+  }
+
+
+  String _normalize(dynamic value) =>
+      (value ?? '').toString().trim().toLowerCase().replaceAll(RegExp(r'\s+'), ' ');
+
+  int _countForCategory(String cat) =>
+      _remedies.where((r) => _normalize(r['filter_category']) == _normalize(cat)).length;
+
+  int _countForSubcategory(String sub) {
+    var rems = _remedies;
+    if (_selCategory != null) rems = rems.where((r) => _normalize(r['filter_category']) == _normalize(_selCategory)).toList();
+    return rems.where((r) => _normalize(r['filter_subcategory']) == _normalize(sub)).length;
+  }
+
+  int _countForIllness(String ill) {
+    var rems = _remedies;
+    if (_selCategory != null) rems = rems.where((r) => _normalize(r['filter_category']) == _normalize(_selCategory)).toList();
+    if (_selSubcategory != null) rems = rems.where((r) => _normalize(r['filter_subcategory']) == _normalize(_selSubcategory)).toList();
+    return rems.where((r) => _normalize(r['filter_illness']) == _normalize(ill)).length;
+  }
+
+  int _countForSymptom(String sym) {
+    var rems = _remedies;
+    if (_selCategory != null) rems = rems.where((r) => _normalize(r['filter_category']) == _normalize(_selCategory)).toList();
+    if (_selSubcategory != null) rems = rems.where((r) => _normalize(r['filter_subcategory']) == _normalize(_selSubcategory)).toList();
+    if (_selIllness != null) rems = rems.where((r) => _normalize(r['filter_illness']) == _normalize(_selIllness)).toList();
+    return rems.where((r) {
+      final syms = r['filter_symptoms'];
+      if (syms is List) return syms.any((s) => _normalize(s) == _normalize(sym));
+      return false;
+    }).length;
+  }
+
+  int _countForRow(Map<String, dynamic> row) {
+    return _remedies.where((r) {
+      final catMatch = _normalize(r['filter_category']) == _normalize(row['category']);
+      final subMatch = _normalize(r['filter_subcategory']) == _normalize(row['subcategory']);
+      final illMatch = _normalize(r['filter_illness']) == _normalize(row['illness']);
+      final syms = r['filter_symptoms'];
+      final symMatch = syms is List &&
+          syms.any((s) => _normalize(s) == _normalize(row['symptom']));
+      return catMatch && subMatch && illMatch && symMatch;
+    }).length;
   }
 
   List<String> _sorted(Set<String> items) =>
@@ -122,11 +167,29 @@ class _CategoryScreenState extends State<CategoryScreen> {
         from += pageSize;
       }
       if (!mounted) return;
+      // Load remedies for counts
+      // Paginated remedy fetch
+      final List<Map<String, dynamic>> allRemedies = [];
+      int remFrom = 0;
+      while (true) {
+        final remPage = await SupabaseService.supabase
+            .from('remedies')
+            .select('filter_category, filter_subcategory, filter_illness, filter_symptoms')
+            .eq('status', 'approved')
+            .range(remFrom, remFrom + 999);
+        final remList = List<Map<String, dynamic>>.from(remPage);
+        allRemedies.addAll(remList);
+        if (remList.length < 1000) break;
+        remFrom += 1000;
+      }
       setState(() {
-        _allRows = all;
+        _allRows   = all;
+        _remedies  = allRemedies;
         _loading = false;
       });
-    } catch (e) {
+    } catch (e, st) {
+      debugPrint('ERROR loading matrix/remedies: $e');
+      debugPrint('$st');
       if (!mounted) return;
       setState(() => _loading = false);
     }
@@ -224,7 +287,7 @@ class _CategoryScreenState extends State<CategoryScreen> {
       body: SafeArea(
         child: Column(
           children: [
-            // Ãƒ¢Ãƒ¢ Header Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢
+            // ÃƒÆ’¢ÃƒÆ’¢ Header ÃƒÆ’¢ÃƒÆ’¢ÃƒÆ’¢ÃƒÆ’¢ÃƒÆ’¢ÃƒÆ’¢ÃƒÆ’¢ÃƒÆ’¢ÃƒÆ’¢ÃƒÆ’¢ÃƒÆ’¢ÃƒÆ’¢ÃƒÆ’¢ÃƒÆ’¢ÃƒÆ’¢ÃƒÆ’¢ÃƒÆ’¢ÃƒÆ’¢ÃƒÆ’¢ÃƒÆ’¢ÃƒÆ’¢ÃƒÆ’¢ÃƒÆ’¢ÃƒÆ’¢ÃƒÆ’¢ÃƒÆ’¢ÃƒÆ’¢ÃƒÆ’¢ÃƒÆ’¢ÃƒÆ’¢ÃƒÆ’¢ÃƒÆ’¢ÃƒÆ’¢ÃƒÆ’¢ÃƒÆ’¢ÃƒÆ’¢ÃƒÆ’¢ÃƒÆ’¢ÃƒÆ’¢ÃƒÆ’¢ÃƒÆ’¢ÃƒÆ’¢ÃƒÆ’¢ÃƒÆ’¢ÃƒÆ’¢ÃƒÆ’¢ÃƒÆ’¢ÃƒÆ’¢ÃƒÆ’¢ÃƒÆ’¢ÃƒÆ’¢ÃƒÆ’¢ÃƒÆ’¢ÃƒÆ’¢
             Container(
               color: AppColors.dark,
               padding: const EdgeInsets.fromLTRB(16, 14, 16, 14),
@@ -254,7 +317,7 @@ class _CategoryScreenState extends State<CategoryScreen> {
             ),
 
 
-            // Ãƒ¢Ãƒ¢ Results count Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢
+            // ÃƒÆ’¢ÃƒÆ’¢ Results count ÃƒÆ’¢ÃƒÆ’¢ÃƒÆ’¢ÃƒÆ’¢ÃƒÆ’¢ÃƒÆ’¢ÃƒÆ’¢ÃƒÆ’¢ÃƒÆ’¢ÃƒÆ’¢ÃƒÆ’¢ÃƒÆ’¢ÃƒÆ’¢ÃƒÆ’¢ÃƒÆ’¢ÃƒÆ’¢ÃƒÆ’¢ÃƒÆ’¢ÃƒÆ’¢ÃƒÆ’¢ÃƒÆ’¢ÃƒÆ’¢ÃƒÆ’¢ÃƒÆ’¢ÃƒÆ’¢ÃƒÆ’¢ÃƒÆ’¢ÃƒÆ’¢ÃƒÆ’¢ÃƒÆ’¢ÃƒÆ’¢ÃƒÆ’¢ÃƒÆ’¢ÃƒÆ’¢ÃƒÆ’¢ÃƒÆ’¢ÃƒÆ’¢ÃƒÆ’¢ÃƒÆ’¢ÃƒÆ’¢ÃƒÆ’¢ÃƒÆ’¢ÃƒÆ’¢ÃƒÆ’¢ÃƒÆ’¢ÃƒÆ’¢ÃƒÆ’¢ÃƒÆ’¢
             if (!_loading)
               Container(
                 width: double.infinity,
@@ -284,7 +347,7 @@ class _CategoryScreenState extends State<CategoryScreen> {
                  ),
               ),
 
-            // Ãƒ¢Ãƒ¢ Filter matrix table Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢
+            // ÃƒÆ’¢ÃƒÆ’¢ Filter matrix table ÃƒÆ’¢ÃƒÆ’¢ÃƒÆ’¢ÃƒÆ’¢ÃƒÆ’¢ÃƒÆ’¢ÃƒÆ’¢ÃƒÆ’¢ÃƒÆ’¢ÃƒÆ’¢ÃƒÆ’¢ÃƒÆ’¢ÃƒÆ’¢ÃƒÆ’¢ÃƒÆ’¢ÃƒÆ’¢ÃƒÆ’¢ÃƒÆ’¢ÃƒÆ’¢ÃƒÆ’¢ÃƒÆ’¢ÃƒÆ’¢ÃƒÆ’¢ÃƒÆ’¢ÃƒÆ’¢ÃƒÆ’¢ÃƒÆ’¢ÃƒÆ’¢ÃƒÆ’¢ÃƒÆ’¢ÃƒÆ’¢ÃƒÆ’¢ÃƒÆ’¢ÃƒÆ’¢ÃƒÆ’¢ÃƒÆ’¢ÃƒÆ’¢ÃƒÆ’¢ÃƒÆ’¢ÃƒÆ’¢ÃƒÆ’¢ÃƒÆ’¢
             if (!_loading)
               Expanded(
                 child: filtered.isEmpty
@@ -305,6 +368,7 @@ class _CategoryScreenState extends State<CategoryScreen> {
                                   items: _categories,
                                   onChanged: _onCategoryChanged,
                                   isDark: true,
+                                  counts: Map.fromEntries(_categories.map((c) => MapEntry(c, _countForCategory(c)))),
                                 )),
                                 const SizedBox(width: 4),
                                 Expanded(flex: 3, child: _Dropdown(
@@ -314,6 +378,7 @@ class _CategoryScreenState extends State<CategoryScreen> {
                                   onChanged: _onSubcategoryChanged,
                                   enabled: _selCategory != null || _subcategories.isNotEmpty,
                                   isDark: true,
+                                  counts: Map.fromEntries(_subcategories.map((s) => MapEntry(s, _countForSubcategory(s)))),
                                 )),
                                 const SizedBox(width: 4),
                                 Expanded(flex: 3, child: _Dropdown(
@@ -323,6 +388,7 @@ class _CategoryScreenState extends State<CategoryScreen> {
                                   onChanged: _onIllnessChanged,
                                   enabled: _illnesses.isNotEmpty,
                                   isDark: true,
+                                  counts: Map.fromEntries(_illnesses.map((i) => MapEntry(i, _countForIllness(i)))),
                                 )),
                                 const SizedBox(width: 4),
                                 Expanded(flex: 3, child: _Dropdown(
@@ -332,7 +398,16 @@ class _CategoryScreenState extends State<CategoryScreen> {
                                   onChanged: _onSymptomChanged,
                                   enabled: _symptoms.isNotEmpty,
                                   isDark: true,
+                                  counts: Map.fromEntries(_symptoms.map((s) => MapEntry(s, _countForSymptom(s)))),
                                 )),
+                                const SizedBox(width: 4),
+                                SizedBox(
+                                  width: 32,
+                                  child: Text('#',
+                                    textAlign: TextAlign.right,
+                                    style: const TextStyle(fontSize: 10,
+                                        color: Colors.white70, fontWeight: FontWeight.w600)),
+                                ),
                               ],
                             ),
                           ),
@@ -402,6 +477,15 @@ class _CategoryScreenState extends State<CategoryScreen> {
                                                   size: 14, color: AppColors.primary),
                                           ],
                                         )),
+                                         SizedBox(
+                                           width: 32,
+                                           child: Text(
+                                             '${_countForRow(row)}',
+                                             textAlign: TextAlign.right,
+                                             style: const TextStyle(fontSize: 11,
+                                                 fontWeight: FontWeight.bold, color: Colors.red),
+                                           ),
+                                         ),
                                       ],
                                     ),
                                   ),
@@ -413,7 +497,7 @@ class _CategoryScreenState extends State<CategoryScreen> {
                       ),
               ),
 
-            // Ãƒ¢Ãƒ¢ Bottom bar Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢
+            // ÃƒÆ’¢ÃƒÆ’¢ Bottom bar ÃƒÆ’¢ÃƒÆ’¢ÃƒÆ’¢ÃƒÆ’¢ÃƒÆ’¢ÃƒÆ’¢ÃƒÆ’¢ÃƒÆ’¢ÃƒÆ’¢ÃƒÆ’¢ÃƒÆ’¢ÃƒÆ’¢ÃƒÆ’¢ÃƒÆ’¢ÃƒÆ’¢ÃƒÆ’¢ÃƒÆ’¢ÃƒÆ’¢ÃƒÆ’¢ÃƒÆ’¢ÃƒÆ’¢ÃƒÆ’¢ÃƒÆ’¢ÃƒÆ’¢ÃƒÆ’¢ÃƒÆ’¢ÃƒÆ’¢ÃƒÆ’¢ÃƒÆ’¢ÃƒÆ’¢ÃƒÆ’¢ÃƒÆ’¢ÃƒÆ’¢ÃƒÆ’¢ÃƒÆ’¢ÃƒÆ’¢ÃƒÆ’¢ÃƒÆ’¢ÃƒÆ’¢ÃƒÆ’¢ÃƒÆ’¢ÃƒÆ’¢ÃƒÆ’¢ÃƒÆ’¢ÃƒÆ’¢ÃƒÆ’¢ÃƒÆ’¢ÃƒÆ’¢ÃƒÆ’¢ÃƒÆ’¢ÃƒÆ’¢
             Container(
               padding: const EdgeInsets.fromLTRB(14, 10, 14, 14),
               decoration: BoxDecoration(
@@ -498,7 +582,7 @@ class _CategoryScreenState extends State<CategoryScreen> {
   }
 }
 
-// Ãƒ¢Ãƒ¢ Dropdown widget Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢
+// ÃƒÆ’¢ÃƒÆ’¢ Dropdown widget ÃƒÆ’¢ÃƒÆ’¢ÃƒÆ’¢ÃƒÆ’¢ÃƒÆ’¢ÃƒÆ’¢ÃƒÆ’¢ÃƒÆ’¢ÃƒÆ’¢ÃƒÆ’¢ÃƒÆ’¢ÃƒÆ’¢ÃƒÆ’¢ÃƒÆ’¢ÃƒÆ’¢ÃƒÆ’¢ÃƒÆ’¢ÃƒÆ’¢ÃƒÆ’¢ÃƒÆ’¢ÃƒÆ’¢ÃƒÆ’¢ÃƒÆ’¢ÃƒÆ’¢ÃƒÆ’¢ÃƒÆ’¢ÃƒÆ’¢ÃƒÆ’¢ÃƒÆ’¢ÃƒÆ’¢ÃƒÆ’¢ÃƒÆ’¢ÃƒÆ’¢ÃƒÆ’¢ÃƒÆ’¢ÃƒÆ’¢ÃƒÆ’¢ÃƒÆ’¢ÃƒÆ’¢ÃƒÆ’¢ÃƒÆ’¢ÃƒÆ’¢ÃƒÆ’¢ÃƒÆ’¢ÃƒÆ’¢ÃƒÆ’¢ÃƒÆ’¢ÃƒÆ’¢ÃƒÆ’¢ÃƒÆ’¢ÃƒÆ’¢ÃƒÆ’¢ÃƒÆ’¢ÃƒÆ’¢ÃƒÆ’¢ÃƒÆ’¢ÃƒÆ’¢ÃƒÆ’¢ÃƒÆ’¢
 class _Dropdown extends StatelessWidget {
   final String label;
   final String? value;
@@ -506,14 +590,16 @@ class _Dropdown extends StatelessWidget {
   final ValueChanged<String?> onChanged;
   final bool enabled;
   final bool isDark;
+  final Map<String, int> counts;
 
-  const _Dropdown({
+  _Dropdown({
     required this.label,
     required this.value,
     required this.items,
     required this.onChanged,
     this.enabled = true,
     this.isDark = false,
+    this.counts = const {},
   });
 
   void _showSearch(BuildContext context) {
@@ -580,8 +666,11 @@ class _Dropdown extends StatelessWidget {
                                 fontSize: 12,
                                 color: value == filtered[i] ? AppColors.primary : AppColors.dark,
                                 fontWeight: value == filtered[i] ? FontWeight.w600 : FontWeight.normal,
-                              )),
+                         )),
                         ),
+                        if (counts.containsKey(filtered[i]))
+                          Text('${counts[filtered[i]] ?? 0}',
+                              style: const TextStyle(fontSize: 11, color: Colors.red, fontWeight: FontWeight.w700)),
                       ]),
                     ),
                   ),

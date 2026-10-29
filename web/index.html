@@ -120,8 +120,8 @@
 
     // iOS instructions
     if (isIOS && !isStandalone) {
-      document.getElementById('bar-text').innerHTML =
-        'Tap Share then Add to Home Screen';
+        document.getElementById('bar-text').innerHTML =
+          'Tap Share \u2192 Add to Home Screen';
       document.getElementById('install-btn').style.display = 'none';
     }
 
@@ -146,7 +146,7 @@
         var isAndroid = /android/i.test(navigator.userAgent);
         var msg = isAndroid
         ? '📲 Install: Tap the menu (top right of Chrome) then Add to Home Screen'
-        'Tap Share then Add to Home Screen';
+        : 'Tap Share \u2192 Add to Home Screen';
         if (confirm(msg + '\n\nOpen browser menu now?')) {
           // Can't open menu programmatically, but confirm gives clear CTA
         }
