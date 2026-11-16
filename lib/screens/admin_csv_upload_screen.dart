@@ -301,9 +301,10 @@ class _AdminCsvUploadScreenState extends State<AdminCsvUploadScreen> {
   // ── Convert XLSX bytes → CSV string for _parseCsv ─────────────────────
   String _xlsxToCsv(List<int> bytes) {
     final excel = xl.Excel.decodeBytes(bytes);
-    // Use the first sheet
+    if (excel.sheets.isEmpty) return '';
     final sheetName = excel.sheets.keys.first;
-    final sheet = excel.sheets[sheetName]!;
+    final sheet = excel.sheets[sheetName];
+    if (sheet == null) return '';
 
     // RFC 4180 quoting
     String q(String v) {
