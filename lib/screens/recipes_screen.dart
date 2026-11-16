@@ -39,8 +39,6 @@ class _RecipesScreenState extends State<RecipesScreen>
   String? _selSubcategory;
   String? _selIllness;
   String? _selSymptom;
-  bool _filterExpanded = false; // collapsible panel state
-
   // ── Filter-matrix rows (loaded once, drives cascading options) ───────────
   List<Map<String, dynamic>> _matrixRows = [];
 
@@ -75,6 +73,37 @@ class _RecipesScreenState extends State<RecipesScreen>
   bool get _hasMatrixFilter =>
       _selCategory != null || _selSubcategory != null ||
       _selIllness  != null || _selSymptom     != null;
+
+  // ── Remedy counts per dropdown option (same as CategoryScreen) ───────────
+  String _norm(dynamic v) => (v ?? '').toString().trim().toLowerCase();
+
+  int _countForCategory(String cat) =>
+      _allRemedies.where((r) => _norm(r['filter_category']) == _norm(cat)).length;
+
+  int _countForSubcategory(String sub) {
+    var rems = _allRemedies;
+    if (_selCategory != null) rems = rems.where((r) => _norm(r['filter_category']) == _norm(_selCategory)).toList();
+    return rems.where((r) => _norm(r['filter_subcategory']) == _norm(sub)).length;
+  }
+
+  int _countForIllness(String ill) {
+    var rems = _allRemedies;
+    if (_selCategory    != null) rems = rems.where((r) => _norm(r['filter_category'])    == _norm(_selCategory)).toList();
+    if (_selSubcategory != null) rems = rems.where((r) => _norm(r['filter_subcategory']) == _norm(_selSubcategory)).toList();
+    return rems.where((r) => _norm(r['filter_illness']) == _norm(ill)).length;
+  }
+
+  int _countForSymptom(String sym) {
+    var rems = _allRemedies;
+    if (_selCategory    != null) rems = rems.where((r) => _norm(r['filter_category'])    == _norm(_selCategory)).toList();
+    if (_selSubcategory != null) rems = rems.where((r) => _norm(r['filter_subcategory']) == _norm(_selSubcategory)).toList();
+    if (_selIllness     != null) rems = rems.where((r) => _norm(r['filter_illness'])     == _norm(_selIllness)).toList();
+    return rems.where((r) {
+      final syms = r['filter_symptoms'];
+      if (syms is List) return syms.any((s) => _norm(s) == _norm(sym));
+      return false;
+    }).length;
+  }
 
   // ── Search ────────────────────────────────────────────────────────────────
   String _searchQuery = '';
@@ -470,39 +499,77 @@ class _RecipesScreenState extends State<RecipesScreen>
                 ],
               ),
             ),
-            // ── Cascading filter panel ──────────────────────────────────────
+            // ── Cascading dropdowns — exact mirror of CategoryScreen header ──
             if (_matrixRows.isNotEmpty)
-              _CascadingFilterPanel(
-                expanded: _filterExpanded,
-                onToggle: () => setState(() => _filterExpanded = !_filterExpanded),
-                selCategory:    _selCategory,
-                selSubcategory: _selSubcategory,
-                selIllness:     _selIllness,
-                selSymptom:     _selSymptom,
-                catOptions:     _catOptions,
-                subOptions:     _subOptions,
-                illnessOptions: _illnessOptions,
-                symptomOptions: _symptomOptions,
-                onCategoryChanged: (v) => setState(() {
-                  _selCategory    = v;
-                  _selSubcategory = null;
-                  _selIllness     = null;
-                  _selSymptom     = null;
-                }),
-                onSubChanged: (v) => setState(() {
-                  _selSubcategory = v;
-                  _selIllness     = null;
-                  _selSymptom     = null;
-                }),
-                onIllnessChanged: (v) => setState(() {
-                  _selIllness = v;
-                  _selSymptom = null;
-                }),
-                onSymptomChanged: (v) => setState(() => _selSymptom = v),
-                onClear: () => setState(() {
-                  _selCategory = _selSubcategory = _selIllness = _selSymptom = null;
-                }),
-                matchCount: _filtered.length,
+              Container(
+                color: AppColors.dark,
+                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                child: Row(
+                  children: [
+                    Expanded(flex: 3, child: _RecipesDropdown(
+                      label: 'Category',
+                      value: _selCategory,
+                      items: _catOptions,
+                      onChanged: (v) => setState(() {
+                        _selCategory = v; _selSubcategory = null;
+                        _selIllness  = null; _selSymptom   = null;
+                      }),
+                      counts: Map.fromEntries(_catOptions.map((c) => MapEntry(c, _countForCategory(c)))),
+                    )),
+                    const SizedBox(width: 4),
+                    Expanded(flex: 3, child: _RecipesDropdown(
+                      label: 'Subcategory',
+                      value: _selSubcategory,
+                      items: _subOptions,
+                      onChanged: (v) => setState(() {
+                        _selSubcategory = v; _selIllness = null; _selSymptom = null;
+                      }),
+                      enabled: _subOptions.isNotEmpty,
+                      counts: Map.fromEntries(_subOptions.map((s) => MapEntry(s, _countForSubcategory(s)))),
+                    )),
+                    const SizedBox(width: 4),
+                    Expanded(flex: 3, child: _RecipesDropdown(
+                      label: 'Illness',
+                      value: _selIllness,
+                      items: _illnessOptions,
+                      onChanged: (v) => setState(() { _selIllness = v; _selSymptom = null; }),
+                      enabled: _illnessOptions.isNotEmpty,
+                      counts: Map.fromEntries(_illnessOptions.map((i) => MapEntry(i, _countForIllness(i)))),
+                    )),
+                    const SizedBox(width: 4),
+                    Expanded(flex: 3, child: _RecipesDropdown(
+                      label: 'Symptom',
+                      value: _selSymptom,
+                      items: _symptomOptions,
+                      onChanged: (v) => setState(() => _selSymptom = v),
+                      enabled: _symptomOptions.isNotEmpty,
+                      counts: Map.fromEntries(_symptomOptions.map((s) => MapEntry(s, _countForSymptom(s)))),
+                    )),
+                    const SizedBox(width: 4),
+                    // Match count + clear button
+                    SizedBox(
+                      width: 36,
+                      child: Column(
+                        mainAxisSize: MainAxisSize.min,
+                        crossAxisAlignment: CrossAxisAlignment.end,
+                        children: [
+                          Text(
+                            '${_filtered.length}',
+                            style: const TextStyle(
+                                fontSize: 11, fontWeight: FontWeight.bold, color: Colors.red),
+                          ),
+                          if (_hasMatrixFilter)
+                            GestureDetector(
+                              onTap: () => setState(() {
+                                _selCategory = _selSubcategory = _selIllness = _selSymptom = null;
+                              }),
+                              child: const Icon(Icons.close, size: 12, color: AppColors.primary),
+                            ),
+                        ],
+                      ),
+                    ),
+                  ],
+                ),
               ),
             // Active chips - always visible
             if (_activeChips.isNotEmpty) ...[
@@ -665,179 +732,136 @@ class _RecipesScreenState extends State<RecipesScreen>
 }
 
 
-// ── Cascading Filter Panel ─────────────────────────────────────────────────
-class _CascadingFilterPanel extends StatelessWidget {
-  final bool expanded;
-  final VoidCallback onToggle;
-  final String? selCategory;
-  final String? selSubcategory;
-  final String? selIllness;
-  final String? selSymptom;
-  final List<String> catOptions;
-  final List<String> subOptions;
-  final List<String> illnessOptions;
-  final List<String> symptomOptions;
-  final ValueChanged<String?> onCategoryChanged;
-  final ValueChanged<String?> onSubChanged;
-  final ValueChanged<String?> onIllnessChanged;
-  final ValueChanged<String?> onSymptomChanged;
-  final VoidCallback onClear;
-  final int matchCount;
+// ── _RecipesDropdown — identical behaviour to CategoryScreen's _Dropdown ───
+// Dark-background styling (white text) — panel sits on AppColors.dark, same as
+// AppColors.dark, same as the CategoryScreen table header.
+class _RecipesDropdown extends StatelessWidget {
+  final String label;
+  final String? value;
+  final List<String> items;
+  final ValueChanged<String?> onChanged;
+  final bool enabled;
+  final Map<String, int> counts;
 
-  const _CascadingFilterPanel({
-    required this.expanded,
-    required this.onToggle,
-    required this.selCategory,
-    required this.selSubcategory,
-    required this.selIllness,
-    required this.selSymptom,
-    required this.catOptions,
-    required this.subOptions,
-    required this.illnessOptions,
-    required this.symptomOptions,
-    required this.onCategoryChanged,
-    required this.onSubChanged,
-    required this.onIllnessChanged,
-    required this.onSymptomChanged,
-    required this.onClear,
-    required this.matchCount,
+  const _RecipesDropdown({
+    required this.label,
+    required this.value,
+    required this.items,
+    required this.onChanged,
+    this.enabled = true,
+    this.counts = const {},
   });
 
-  bool get _hasFilter =>
-      selCategory != null || selSubcategory != null ||
-      selIllness  != null || selSymptom     != null;
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      margin: const EdgeInsets.fromLTRB(12, 0, 12, 8),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(10),
-        border: Border.all(color: Colors.grey.shade200),
-        boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.04), blurRadius: 4)],
-      ),
-      child: Column(
-        children: [
-          // Header row — always visible
-          InkWell(
-            onTap: onToggle,
-            borderRadius: BorderRadius.circular(10),
-            child: Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
-              child: Row(
-                children: [
-                  const Icon(Icons.filter_list, size: 16, color: AppColors.dark),
-                  const SizedBox(width: 8),
-                  Expanded(
-                    child: _hasFilter
-                        ? Wrap(
-                            spacing: 4, runSpacing: 2,
-                            children: [
-                              if (selCategory    != null) _miniChip(selCategory!),
-                              if (selSubcategory != null) _miniChip(selSubcategory!),
-                              if (selIllness     != null) _miniChip(selIllness!),
-                              if (selSymptom     != null) _miniChip(selSymptom!),
-                            ],
-                          )
-                        : Text(
-                            'Filter by category, illness or symptom',
-                            style: const TextStyle(fontSize: 12, color: AppColors.textSecondary),
-                          ),
-                  ),
-                  if (_hasFilter) ...[
-                    Text(
-                      '$matchCount found',
-                      style: const TextStyle(fontSize: 11, fontWeight: FontWeight.w700, color: AppColors.dark),
-                    ),
-                    const SizedBox(width: 8),
-                    GestureDetector(
-                      onTap: onClear,
-                      child: const Icon(Icons.close, size: 16, color: AppColors.textSecondary),
-                    ),
-                    const SizedBox(width: 4),
-                  ],
-                  Icon(
-                    expanded ? Icons.keyboard_arrow_up : Icons.keyboard_arrow_down,
-                    size: 18, color: AppColors.textSecondary,
-                  ),
-                ],
+  void _showSearch(BuildContext context) {
+    final searchCtrl = TextEditingController();
+    List<String> filtered = List.from(items);
+    showDialog(
+      context: context,
+      builder: (ctx) => StatefulBuilder(
+        builder: (ctx, setDlg) => AlertDialog(
+          contentPadding: const EdgeInsets.fromLTRB(16, 16, 16, 0),
+          title: Text('Select $label',
+              style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w600)),
+          content: SizedBox(
+            width: double.maxFinite,
+            height: 400,
+            child: Column(children: [
+              TextField(
+                controller: searchCtrl,
+                autofocus: true,
+                decoration: InputDecoration(
+                  hintText: 'Search $label...',
+                  prefixIcon: const Icon(Icons.search, size: 18),
+                  border: OutlineInputBorder(borderRadius: BorderRadius.circular(8)),
+                  contentPadding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+                  isDense: true,
+                ),
+                style: const TextStyle(fontSize: 12),
+                onChanged: (q) => setDlg(() {
+                  filtered = items
+                      .where((s) => s.toLowerCase().contains(q.toLowerCase()))
+                      .toList();
+                }),
               ),
-            ),
+              const SizedBox(height: 4),
+              InkWell(
+                onTap: () { onChanged(null); Navigator.pop(ctx); },
+                child: Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 8),
+                  child: Row(children: [
+                    const Icon(Icons.clear, size: 14, color: AppColors.textSecondary),
+                    const SizedBox(width: 6),
+                    Text('All $label',
+                        style: const TextStyle(fontSize: 12, color: AppColors.textSecondary)),
+                  ]),
+                ),
+              ),
+              const Divider(height: 1),
+              Expanded(
+                child: ListView.builder(
+                  itemCount: filtered.length,
+                  itemBuilder: (_, i) => InkWell(
+                    onTap: () { onChanged(filtered[i]); Navigator.pop(ctx); },
+                    child: Padding(
+                      padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 10),
+                      child: Row(children: [
+                        if (value == filtered[i]) ...[
+                          const Icon(Icons.check, size: 14, color: AppColors.primary),
+                          const SizedBox(width: 4),
+                        ],
+                        Expanded(
+                          child: Text(filtered[i],
+                              style: TextStyle(
+                                fontSize: 12,
+                                color: value == filtered[i] ? AppColors.primary : AppColors.dark,
+                                fontWeight: value == filtered[i] ? FontWeight.w600 : FontWeight.normal,
+                              )),
+                        ),
+                        if (counts.containsKey(filtered[i]))
+                          Text('${counts[filtered[i]] ?? 0}',
+                              style: const TextStyle(
+                                  fontSize: 11, color: Colors.red, fontWeight: FontWeight.w700)),
+                      ]),
+                    ),
+                  ),
+                ),
+              ),
+            ]),
           ),
-          // Expandable dropdown rows
-          if (expanded) ...[
-            const Divider(height: 1),
-            Padding(
-              padding: const EdgeInsets.fromLTRB(12, 8, 12, 12),
-              child: Column(
-                children: [
-                  _dropRow('Category', selCategory, catOptions, onCategoryChanged),
-                  const SizedBox(height: 8),
-                  _dropRow('Sub-category', selSubcategory, subOptions, onSubChanged),
-                  const SizedBox(height: 8),
-                  _dropRow('Illness', selIllness, illnessOptions, onIllnessChanged),
-                  const SizedBox(height: 8),
-                  _dropRow('Symptom', selSymptom, symptomOptions, onSymptomChanged),
-                ],
-              ),
-            ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(ctx),
+              child: const Text('Cancel')),
           ],
-        ],
+        ),
       ),
     );
   }
 
-  Widget _miniChip(String label) => Container(
-    padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 2),
-    decoration: BoxDecoration(
-      color: AppColors.primary.withOpacity(0.3),
-      borderRadius: BorderRadius.circular(8),
-    ),
-    child: Text(label, style: const TextStyle(fontSize: 10, fontWeight: FontWeight.w600, color: AppColors.dark)),
-  );
-
-  Widget _dropRow(String label, String? value, List<String> options, ValueChanged<String?> onChanged) {
-    return Row(
-      children: [
-        SizedBox(
-          width: 88,
-          child: Text(label, style: const TextStyle(fontSize: 11, color: AppColors.textSecondary, fontWeight: FontWeight.w500)),
-        ),
-        Expanded(
-          child: Container(
-            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 2),
-            decoration: BoxDecoration(
-              color: value != null ? AppColors.primary.withOpacity(0.15) : AppColors.background,
-              borderRadius: BorderRadius.circular(8),
-              border: Border.all(color: value != null ? AppColors.primary.withOpacity(0.5) : Colors.grey.shade200),
-            ),
-            child: DropdownButtonHideUnderline(
-              child: DropdownButton<String>(
-                value: value,
-                hint: Text(
-                  options.isEmpty ? 'No options' : 'All',
-                  style: const TextStyle(fontSize: 12, color: AppColors.textSecondary),
-                ),
-                isDense: true,
-                isExpanded: true,
-                icon: const Icon(Icons.keyboard_arrow_down, size: 16, color: AppColors.textSecondary),
-                items: [
-                  const DropdownMenuItem<String>(
-                    value: null,
-                    child: Text('All', style: TextStyle(fontSize: 12, color: AppColors.textSecondary)),
-                  ),
-                  ...options.map((o) => DropdownMenuItem<String>(
-                    value: o,
-                    child: Text(o, style: const TextStyle(fontSize: 12), overflow: TextOverflow.ellipsis),
-                  )),
-                ],
-                onChanged: onChanged,
+  @override
+  Widget build(BuildContext context) {
+    final effectiveValue = (value != null && items.contains(value)) ? value : null;
+    final textColor = effectiveValue != null ? AppColors.primary : Colors.white70;
+    return GestureDetector(
+      onTap: enabled ? () => _showSearch(context) : null,
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 6),
+        child: Row(children: [
+          Expanded(
+            child: Text(
+              effectiveValue ?? label,
+              style: TextStyle(
+                fontSize: 10,
+                color: enabled ? textColor : Colors.white38,
+                fontWeight: effectiveValue != null ? FontWeight.w700 : FontWeight.w500,
               ),
+              overflow: TextOverflow.ellipsis,
             ),
           ),
-        ),
-      ],
+          Icon(Icons.keyboard_arrow_down, size: 12,
+              color: enabled ? Colors.white70 : Colors.white38),
+        ]),
+      ),
     );
   }
 }
