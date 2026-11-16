@@ -71,7 +71,8 @@ class _CategoryScreenState extends State<CategoryScreen> {
     if (_selSubcategory != null) rows = rows.where((r) => r['subcategory'] == _selSubcategory).toList();
     if (_selIllness     != null) rows = rows.where((r) => r['illness']     == _selIllness).toList();
     if (_selSymptom     != null) rows = rows.where((r) => r['symptom']     == _selSymptom).toList();
-    return rows;
+    // Hide rows with no matching remedies
+    return rows.where((r) => _countForRow(r) > 0).toList();
   }
 
 
@@ -690,27 +691,29 @@ class _Dropdown extends StatelessWidget {
     return GestureDetector(
       onTap: enabled ? () => _showSearch(context) : null,
       child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 6),
+        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 10),
         decoration: isDark ? null : BoxDecoration(
           color: enabled ? Colors.white : Colors.grey.shade100,
+          borderRadius: BorderRadius.circular(10),
           border: Border.all(
               color: effectiveValue != null ? AppColors.primary : Colors.grey.shade300,
-              width: effectiveValue != null ? 1.5 : 0.5),
-          borderRadius: BorderRadius.circular(8),
+              width: effectiveValue != null ? 1.5 : 1.0),
+          boxShadow: enabled ? [BoxShadow(
+              color: Colors.black.withOpacity(0.04), blurRadius: 4)] : null,
         ),
         child: Row(children: [
           Expanded(
             child: Text(
               effectiveValue ?? label,
               style: TextStyle(
-                fontSize: 10,
+                fontSize: 12,
                 color: textColor,
-                fontWeight: effectiveValue != null ? FontWeight.w700 : FontWeight.w500,
+                fontWeight: effectiveValue != null ? FontWeight.w600 : FontWeight.normal,
               ),
               overflow: TextOverflow.ellipsis,
             ),
           ),
-          Icon(Icons.keyboard_arrow_down, size: 12,
+          Icon(Icons.keyboard_arrow_down, size: 16,
               color: isDark ? Colors.white70 : (enabled ? AppColors.dark : Colors.grey.shade400)),
         ]),
       ),
