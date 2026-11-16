@@ -2195,10 +2195,7 @@ class _ProductPickerSheetState extends State<_ProductPickerSheet> {
   List<Map<String, dynamic>> get _filtered {
     return widget.products.where((p) {
       final name = (p['name'] ?? '').toString().toLowerCase();
-      final sku  = (p['sku']  ?? '').toString().toLowerCase();
-      return _search.isEmpty ||
-             name.contains(_search.toLowerCase()) ||
-             sku.contains(_search.toLowerCase());
+      return _search.isEmpty || name.contains(_search.toLowerCase());
     }).toList();
   }
 
@@ -2252,9 +2249,9 @@ class _ProductPickerSheetState extends State<_ProductPickerSheet> {
                     final isLinked = widget.linkedIds.contains(p['id'].toString());
                     final name     = p['name'] ?? '';
                     final type     = p['type'] ?? '';
-                    final sku      = p['sku']?.toString() ?? '';
                     final price    = ((p['price'] ?? 0) as num).toDouble();
                     final imageUrl = p['image_url'] ?? '';
+
                     return Material(
                       color: Colors.transparent,
                       child: ListTile(
@@ -2267,10 +2264,7 @@ class _ProductPickerSheetState extends State<_ProductPickerSheet> {
                               : const HerbIconPlaceholder(size: 44),
                         ),
                         title: Text(name, style: AppTextStyles.heading3),
-                        subtitle: Text(
-                          [if (sku.isNotEmpty) sku, type, 'R${price.toInt()}'].join('  ·  '),
-                          style: AppTextStyles.caption,
-                        ),
+                        subtitle: Text('$type  -  R${price.toInt()}', style: AppTextStyles.caption),
                         trailing: isLinked
                             ? const Icon(Icons.check_circle, color: Colors.green, size: 20)
                             : const Icon(Icons.add_circle_outline, color: AppColors.primary, size: 20),
