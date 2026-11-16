@@ -21,6 +21,8 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
   String? _savedToken;
   String? _savedTokenBackup;
   bool _oneclickChecked = false;
+  double _discountPct  = 0;
+  int?   _enrollmentId;
 
   final _nameController    = TextEditingController();
   final _emailController   = TextEditingController();
@@ -36,6 +38,7 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
     super.initState();
     _loadCart();
     _loadSavedToken();
+    _loadDiscount();
     _prefillProfile();
   }
 
@@ -129,6 +132,22 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
     } catch (_) {}
   }
 
+  Future<void> _loadDiscount() async {
+    final userId = SupabaseService.supabase.auth.currentUser?.id;
+    if (userId == null) return;
+    final data = await SupabaseService.supabase
+        .from('profiles')
+        .select('enrollment_id, discount_pct')
+        .eq('id', userId)
+        .single();
+    if (mounted) {
+      setState(() {
+        _enrollmentId = data['enrollment_id'] as int?;
+        _discountPct  = ((data['discount_pct'] ?? 0) as num).toDouble();
+      });
+    }
+  }
+
   Future<void> _loadCart() async {
     final items = await SupabaseService.getCart();
     setState(() { _items = items; _loading = false; });
@@ -161,8 +180,10 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
     final qty   = (i['quantity'] ?? 1) as int;
     return s + price * qty;
   });
-  double get shipping => subtotal >= 500 ? 0 : 85;
-  double get total    => subtotal + shipping;
+  double get discountAmount => _discountPct > 0 ? subtotal * _discountPct / 100 : 0;
+  double get discountedSubtotal => subtotal - discountAmount;
+  double get shipping => discountedSubtotal >= 500 ? 0 : 85;
+  double get total    => discountedSubtotal + shipping;
 
   Future<void> _payWithToken() async {
     if (_nameController.text.isEmpty || _addressController.text.isEmpty) {
@@ -336,6 +357,26 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
                               boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.04), blurRadius: 6)]),
                           child: Column(children: [
                             InfoRow(label: 'Subtotal', value: 'R${subtotal.toInt()}'),
+                            if (_discountPct > 0) ...[
+                              Row(
+                                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                children: [
+                                  Row(children: [
+                                    const Icon(Icons.local_offer, size: 14, color: Colors.green),
+                                    const SizedBox(width: 6),
+                                    Text(
+                                      'Early supporter discount'
+                                      ' (#${_enrollmentId ?? ''}  ·  ${_discountPct % 1 == 0 ? _discountPct.toInt() : _discountPct}%)',
+                                      style: const TextStyle(fontSize: 13, color: Colors.green, fontWeight: FontWeight.w600),
+                                    ),
+                                  ]),
+                                  Text(
+                                    '- R${discountAmount.toStringAsFixed(2)}',
+                                    style: const TextStyle(fontSize: 13, color: Colors.green, fontWeight: FontWeight.w600),
+                                  ),
+                                ],
+                              ),
+                            ],
                             InfoRow(
                               label: 'Delivery',
                               value: shipping == 0 ? 'FREE' : 'R${shipping.toInt()}',
@@ -343,7 +384,7 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
                             const Divider(height: 16),
                             Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [
                               const Text('Total', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 15)),
-                              Text('R${total.toInt()}', style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 18, color: AppColors.dark)),
+                              Text('R${total.toStringAsFixed(2)}', style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 18, color: AppColors.dark)),
                             ]),
                           ]),
                         ),
