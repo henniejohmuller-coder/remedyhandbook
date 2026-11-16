@@ -36,8 +36,8 @@ class _AdminUserManagementScreenState extends State<AdminUserManagementScreen> {
     try {
       final profileData = await SupabaseService.supabase
           .from('profiles')
-          .select('id, full_name, phone, email, role, city, country, joined_at')
-          .order('full_name', ascending: true);
+          .select('id, full_name, phone, email, role, city, country, joined_at, enrollment_id, discount_pct')
+          .order('enrollment_id', ascending: true);
       final profiles = List<Map<String, dynamic>>.from(profileData);
 
       final orderData = await SupabaseService.supabase
@@ -82,11 +82,12 @@ class _AdminUserManagementScreenState extends State<AdminUserManagementScreen> {
     if (_search.isNotEmpty) {
       final q = _search.toLowerCase();
       list = list.where((u) =>
-          (u['full_name'] ?? '').toString().toLowerCase().contains(q) ||
-          (u['email']     ?? '').toString().toLowerCase().contains(q) ||
-          (u['phone']     ?? '').toString().toLowerCase().contains(q) ||
-          (u['city']      ?? '').toString().toLowerCase().contains(q) ||
-          (u['country']   ?? '').toString().toLowerCase().contains(q)).toList();
+          (u['full_name']     ?? '').toString().toLowerCase().contains(q) ||
+          (u['email']         ?? '').toString().toLowerCase().contains(q) ||
+          (u['phone']         ?? '').toString().toLowerCase().contains(q) ||
+          (u['city']          ?? '').toString().toLowerCase().contains(q) ||
+          (u['country']       ?? '').toString().toLowerCase().contains(q) ||
+          (u['enrollment_id'] ?? '').toString().contains(q)).toList();
     }
     _filtered = list;
   }
@@ -236,18 +237,20 @@ class _AdminUserManagementScreenState extends State<AdminUserManagementScreen> {
 
   void _exportCsv() {
     final rows = <List<String>>[
-      ['Name', 'Phone', 'Email', 'City', 'Country', 'Role', 'Total Orders', 'Pending Orders', 'Last Order', 'Joined'],
+      ['#ID', 'Name', 'Phone', 'Email', 'City', 'Country', 'Role', 'Discount%', 'Total Orders', 'Pending Orders', 'Last Order', 'Joined'],
       ..._filtered.map((u) => [
-        u['full_name']   ?? '',
-        u['phone']       ?? '',
-        u['email']       ?? '',
-        u['city']        ?? '',
-        u['country']     ?? '',
-        u['role']        ?? 'user',
-        (u['total']      ?? 0).toString(),
-        (u['pending']    ?? 0).toString(),
-        (u['last_order'] ?? '').toString(),
-        (u['joined_at']  ?? '').toString().split('T').first,
+        (u['enrollment_id'] ?? '').toString(),
+        u['full_name']      ?? '',
+        u['phone']          ?? '',
+        u['email']          ?? '',
+        u['city']           ?? '',
+        u['country']        ?? '',
+        u['role']           ?? 'user',
+        ((u['discount_pct'] ?? 0) as num).toString(),
+        (u['total']         ?? 0).toString(),
+        (u['pending']       ?? 0).toString(),
+        (u['last_order']    ?? '').toString(),
+        (u['joined_at']     ?? '').toString().split('T').first,
       ]),
     ];
     final csv = rows.map((r) => r.map((c) => '"${c.replaceAll('"', '""')}"').join(',')).join('\n');
@@ -416,9 +419,10 @@ class _AdminUserManagementScreenState extends State<AdminUserManagementScreen> {
               ),
               child: Row(
                 children: const [
+                  SizedBox(width: 44, child: Text('#ID',   style: TextStyle(color: AppColors.primary, fontSize: 11, fontWeight: FontWeight.w700))),
                   Expanded(flex: 3, child: Text('Name',    style: TextStyle(color: AppColors.primary, fontSize: 11, fontWeight: FontWeight.w700))),
-                  Expanded(flex: 3, child: Text('Phone',   style: TextStyle(color: AppColors.primary, fontSize: 11, fontWeight: FontWeight.w700))),
                   Expanded(flex: 3, child: Text('Email',   style: TextStyle(color: AppColors.primary, fontSize: 11, fontWeight: FontWeight.w700))),
+                  SizedBox(width: 44, child: Text('Disc%', style: TextStyle(color: AppColors.primary, fontSize: 11, fontWeight: FontWeight.w700))),
                   SizedBox(width: 40, child: Text('Ord',   style: TextStyle(color: AppColors.primary, fontSize: 11, fontWeight: FontWeight.w700))),
                   SizedBox(width: 40, child: Text('Pend',  style: TextStyle(color: AppColors.primary, fontSize: 11, fontWeight: FontWeight.w700))),
                   SizedBox(width: 60, child: Text('Role',  style: TextStyle(color: AppColors.primary, fontSize: 11, fontWeight: FontWeight.w700))),
@@ -437,14 +441,16 @@ class _AdminUserManagementScreenState extends State<AdminUserManagementScreen> {
                           itemCount: _filtered.length,
                           itemBuilder: (context, i) {
                             final u         = _filtered[i];
-                            final name      = u['full_name']   ?? '—';
-                            final phone     = u['phone']       ?? '—';
-                            final email     = u['email']       ?? '—';
-                            final role      = (u['role']       ?? 'user').toString();
-                            final total     = (u['total']      ?? 0) as int;
-                            final pending   = (u['pending']    ?? 0) as int;
-                            final lastOrder = (u['last_order'] ?? '').toString();
-                            final isAdmin   = role == 'admin' || role == 'moderator';
+                            final name         = u['full_name']    ?? '—';
+                            final phone        = u['phone']        ?? '—';
+                            final email        = u['email']        ?? '—';
+                            final role         = (u['role']        ?? 'user').toString();
+                            final total        = (u['total']       ?? 0) as int;
+                            final pending      = (u['pending']     ?? 0) as int;
+                            final lastOrder    = (u['last_order']  ?? '').toString();
+                            final isAdmin      = role == 'admin' || role == 'moderator';
+                            final enrollId     = u['enrollment_id'];
+                            final discountPct  = ((u['discount_pct'] ?? 0) as num).toDouble();
 
                             return Container(
                               margin: const EdgeInsets.only(bottom: 6),
@@ -460,15 +466,48 @@ class _AdminUserManagementScreenState extends State<AdminUserManagementScreen> {
                                 children: [
                                   Row(
                                     children: [
+                                      // Enrollment ID badge
+                                      SizedBox(
+                                        width: 44,
+                                        child: enrollId != null
+                                            ? Container(
+                                                padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 3),
+                                                decoration: BoxDecoration(
+                                                    color: AppColors.dark,
+                                                    borderRadius: BorderRadius.circular(6)),
+                                                child: Text('#$enrollId',
+                                                    style: const TextStyle(fontSize: 10, fontWeight: FontWeight.w700,
+                                                        color: AppColors.primary),
+                                                    textAlign: TextAlign.center))
+                                            : const Text('—',
+                                                style: TextStyle(fontSize: 11, color: AppColors.textSecondary),
+                                                textAlign: TextAlign.center),
+                                      ),
                                       Expanded(flex: 3, child: Text(name,
                                           style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: AppColors.dark),
-                                          maxLines: 1, overflow: TextOverflow.ellipsis)),
-                                      Expanded(flex: 3, child: Text(phone,
-                                          style: const TextStyle(fontSize: 11, color: AppColors.textSecondary),
                                           maxLines: 1, overflow: TextOverflow.ellipsis)),
                                       Expanded(flex: 3, child: Text(email,
                                           style: const TextStyle(fontSize: 11, color: AppColors.textSecondary),
                                           maxLines: 1, overflow: TextOverflow.ellipsis)),
+                                      // Discount %
+                                      SizedBox(
+                                        width: 44,
+                                        child: discountPct > 0
+                                            ? Container(
+                                                padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 3),
+                                                decoration: BoxDecoration(
+                                                    color: Colors.green.shade50,
+                                                    borderRadius: BorderRadius.circular(6),
+                                                    border: Border.all(color: Colors.green.shade200)),
+                                                child: Text(
+                                                    '${discountPct % 1 == 0 ? discountPct.toInt() : discountPct}%',
+                                                    style: TextStyle(fontSize: 10, fontWeight: FontWeight.w700,
+                                                        color: Colors.green.shade700),
+                                                    textAlign: TextAlign.center))
+                                            : const Text('—',
+                                                style: TextStyle(fontSize: 11, color: AppColors.textSecondary),
+                                                textAlign: TextAlign.center),
+                                      ),
                                       SizedBox(
                                         width: 40,
                                         child: Text('$total',
@@ -542,10 +581,14 @@ class _AdminUserManagementScreenState extends State<AdminUserManagementScreen> {
                                       ),
                                     ],
                                   ),
-                                  if (lastOrder.isNotEmpty) ...[
+                                  if (lastOrder.isNotEmpty || phone != '—') ...[
                                     const SizedBox(height: 2),
-                                    Text('Last order: $lastOrder',
-                                        style: const TextStyle(fontSize: 10, color: AppColors.textSecondary)),
+                                    Row(children: [
+                                      if (phone != '—') Text('📞 $phone  ',
+                                          style: const TextStyle(fontSize: 10, color: AppColors.textSecondary)),
+                                      if (lastOrder.isNotEmpty) Text('Last order: $lastOrder',
+                                          style: const TextStyle(fontSize: 10, color: AppColors.textSecondary)),
+                                    ]),
                                   ],
                                 ],
                               ),
