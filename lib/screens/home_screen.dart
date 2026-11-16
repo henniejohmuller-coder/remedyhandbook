@@ -72,18 +72,18 @@ class _HomeScreenState extends State<HomeScreen> {
                 child: Column(
                   children: [
                     _buildHeroCard(),
-                    const SizedBox(height: 8),
+                    const SizedBox(height: 6),
                     if (_encouragement.isNotEmpty)
                       Padding(
                         padding: const EdgeInsets.symmetric(horizontal: 16),
                         child: EncouragementBanner(text: _encouragement),
                       ),
-                    const SizedBox(height: 8),
+                    const SizedBox(height: 4),
                     Padding(
                       padding: const EdgeInsets.symmetric(horizontal: 16),
                       child: _buildStatsRow(),
                     ),
-                    const SizedBox(height: 16),
+                    const SizedBox(height: 10),
                     Padding(
                       padding: const EdgeInsets.symmetric(horizontal: 16),
                       child: _NavButton(
@@ -278,13 +278,12 @@ class _StatCard extends StatelessWidget {
       children: [
         Text(value,
             style: const TextStyle(
-                fontSize: 20,
+                fontSize: 12,
                 fontWeight: FontWeight.bold,
                 color: AppColors.dark)),
-        const SizedBox(height: 1),
         Text(label,
             style: const TextStyle(
-                fontSize: 10,
+                fontSize: 9,
                 color: AppColors.textSecondary)),
       ],
     );
