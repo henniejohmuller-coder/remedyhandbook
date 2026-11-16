@@ -9,7 +9,7 @@ import '../theme/app_theme.dart';
 import '../widgets/shared_widgets.dart';
 import '../services/supabase_service.dart';
 
-// Ãƒ¢Ãƒ¢ Error model Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢
+// ── Error model ────────────────────────────────────────────────────────────
 class _UploadError {
   final int rowNumber;          // 1-based row number in original CSV
   final String remedyName;
@@ -35,7 +35,7 @@ class _AdminCsvUploadScreenState extends State<AdminCsvUploadScreen> {
   List<String>              _headers  = [];
   List<String>              _parseErrors   = [];   // pre-upload parse/validation errors
   List<String>              _parseWarnings = [];
-  List<_UploadError>        _uploadErrors  = [];   // per-row upload errors Ãƒ¢Ã¢ ' downloadable
+  List<_UploadError>        _uploadErrors  = [];   // per-row upload errors – downloadable
   bool _uploading     = false;
   bool _dbDownloading = false;
   bool _shopExporting = false;
@@ -48,7 +48,7 @@ class _AdminCsvUploadScreenState extends State<AdminCsvUploadScreen> {
   int  _uploaded   = 0;  // successfully uploaded rows
   String? _fileName;
 
-  // Ãƒ¢Ãƒ¢ CSV Column Spec Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢
+  // ── CSV Column Spec ────────────────────────────────────────────────────
   static const _requiredCols = ['name', 'component'];
   static const _allCols = [
     'name','component','origin','illness_name','category_name',
@@ -60,7 +60,7 @@ class _AdminCsvUploadScreenState extends State<AdminCsvUploadScreen> {
     'step_6','step_7','step_8','step_9','step_10',
   ];
 
-  // Ãƒ¢Ãƒ¢ Pre-upload row validation Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢
+  // ── Pre-upload row validation ──────────────────────────────────────────
   // Returns a list of error strings for a row; empty = row is valid.
   List<String> _validateRow(Map<String, String> row, int rowNum) {
     final errs = <String>[];
@@ -77,17 +77,17 @@ class _AdminCsvUploadScreenState extends State<AdminCsvUploadScreen> {
     final tradRating = row['tradition_rating'] ?? '';
     if (tradRating.isNotEmpty) {
       final v = int.tryParse(tradRating);
-      if (v == null || v < 1 || v > 5) errs.add('tradition_rating "$tradRating" must be 1Ãƒ¢Ã¢Å“5');
+      if (v == null || v < 1 || v > 5) errs.add('tradition_rating "$tradRating" must be 1–5');
     }
     final valLevel = row['validation_level'] ?? '';
     if (valLevel.isNotEmpty) {
       final v = int.tryParse(valLevel);
-      if (v == null || v < 1 || v > 5) errs.add('validation_level "$valLevel" must be 1Ãƒ¢Ã¢Å“5');
+      if (v == null || v < 1 || v > 5) errs.add('validation_level "$valLevel" must be 1–5');
     }
     final efficacy = row['efficacy'] ?? '';
     if (efficacy.isNotEmpty) {
       final v = int.tryParse(efficacy);
-      if (v == null || v < 0 || v > 100) errs.add('efficacy "$efficacy" must be 0Ãƒ¢Ã¢Å“100');
+      if (v == null || v < 0 || v > 100) errs.add('efficacy "$efficacy" must be 0–100');
     }
 
     // Image URL format: must be correct Wikimedia 250px thumb or empty
@@ -97,28 +97,28 @@ class _AdminCsvUploadScreenState extends State<AdminCsvUploadScreen> {
           img.contains('/250px-');
       final isOtherHttp = img.startsWith('http') && !img.contains('wikimedia');
       if (!isWiki250 && !isOtherHttp) {
-        errs.add('image_url format invalid Ãƒ¢ must be Wikimedia 250px thumb URL or a direct image URL');
+        errs.add('image_url format invalid – must be Wikimedia 250px thumb URL or a direct image URL');
       }
     }
 
     // At least step_1 should be present
     if ((row['step_1'] ?? '').trim().isEmpty) {
-      errs.add('step_1 is empty Ãƒ¢ at least one preparation step is required');
+      errs.add('step_1 is empty – at least one preparation step is required');
     }
 
     return errs;
   }
 
-  // Ãƒ¢Ãƒ¢ RFC 4180 full-content CSV parser Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢
+  // ── RFC 4180 full-content CSV parser ───────────────────────────────────
   // Single-pass parser that correctly handles:
-  //   Ãƒ¢¢ Quoted fields with embedded newlines (the main cause of "9 columns" errors)
-  //   Ãƒ¢¢ Escaped double-quotes ("")
-  //   Ãƒ¢¢ Any delimiter Ãƒ¢ comma (Excel EN), semicolon (Excel ZA/EU), tab (TSV)
-  //   Ãƒ¢¢ UTF-8 BOM from Excel "Save as UTF-8 CSV"
-  //   Ãƒ¢¢ Windows (\r\n) and Unix (\n) line endings
+  //   • Quoted fields with embedded newlines (the main cause of "9 columns" errors)
+  //   • Escaped double-quotes ("")
+  //   • Any delimiter – comma (Excel EN), semicolon (Excel ZA/EU), tab (TSV)
+  //   • UTF-8 BOM from Excel "Save as UTF-8 CSV"
+  //   • Windows (\r\n) and Unix (\n) line endings
   List<List<String>> _parseAllRows(String raw) {
     // Strip UTF-8 BOM
-    if (raw.startsWith('\uFEFF')) raw = raw.substring(1);
+    if (raw.startsWith('﻿')) raw = raw.substring(1);
 
     // Detect delimiter from the first line (before the first newline)
     final firstNl  = raw.indexOf('\n');
@@ -137,15 +137,15 @@ class _AdminCsvUploadScreenState extends State<AdminCsvUploadScreen> {
 
       if (inQuotes) {
         if (c == '"') {
-          // Escaped quote "" Ãƒ¢Ã¢ ' emit single "
+          // Escaped quote "" → emit single "
           if (i + 1 < raw.length && raw[i + 1] == '"') {
             buf.write('"');
             i++;
           } else {
-            inQuotes = false; // closing quote Ãƒ¢ stay in same field
+            inQuotes = false; // closing quote – stay in same field
           }
         } else {
-          buf.write(c); // embedded newlines, commas, etc. Ãƒ¢ all go into the field
+          buf.write(c); // embedded newlines, commas, etc. – all go into the field
         }
       } else {
         if (c == '"') {
@@ -159,7 +159,7 @@ class _AdminCsvUploadScreenState extends State<AdminCsvUploadScreen> {
         } else if (c == '\r') {
           // Ignore bare \r (Windows line endings handled by \n below)
         } else if (c == '\n') {
-          // Record separator Ãƒ¢ only triggered outside quotes
+          // Record separator – only triggered outside quotes
           currentRecord.add(buf.toString());
           buf.clear();
           if (currentRecord.any((f) => f.trim().isNotEmpty)) {
@@ -202,7 +202,7 @@ class _AdminCsvUploadScreenState extends State<AdminCsvUploadScreen> {
     return ',';
   }
 
-  // Ãƒ¢Ãƒ¢ Parse CSV Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢
+  // ── Parse CSV ──────────────────────────────────────────────────────────
   void _parseCsv(String content) {
     setState(() {
       _rows = []; _headers = []; _parseErrors = []; _parseWarnings = [];
@@ -211,7 +211,7 @@ class _AdminCsvUploadScreenState extends State<AdminCsvUploadScreen> {
     });
 
     // _parseAllRows handles BOM stripping, delimiter detection, and
-    // multi-line quoted fields in a single pass Ãƒ¢ no pre-splitting on \n.
+    // multi-line quoted fields in a single pass – no pre-splitting on \n.
     final allRows = _parseAllRows(content);
 
     if (allRows.isEmpty) {
@@ -220,18 +220,18 @@ class _AdminCsvUploadScreenState extends State<AdminCsvUploadScreen> {
     }
 
     // Detect delimiter for the warning message (re-use same logic)
-    final firstLine = content.startsWith('\uFEFF')
+    final firstLine = content.startsWith('﻿')
         ? content.substring(1).split('\n').first
         : content.split('\n').first;
     final delimiter = _detectDelimiter(firstLine.replaceAll('\r', ''));
     if (delimiter != ',') {
       final delimName = delimiter == ';' ? 'semicolon' : 'tab';
-      _parseWarnings.add('Detected $delimName-delimited file Ãƒ¢ parsed accordingly');
+      _parseWarnings.add('Detected $delimName-delimited file – parsed accordingly');
     }
 
     // First record = header
     _headers = allRows[0]
-        .map((h) => h.trim().toLowerCase().replaceAll('\uFEFF', ''))
+        .map((h) => h.trim().toLowerCase().replaceAll('﻿', ''))
         .toList();
 
     for (final col in _requiredCols) {
@@ -249,7 +249,7 @@ class _AdminCsvUploadScreenState extends State<AdminCsvUploadScreen> {
     for (int i = 1; i < allRows.length; i++) {
       final vals = allRows[i];
       if (vals.length != _headers.length) {
-        _parseWarnings.add('Row $i has ${vals.length} columns, expected ${_headers.length} Ãƒ¢ skipped');
+        _parseWarnings.add('Row $i has ${vals.length} columns, expected ${_headers.length} – skipped');
         continue;
       }
       final row = <String, String>{};
@@ -257,19 +257,19 @@ class _AdminCsvUploadScreenState extends State<AdminCsvUploadScreen> {
         row[_headers[j]] = vals[j].trim();
       }
       if ((row['name'] ?? '').isEmpty) {
-        _parseWarnings.add('Row $i has no name Ãƒ¢ skipped');
+        _parseWarnings.add('Row $i has no name – skipped');
         continue;
       }
       rows.add(row);
     }
 
-    // Pre-upload validation Ãƒ¢ collect validation errors as _UploadErrors
+    // Pre-upload validation – collect validation errors as _UploadErrors
     // so they appear in the downloadable report if the user attempts upload.
     // We still allow proceeding to let the user decide, but we flag them.
     setState(() { _rows = rows; _parsed = true; });
   }
 
-  // Ãƒ¢Ãƒ¢ Pick file Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢
+  // ── Pick file ──────────────────────────────────────────────────────────
   Future<void> _pickFile() async {
     try {
       final result = await FilePicker.platform.pickFiles(
@@ -282,7 +282,7 @@ class _AdminCsvUploadScreenState extends State<AdminCsvUploadScreen> {
       final file = result.files.first;
       final bytes = file.bytes;
       if (bytes == null) {
-        setState(() => _parseErrors = ['Could not read file Ãƒ¢ try re-saving the CSV in UTF-8 encoding']);
+        setState(() => _parseErrors = ['Could not read file – try re-saving the CSV in UTF-8 encoding']);
         return;
       }
       setState(() { _fileName = file.name; _uploadDone = false; });
@@ -292,7 +292,7 @@ class _AdminCsvUploadScreenState extends State<AdminCsvUploadScreen> {
     }
   }
 
-  // Ãƒ¢Ãƒ¢ Upload Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢
+  // ── Upload ─────────────────────────────────────────────────────────────
   Future<void> _upload() async {
     if (_rows.isEmpty) return;
 
@@ -330,7 +330,7 @@ class _AdminCsvUploadScreenState extends State<AdminCsvUploadScreen> {
         setState(() { _uploading = false; _uploadDone = true; });
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
-            content: Text('Ãƒ¢Ã¢º Upload cancelled'),
+            content: Text('⛔ Upload cancelled'),
             backgroundColor: Colors.orange,
             duration: Duration(seconds: 2),
           ));
@@ -341,7 +341,7 @@ class _AdminCsvUploadScreenState extends State<AdminCsvUploadScreen> {
       final row = rowsToUpload[i];
       final rowNum = _rows.indexOf(row) + 2; // +2 = 1-based + header row
 
-      // Ãƒ¢Ãƒ¢ Pre-upload validation Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢
+      // ── Pre-upload validation ─────────────────────────────────────────
       final validationErrs = _validateRow(row, rowNum);
       if (validationErrs.isNotEmpty) {
         setState(() {
@@ -355,7 +355,7 @@ class _AdminCsvUploadScreenState extends State<AdminCsvUploadScreen> {
         continue; // skip DB upload for invalid row
       }
 
-      // Ãƒ¢Ãƒ¢ DB upload Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢
+      // ── DB upload ──────────────────────────────────────────────────────
       try {
         await _uploadRow(row);
         setState(() => _uploaded++);
@@ -379,7 +379,7 @@ class _AdminCsvUploadScreenState extends State<AdminCsvUploadScreen> {
 
     if (mounted && _uploadErrors.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-        content: Text('Ãƒ¢Ã…â€œ... $_uploaded remedies uploaded successfully!'),
+        content: Text('✅ $_uploaded remedies uploaded successfully!'),
         backgroundColor: Colors.green,
         duration: const Duration(seconds: 3),
       ));
@@ -446,7 +446,7 @@ class _AdminCsvUploadScreenState extends State<AdminCsvUploadScreen> {
   Future<void> _upsertLookup(dynamic db, String table, String col, String? val) async {
     if (val == null || val.isEmpty) return;
     // A single cell may contain multiple comma/semicolon-separated values
-    // (e.g. "Cancer, Diabetes") Ãƒ¢ insert each as its own atomic lookup row.
+    // (e.g. "Cancer, Diabetes") – insert each as its own atomic lookup row.
     final items = val
         .split(RegExp(r'[,;]'))
         .map((e) => e.trim())
@@ -458,7 +458,7 @@ class _AdminCsvUploadScreenState extends State<AdminCsvUploadScreen> {
     }
   }
 
-  // Accepts URLs separated by commas, semicolons, or newlines Ãƒ¢Ã¢ ' one per line.
+  // Accepts URLs separated by commas, semicolons, or newlines → one per line.
   String _normaliseUrls(String raw) {
     if (raw.trim().isEmpty) return '';
     return raw
@@ -470,17 +470,17 @@ class _AdminCsvUploadScreenState extends State<AdminCsvUploadScreen> {
 
   String? _val(String? v) => (v == null || v.trim().isEmpty) ? null : v.trim();
 
-  // Ãƒ¢Ãƒ¢ Download Error Report CSV Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢
+  // ── Download Error Report CSV ──────────────────────────────────────────
   Future<void> _downloadErrorReport() async {
     if (_uploadErrors.isEmpty) return;
 
     // Columns: error metadata + all original CSV columns
     final reportCols = ['csv_row', 'remedy_name', 'error', ..._allCols];
 
-    // Quote a cell value for CSV safety
+    // RFC 4180 quoting
     String q(String v) {
       if (v.contains(',') || v.contains('"') || v.contains('\n')) {
-        return v.replaceAll(',', ' ').replaceAll('\t', ' ').replaceAll('\n', ' ');
+        return '"${v.replaceAll('"', '""')}"';
       }
       return v;
     }
@@ -501,13 +501,13 @@ class _AdminCsvUploadScreenState extends State<AdminCsvUploadScreen> {
     final path = await downloadCsv(csv, 'upload_errors_${ts}.csv');
     if (path != null && mounted) {
       ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-        content: Text('Ãƒ¢Ã…â€œ... Error report saved to $path'),
+        content: Text('✅ Error report saved to $path'),
         duration: const Duration(seconds: 5),
       ));
     }
   }
 
-  // Ãƒ¢Ãƒ¢ Download full database as CSV Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢
+  // ── Download full database as CSV ──────────────────────────────────────
   // Fetches all remedies from Supabase and exports as a CSV matching _allCols
   Future<void> _downloadDatabase() async {
     if (_dbDownloading) return;
@@ -516,13 +516,23 @@ class _AdminCsvUploadScreenState extends State<AdminCsvUploadScreen> {
     try {
       final db = SupabaseService.supabase;
 
-      // Fetch all remedies (no status filter Ãƒ¢ admin sees everything)
-      final List rows = await db
-          .from('remedies')
-          .select('*, remedy_instructions(*)')
-          .order('name');
+      // Fetch all remedies with pagination (no status filter – admin sees everything)
+      final List<Map<String, dynamic>> allRows = [];
+      int offset = 0;
+      const pageSize = 1000;
+      while (true) {
+        final page = await db
+            .from('remedies')
+            .select('*, remedy_instructions(*)')
+            .order('name')
+            .range(offset, offset + pageSize - 1);
+        final pageList = List<Map<String, dynamic>>.from(page);
+        allRows.addAll(pageList);
+        if (pageList.length < pageSize) break;
+        offset += pageSize;
+      }
 
-      if (rows.isEmpty) {
+      if (allRows.isEmpty) {
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
             content: Text('No remedies found in database'),
@@ -533,18 +543,13 @@ class _AdminCsvUploadScreenState extends State<AdminCsvUploadScreen> {
         return;
       }
 
-      // Quote a value for CSV safety
-      String q(dynamic v) {
-        final s = (v ?? '').toString();
-        if (s.contains(',') || s.contains('"') || s.contains('\n')) {
-          return s.replaceAll(',', ' ').replaceAll('\t', ' ').replaceAll('\n', ' ');
-        }
-        return s;
-      }
+      // Export as Excel so each value lands in its own column
+      final excel = xl.Excel.createExcel();
+      final sheet = excel['Remedies'];
+      // Header row
+      sheet.appendRow(_allCols.map((h) => xl.TextCellValue(h)).toList());
 
-      final lines = <String>[_allCols.join(',')];
-
-      for (final row in rows) {
+      for (final row in allRows) {
         // Flatten remedy_instructions into step_1..step_10
         final steps = <int, String>{};
         final instructions = row['remedy_instructions'] as List? ?? [];
@@ -558,24 +563,30 @@ class _AdminCsvUploadScreenState extends State<AdminCsvUploadScreen> {
         final cells = _allCols.map((col) {
           if (col.startsWith('step_')) {
             final n = int.tryParse(col.split('_')[1]) ?? 0;
-            return q(steps[n] ?? '');
+            return xl.TextCellValue(steps[n] ?? '');
           }
-          return q(row[col]);
+          return xl.TextCellValue((row[col] ?? '').toString());
         }).toList();
 
-        lines.add(cells.join(','));
+        sheet.appendRow(cells);
       }
 
-      final csv = lines.join('\n');
-      final ts  = DateTime.now().toIso8601String().substring(0, 10);
-      final path = await downloadCsv(csv, 'remedy_database_$ts.csv');
+      excel.delete('Sheet1');
+      final bytes = excel.encode();
+      if (bytes != null) {
+        final ts = DateTime.now().toIso8601String().substring(0, 10);
+        final blob = html.Blob([bytes], 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
+        final url = html.Url.createObjectUrlFromBlob(blob);
+        final anchor = html.AnchorElement(href: url)
+          ..setAttribute('download', 'remedy_database_$ts.xlsx')
+          ..click();
+        html.Url.revokeObjectUrl(url);
+      }
 
       if (mounted) {
         setState(() => _dbDownloading = false);
         ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-          content: Text(path != null
-              ? 'Ãƒ¢Ã…â€œ... Database exported: ${rows.length} remedies Ãƒ¢ saved to $path'
-              : 'Ãƒ¢Ã…â€œ... Database exported: ${rows.length} remedies'),
+          content: Text('✅ Database exported: ${allRows.length} remedies'),
           duration: const Duration(seconds: 5),
           backgroundColor: Colors.green,
         ));
@@ -591,6 +602,8 @@ class _AdminCsvUploadScreenState extends State<AdminCsvUploadScreen> {
       }
     }
   }
+
+  // ── Export Filter Matrix ───────────────────────────────────────────────
   Future<void> _exportFilterMatrix() async {
     if (_fmExporting) return;
     setState(() => _fmExporting = true);
@@ -610,17 +623,27 @@ class _AdminCsvUploadScreenState extends State<AdminCsvUploadScreen> {
         if (pageList.length < pageSize) break;
         from += pageSize;
       }
-      String q(dynamic v) {
-        final s = (v ?? '').toString();
-        return (s.contains(',') || s.contains('"') || s.contains('\n'))
-            ? s.replaceAll(',', ' ').replaceAll('\t', ' ').replaceAll('\n', ' ') : s;
+
+      // Export as Excel so columns open correctly regardless of regional settings
+      final excel = xl.Excel.createExcel();
+      final sheet = excel['FilterMatrix'];
+      const headers = ['category', 'subcategory', 'illness', 'symptom'];
+      sheet.appendRow(headers.map((h) => xl.TextCellValue(h)).toList());
+      for (final r in rows) {
+        sheet.appendRow(headers.map((h) => xl.TextCellValue((r[h] ?? '').toString())).toList());
       }
-      final csv = ['category,subcategory,illness,symptom',
-        ...rows.map((r) => '${q(r['category'])},${q(r['subcategory'])},${q(r['illness'])},${q(r['symptom'])}')
-      ].join('\n');
-      await downloadCsv(csv, 'filter_matrix.csv');
+      excel.delete('Sheet1');
+      final bytes = excel.encode();
+      if (bytes != null) {
+        final blob = html.Blob([bytes], 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
+        final url = html.Url.createObjectUrlFromBlob(blob);
+        final anchor = html.AnchorElement(href: url)
+          ..setAttribute('download', 'filter_matrix_${DateTime.now().millisecondsSinceEpoch}.xlsx')
+          ..click();
+        html.Url.revokeObjectUrl(url);
+      }
       if (mounted) ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Filter matrix exported!'), backgroundColor: Colors.green));
+        SnackBar(content: Text('Filter matrix exported (${rows.length} rows)!'), backgroundColor: Colors.green));
     } catch (e) {
       if (mounted) ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text('Export failed: $e')));
@@ -629,6 +652,7 @@ class _AdminCsvUploadScreenState extends State<AdminCsvUploadScreen> {
     }
   }
 
+  // ── Import Filter Matrix ───────────────────────────────────────────────
   Future<void> _importFilterMatrix() async {
     if (_fmImporting) return;
     setState(() => _fmImporting = true);
@@ -638,11 +662,13 @@ class _AdminCsvUploadScreenState extends State<AdminCsvUploadScreen> {
       if (result == null) { setState(() => _fmImporting = false); return; }
       final bytes = result.files.first.bytes;
       if (bytes == null) { setState(() => _fmImporting = false); return; }
-      final csvLines = String.fromCharCodes(bytes)
-          .split('\n').where((l) => l.trim().isNotEmpty).skip(1).toList();
+
+      // Use the RFC 4180 parser so values containing commas are handled correctly
+      final allRows = _parseAllRows(utf8.decode(bytes, allowMalformed: true));
       int inserted = 0;
-      for (final line in csvLines) {
-        final cols = line.split(',').map((c) => c.trim().replaceAll('"', '')).toList();
+      // Skip header row (index 0)
+      for (int ri = 1; ri < allRows.length; ri++) {
+        final cols = allRows[ri].map((c) => c.trim()).toList();
         if (cols.length < 4) continue;
         await SupabaseService.supabase.from('filter_matrix').upsert({
           'category': cols[0], 'subcategory': cols[1],
@@ -660,14 +686,24 @@ class _AdminCsvUploadScreenState extends State<AdminCsvUploadScreen> {
     }
   }
 
-
+  // ── Export Shop CSV ────────────────────────────────────────────────────
   Future<void> _exportShopCsv() async {
     setState(() => _shopExporting = true);
     try {
-      final data = await SupabaseService.supabase.from('products').select(
-        'id, sku, name, type, description, price, cost_price, stock, delivery_cost, active, image_url, category, brand, primary_herb, main_constituent'
-      ).order('name');
-      final rows = data as List;
+      // Paginate to fetch all products (Supabase caps single queries at 1000)
+      final allData = <Map<String, dynamic>>[];
+      int offset = 0;
+      const pageSize = 1000;
+      while (true) {
+        final page = await SupabaseService.supabase.from('products').select(
+          'id, sku, name, type, description, price, cost_price, stock, delivery_cost, active, image_url, category, brand, primary_herb, main_constituent'
+        ).order('name').range(offset, offset + pageSize - 1);
+        final pageList = List<Map<String, dynamic>>.from(page);
+        allData.addAll(pageList);
+        if (pageList.length < pageSize) break;
+        offset += pageSize;
+      }
+      final rows = allData;
       final headers = ['id','sku','name','type','description','price','cost_price','stock','delivery_cost','active','image_url','category','brand','primary_herb','main_constituent'];
 
       final excel = xl.Excel.createExcel();
@@ -692,7 +728,7 @@ class _AdminCsvUploadScreenState extends State<AdminCsvUploadScreen> {
         html.Url.revokeObjectUrl(url);
       }
       if (mounted) ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Shop items exported as Excel!'), backgroundColor: Colors.green));
+        SnackBar(content: Text('Shop items exported (${rows.length} rows)!'), backgroundColor: Colors.green));
     } catch (e) {
       if (mounted) ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text('Export failed: ' + e.toString()), backgroundColor: Colors.red));
@@ -701,6 +737,7 @@ class _AdminCsvUploadScreenState extends State<AdminCsvUploadScreen> {
     }
   }
 
+  // ── Import Shop CSV ────────────────────────────────────────────────────
   Future<void> _importShopCsv() async {
     final result = await FilePicker.platform.pickFiles(
       type: FileType.custom, allowedExtensions: ['csv'], withData: true);
@@ -709,13 +746,14 @@ class _AdminCsvUploadScreenState extends State<AdminCsvUploadScreen> {
     if (bytes == null) return;
     setState(() => _shopImporting = true);
     try {
-      final csv = utf8.decode(bytes);
-      final lines = csv.split('\n').where((l) => l.trim().isNotEmpty).toList();
-      if (lines.isEmpty) return;
-      final headers = lines.first.split(',').map((h) => h.trim().replaceAll('"', '')).toList();
+      final csv = utf8.decode(bytes, allowMalformed: true);
+      // Use the RFC 4180 parser so values containing commas are handled correctly
+      final allRows = _parseAllRows(csv);
+      if (allRows.isEmpty) return;
+      final headers = allRows[0].map((h) => h.trim()).toList();
       int updated = 0;
-      for (int i = 1; i < lines.length; i++) {
-        final values = lines[i].split(',').map((v) => v.trim().replaceAll('"', '')).toList();
+      for (int i = 1; i < allRows.length; i++) {
+        final values = allRows[i].map((v) => v.trim()).toList();
         if (values.length < 2) continue;
         final row = <String, dynamic>{};
         for (int j = 0; j < headers.length; j++) {
@@ -750,7 +788,7 @@ class _AdminCsvUploadScreenState extends State<AdminCsvUploadScreen> {
     }
   }
 
-  // Ãƒ¢Ãƒ¢ Download Template Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢
+  // ── Download Template ──────────────────────────────────────────────────
   Future<void> _downloadTemplate() async {
     final header = _allCols.join(',');
     final example = [
@@ -794,13 +832,13 @@ class _AdminCsvUploadScreenState extends State<AdminCsvUploadScreen> {
     final path = await downloadCsv(csv, 'remedy_template.csv');
     if (path != null && mounted) {
       ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-        content: Text('Ãƒ¢Ã…â€œ... Template saved to $path'),
+        content: Text('✅ Template saved to $path'),
         duration: const Duration(seconds: 5),
       ));
     }
   }
 
-  // Ãƒ¢Ãƒ¢ Build Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢
+  // ── Build ──────────────────────────────────────────────────────────────
   @override
   Widget build(BuildContext context) {
     final hasUploadErrors  = _uploadErrors.isNotEmpty;
@@ -819,7 +857,7 @@ class _AdminCsvUploadScreenState extends State<AdminCsvUploadScreen> {
           padding: const EdgeInsets.all(16),
           child: Column(children: [
 
-            // Ãƒ¢Ãƒ¢ Info / template card Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢
+            // ── Info / template card ──────────────────────────────────
             Container(
               padding: const EdgeInsets.all(14),
               decoration: BoxDecoration(
@@ -834,7 +872,7 @@ class _AdminCsvUploadScreenState extends State<AdminCsvUploadScreen> {
                   'Each row = one remedy. Required: name, component.\n'
                   'Preparation steps go in step_1 ... step_10.\n'
                   'Lookup values (illness, category etc.) are auto-created.\n'
-                  'prep_time is in minutes (numbers only). Values > 100 will show "see instructions" in the app. Ratings 1Ãƒ¢Ã¢Å“5. Efficacy 0Ãƒ¢Ã¢Å“100.',
+                  'prep_time is in minutes (numbers only). Values > 100 will show "see instructions" in the app. Ratings 1–5. Efficacy 0–100.',
                   style: AppTextStyles.caption,
                 ),
                 const SizedBox(height: 10),
@@ -885,7 +923,7 @@ class _AdminCsvUploadScreenState extends State<AdminCsvUploadScreen> {
             ),
             const SizedBox(height: 12),
 
-            // Ãƒ¢Ãƒ¢ Filter Matrix section Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢
+            // ── Filter Matrix section ─────────────────────────────────
             Container(
               padding: const EdgeInsets.all(14),
               decoration: BoxDecoration(
@@ -918,7 +956,7 @@ class _AdminCsvUploadScreenState extends State<AdminCsvUploadScreen> {
             ),
             const SizedBox(height: 12),
 
-            // Ãƒ¢Ãƒ¢ Parse errors Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢
+            // ── Parse errors ──────────────────────────────────────────
             if (_parseErrors.isNotEmpty)
               _MessageBox(
                 color: const Color(0xFFFFEBEE),
@@ -928,7 +966,7 @@ class _AdminCsvUploadScreenState extends State<AdminCsvUploadScreen> {
                 textColor: Colors.red,
               ),
 
-            // Ãƒ¢Ãƒ¢ Parse warnings Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢
+            // ── Parse warnings ────────────────────────────────────────
             if (_parseWarnings.isNotEmpty) ...[
               const SizedBox(height: 8),
               _MessageBox(
@@ -940,7 +978,7 @@ class _AdminCsvUploadScreenState extends State<AdminCsvUploadScreen> {
               ),
             ],
 
-            // Ãƒ¢Ãƒ¢ Preview Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢
+            // ── Preview ───────────────────────────────────────────────
             if (_parsed && _rows.isNotEmpty) ...[
               const SizedBox(height: 16),
               Text('Preview (first 3 rows)', style: AppTextStyles.heading3),
@@ -982,7 +1020,7 @@ class _AdminCsvUploadScreenState extends State<AdminCsvUploadScreen> {
                 ),
             ],
 
-            // Ãƒ¢Ãƒ¢ Upload progress Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢
+            // ── Upload progress ───────────────────────────────────────
             if (_uploading) ...[
               const SizedBox(height: 20),
               LinearProgressIndicator(
@@ -1006,7 +1044,7 @@ class _AdminCsvUploadScreenState extends State<AdminCsvUploadScreen> {
                 ),
             ],
 
-            // Ãƒ¢Ãƒ¢ Upload results Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢
+            // ── Upload results ────────────────────────────────────────
             if (_uploadDone) ...[
               const SizedBox(height: 20),
               _UploadResultCard(
@@ -1020,7 +1058,7 @@ class _AdminCsvUploadScreenState extends State<AdminCsvUploadScreen> {
 
             const SizedBox(height: 24),
 
-            // Ãƒ¢Ãƒ¢ Action buttons Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢
+            // ── Action buttons ────────────────────────────────────────
             if (_parsed && _rows.isNotEmpty && _parseErrors.isEmpty)
               Row(children: [
                 if (_uploading) ...[
@@ -1076,7 +1114,7 @@ class _AdminCsvUploadScreenState extends State<AdminCsvUploadScreen> {
   }
 }
 
-// Ãƒ¢Ãƒ¢ Upload result card Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢
+// ── Upload result card ─────────────────────────────────────────────────────
 class _UploadResultCard extends StatefulWidget {
   final int successCount;
   final int errorCount;
@@ -1105,7 +1143,7 @@ class _UploadResultCardState extends State<_UploadResultCard> {
 
     return Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
 
-      // Ãƒ¢Ãƒ¢ Summary strip Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢
+      // ── Summary strip ───────────────────────────────────────────────
       Container(
         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
         decoration: BoxDecoration(
@@ -1132,103 +1170,68 @@ class _UploadResultCardState extends State<_UploadResultCard> {
               ),
             ),
             if (hasErrors)
-              const Text(
-                'Download the error report, fix the rows, and re-upload.',
-                style: TextStyle(fontSize: 12, color: Colors.black54),
+              Text(
+                'Tap "Download Error Report" to get a CSV of failed rows',
+                style: TextStyle(fontSize: 12, color: Colors.orange.shade700),
               ),
           ])),
+          if (hasErrors)
+            IconButton(
+              icon: Icon(_expanded ? Icons.expand_less : Icons.expand_more),
+              color: Colors.orange,
+              onPressed: () => setState(() => _expanded = !_expanded),
+            ),
         ]),
       ),
 
-      // Ãƒ¢Ãƒ¢ Error list + download Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢
-      if (hasErrors) ...[
-        const SizedBox(height: 10),
-
-        // Download button
-        _SmallButton(
-          icon: Icons.download,
-          label: kIsWeb
-              ? 'Download error report (${widget.errorCount} rows)'
-              : 'Save error report (${widget.errorCount} rows)',
-          onTap: widget.onDownload ?? () {},
-          color: Colors.red.shade600,
-          bgColor: const Color(0xFFFFEBEE),
-        ),
-
-        const SizedBox(height: 10),
-
-        // Collapsible error list
-        GestureDetector(
-          onTap: () => setState(() => _expanded = !_expanded),
-          child: Container(
-            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-            decoration: BoxDecoration(
-              color: Colors.white,
-              borderRadius: BorderRadius.circular(8),
-              border: Border.all(color: Colors.grey.shade200),
-            ),
-            child: Row(children: [
-              const Icon(Icons.list_alt, size: 16, color: Colors.red),
-              const SizedBox(width: 8),
-              Expanded(
-                child: Text(
-                  '${widget.errorCount} row${widget.errorCount == 1 ? '' : 's'} with errors',
-                  style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 13),
+      // ── Error list ──────────────────────────────────────────────────
+      if (hasErrors && _expanded) ...[
+        const SizedBox(height: 8),
+        Container(
+          decoration: BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.circular(10),
+            border: Border.all(color: Colors.red.shade100),
+          ),
+          child: ListView.separated(
+            shrinkWrap: true,
+            physics: const NeverScrollableScrollPhysics(),
+            itemCount: widget.errors.length.clamp(0, 10),
+            separatorBuilder: (_, __) => const Divider(height: 1),
+            itemBuilder: (_, i) {
+              final err = widget.errors[i];
+              return ListTile(
+                dense: true,
+                leading: CircleAvatar(
+                  radius: 14,
+                  backgroundColor: Colors.red.shade50,
+                  child: Text('${err.rowNumber}',
+                      style: const TextStyle(fontSize: 11, color: Colors.red)),
                 ),
-              ),
-              Icon(
-                _expanded ? Icons.expand_less : Icons.expand_more,
-                size: 18, color: AppColors.textSecondary,
-              ),
-            ]),
+                title: Text(err.remedyName,
+                    style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w600)),
+                subtitle: Text(err.errorMessage,
+                    style: const TextStyle(fontSize: 12, color: Colors.red)),
+              );
+            },
           ),
         ),
-
-        if (_expanded) ...[
-          const SizedBox(height: 4),
-          Container(
-            decoration: BoxDecoration(
-              color: Colors.white,
-              borderRadius: BorderRadius.circular(8),
-              border: Border.all(color: Colors.grey.shade200),
-            ),
-            child: ListView.separated(
-              shrinkWrap: true,
-              physics: const NeverScrollableScrollPhysics(),
-              itemCount: widget.errors.length,
-              separatorBuilder: (_, __) => const Divider(height: 1, indent: 48),
-              itemBuilder: (_, i) {
-                final err = widget.errors[i];
-                return Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-                  child: Row(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                    // Row badge
-                    Container(
-                      width: 36, height: 36,
-                      decoration: BoxDecoration(
-                        color: const Color(0xFFFFEBEE),
-                        borderRadius: BorderRadius.circular(6),
-                      ),
-                      alignment: Alignment.center,
-                      child: Text(
-                        'R${err.rowNumber}',
-                        style: const TextStyle(
-                          fontSize: 10, fontWeight: FontWeight.w700, color: Colors.red,
-                        ),
-                      ),
-                    ),
-                    const SizedBox(width: 10),
-                    Expanded(child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start, children: [
-                      Text(err.remedyName,
-                          style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 13)),
-                      const SizedBox(height: 2),
-                      Text(err.errorMessage,
-                          style: const TextStyle(fontSize: 12, color: Colors.red)),
-                    ])),
-                  ]),
-                );
-              },
+        if (widget.errors.length > 10)
+          Padding(
+            padding: const EdgeInsets.only(top: 4),
+            child: Text('...and ${widget.errors.length - 10} more errors',
+                style: const TextStyle(fontSize: 12, color: Colors.red),
+                textAlign: TextAlign.center),
+          ),
+        if (widget.onDownload != null) ...[
+          const SizedBox(height: 10),
+          OutlinedButton.icon(
+            onPressed: widget.onDownload,
+            icon: const Icon(Icons.download_outlined, size: 18),
+            label: const Text('Download Error Report'),
+            style: OutlinedButton.styleFrom(
+              foregroundColor: Colors.red,
+              side: const BorderSide(color: Colors.red),
             ),
           ),
         ],
@@ -1237,45 +1240,99 @@ class _UploadResultCardState extends State<_UploadResultCard> {
   }
 }
 
-// Ãƒ¢Ãƒ¢ Shared small button Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢
+// ── Duplicate Dialog ───────────────────────────────────────────────────────
+class _DuplicateDialog extends StatefulWidget {
+  final Set<String> existingNames;
+  const _DuplicateDialog({required this.existingNames});
+
+  @override
+  State<_DuplicateDialog> createState() => _DuplicateDialogState();
+}
+
+class _DuplicateDialogState extends State<_DuplicateDialog> {
+  late Set<String> _skip;
+
+  @override
+  void initState() {
+    super.initState();
+    _skip = Set.from(widget.existingNames); // default: skip all duplicates
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return AlertDialog(
+      title: const Text('Duplicate Remedies Found'),
+      content: SizedBox(
+        width: double.maxFinite,
+        child: Column(mainAxisSize: MainAxisSize.min, children: [
+          Text('${widget.existingNames.length} remedy name(s) already exist in the database. '
+              'Choose which to skip (checked = skip / keep existing):'),
+          const SizedBox(height: 8),
+          Flexible(
+            child: ListView(
+              shrinkWrap: true,
+              children: widget.existingNames.map((name) => CheckboxListTile(
+                dense: true,
+                title: Text(name, style: const TextStyle(fontSize: 13)),
+                value: _skip.contains(name),
+                onChanged: (v) => setState(() {
+                  if (v == true) _skip.add(name); else _skip.remove(name);
+                }),
+              )).toList(),
+            ),
+          ),
+        ]),
+      ),
+      actions: [
+        TextButton(
+          onPressed: () => Navigator.pop(context, null),
+          child: const Text('Cancel'),
+        ),
+        ElevatedButton(
+          onPressed: () => Navigator.pop(context, _skip),
+          child: const Text('Continue Upload'),
+        ),
+      ],
+    );
+  }
+}
+
+// ── Small Button ───────────────────────────────────────────────────────────
 class _SmallButton extends StatelessWidget {
   final IconData icon;
   final String label;
   final VoidCallback onTap;
-  final Color color;
-  final Color bgColor;
+  final Color? bgColor;
 
   const _SmallButton({
     required this.icon,
     required this.label,
     required this.onTap,
-    this.color = AppColors.dark,
-    this.bgColor = AppColors.primary,
+    this.bgColor,
   });
 
   @override
   Widget build(BuildContext context) {
-    return GestureDetector(
-      onTap: onTap,
-      child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-        decoration: BoxDecoration(
-          color: bgColor,
-          borderRadius: BorderRadius.circular(8),
+    return Material(
+      color: bgColor ?? AppColors.lightYellow,
+      borderRadius: BorderRadius.circular(8),
+      child: InkWell(
+        borderRadius: BorderRadius.circular(8),
+        onTap: onTap,
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+          child: Row(mainAxisSize: MainAxisSize.min, children: [
+            Icon(icon, size: 16, color: AppColors.dark),
+            const SizedBox(width: 6),
+            Text(label, style: AppTextStyles.caption),
+          ]),
         ),
-        child: Row(mainAxisSize: MainAxisSize.min, children: [
-          Icon(icon, size: 16, color: color),
-          const SizedBox(width: 6),
-          Text(label, style: TextStyle(
-            fontWeight: FontWeight.w700, fontSize: 13, color: color,
-          )),
-        ]),
       ),
     );
   }
 }
 
-// Ãƒ¢Ãƒ¢ Message box (errors / warnings) Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢
+// ── Message Box ────────────────────────────────────────────────────────────
 class _MessageBox extends StatelessWidget {
   final Color color;
   final IconData icon;
@@ -1299,140 +1356,19 @@ class _MessageBox extends StatelessWidget {
         color: color,
         borderRadius: BorderRadius.circular(10),
       ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: messages.map((m) => Padding(
-          padding: const EdgeInsets.symmetric(vertical: 2),
-          child: Row(crossAxisAlignment: CrossAxisAlignment.start, children: [
-            Icon(icon, size: 14, color: iconColor),
-            const SizedBox(width: 6),
-            Expanded(child: Text(m,
-                style: TextStyle(fontSize: 12, color: textColor))),
-          ]),
-        )).toList(),
-      ),
-    );
-  }
-}
-
-// Ãƒ¢Ãƒ¢ Duplicate dialog Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢Ãƒ¢
-class _DuplicateDialog extends StatefulWidget {
-  final Set<String> existingNames;
-  const _DuplicateDialog({required this.existingNames});
-
-  @override
-  State<_DuplicateDialog> createState() => _DuplicateDialogState();
-}
-
-class _DuplicateDialogState extends State<_DuplicateDialog> {
-  late Set<String> _checkedToUpdate;
-
-  @override
-  void initState() {
-    super.initState();
-    _checkedToUpdate = Set.from(widget.existingNames);
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    final updateCount = _checkedToUpdate.length;
-    final skipCount   = widget.existingNames.length - updateCount;
-
-    return AlertDialog(
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-      title: Row(children: [
-        const Icon(Icons.warning_amber, color: Colors.orange, size: 22),
+      child: Row(crossAxisAlignment: CrossAxisAlignment.start, children: [
+        Icon(icon, color: iconColor, size: 18),
         const SizedBox(width: 8),
-        Text('${widget.existingNames.length} duplicates found',
-            style: AppTextStyles.heading3),
+        Expanded(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: messages
+                .map((m) => Text(m,
+                    style: TextStyle(fontSize: 13, color: textColor)))
+                .toList(),
+          ),
+        ),
       ]),
-      content: SizedBox(
-        width: double.maxFinite,
-        child: Column(mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-          const Text('Tick to UPDATE existing  -  Untick to SKIP',
-              style: AppTextStyles.caption),
-          const SizedBox(height: 4),
-          Row(children: [
-            TextButton(
-              onPressed: () => setState(() =>
-                  _checkedToUpdate = Set.from(widget.existingNames)),
-              child: const Text('Select all',
-                  style: TextStyle(fontSize: 12, color: AppColors.primary)),
-            ),
-            TextButton(
-              onPressed: () => setState(() => _checkedToUpdate.clear()),
-              child: const Text('Deselect all',
-                  style: TextStyle(fontSize: 12, color: AppColors.textSecondary)),
-            ),
-          ]),
-          const Divider(height: 8),
-          ConstrainedBox(
-            constraints: const BoxConstraints(maxHeight: 300),
-            child: SingleChildScrollView(
-              child: Column(
-                children: widget.existingNames.map((name) {
-                  final checked = _checkedToUpdate.contains(name);
-                  return CheckboxListTile(
-                    dense: true,
-                    contentPadding: EdgeInsets.zero,
-                    title: Text(name, style: AppTextStyles.body),
-                    subtitle: Text(
-                      checked ? 'Will be updated' : 'Will be skipped',
-                      style: TextStyle(
-                        fontSize: 11,
-                        color: checked ? Colors.orange : AppColors.textSecondary,
-                      ),
-                    ),
-                    value: checked,
-                    activeColor: AppColors.primary,
-                    checkboxShape:
-                        RoundedRectangleBorder(borderRadius: BorderRadius.circular(4)),
-                    onChanged: (v) => setState(() {
-                      if (v == true) _checkedToUpdate.add(name);
-                      else _checkedToUpdate.remove(name);
-                    }),
-                  );
-                }).toList(),
-              ),
-            ),
-          ),
-          const Divider(height: 12),
-          Text(
-            '$updateCount will be updated  -  $skipCount will be skipped',
-            style: const TextStyle(
-                fontSize: 12, fontWeight: FontWeight.w600, color: AppColors.dark),
-          ),
-        ]),
-      ),
-      actions: [
-        TextButton(
-          onPressed: () => Navigator.pop(context, null),
-          child: const Text('Cancel upload',
-              style: TextStyle(color: Colors.red)),
-        ),
-        ElevatedButton(
-          onPressed: () {
-            final skipNames = widget.existingNames.difference(_checkedToUpdate);
-            Navigator.pop(context, skipNames);
-          },
-          style: ElevatedButton.styleFrom(
-            backgroundColor: AppColors.primary,
-            foregroundColor: AppColors.dark,
-            elevation: 0,
-            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
-          ),
-          child: const Text('Continue upload'),
-        ),
-      ],
     );
   }
 }
-
-
-
-
-
-
-
