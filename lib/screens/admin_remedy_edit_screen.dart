@@ -292,6 +292,11 @@ class _AdminRemedyEditScreenState extends State<AdminRemedyEditScreen> {
     }
     final filtered = allProducts;
     if (!mounted) return;
+    // Build match hints from the current remedy fields
+    final matchHerb        = (_selectedComponent.isNotEmpty && _selectedComponent != 'Select component')
+        ? _selectedComponent.toLowerCase() : '';
+    final matchConstituent = _constituentController.text.trim().toLowerCase();
+    final matchSku         = widget.remedy['sku']?.toString().toLowerCase() ?? '';
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
@@ -299,6 +304,9 @@ class _AdminRemedyEditScreenState extends State<AdminRemedyEditScreen> {
       builder: (_) => _ProductPickerSheet(
         products: filtered,
         linkedIds: _linkedProducts.map((p) => p['id'].toString()).toList(),
+        matchHerb: matchHerb,
+        matchConstituent: matchConstituent,
+        matchSku: matchSku,
         onSelect: (product) async {
           Navigator.pop(context);
           await SupabaseService.supabase.from('remedy_products')
@@ -2171,11 +2179,17 @@ class _ProductPickerSheet extends StatefulWidget {
   final List<Map<String, dynamic>> products;
   final List<String> linkedIds;
   final Function(Map<String, dynamic>) onSelect;
+  final String matchHerb;
+  final String matchConstituent;
+  final String matchSku;
 
   const _ProductPickerSheet({
     required this.products,
     required this.linkedIds,
     required this.onSelect,
+    this.matchHerb = '',
+    this.matchConstituent = '',
+    this.matchSku = '',
   });
 
   @override
@@ -2192,11 +2206,42 @@ class _ProductPickerSheetState extends State<_ProductPickerSheet> {
     super.dispose();
   }
 
+  /// Score a product: SKU match=3, constituent match=2, primary herb match=1
+  int _matchScore(Map<String, dynamic> p) {
+    int score = 0;
+    final sku          = (p['sku'] ?? '').toString().toLowerCase();
+    final herb         = (p['primary_herb'] ?? '').toString().toLowerCase();
+    final constituent  = (p['main_constituent'] ?? '').toString().toLowerCase();
+    if (widget.matchSku.isNotEmpty && sku == widget.matchSku) score += 3;
+    if (widget.matchConstituent.isNotEmpty && constituent.isNotEmpty &&
+        (constituent.contains(widget.matchConstituent) || widget.matchConstituent.contains(constituent))) score += 2;
+    if (widget.matchHerb.isNotEmpty && herb.isNotEmpty &&
+        (herb.contains(widget.matchHerb) || widget.matchHerb.contains(herb))) score += 1;
+    return score;
+  }
+
   List<Map<String, dynamic>> get _filtered {
     return widget.products.where((p) {
       final name = (p['name'] ?? '').toString().toLowerCase();
-      return _search.isEmpty || name.contains(_search.toLowerCase());
+      final sku  = (p['sku']  ?? '').toString().toLowerCase();
+      return _search.isEmpty ||
+             name.contains(_search.toLowerCase()) ||
+             sku.contains(_search.toLowerCase());
     }).toList();
+  }
+
+  List<Map<String, dynamic>> get _suggested {
+    if (_search.isNotEmpty) return [];
+    final hasMatchers = widget.matchHerb.isNotEmpty ||
+                        widget.matchConstituent.isNotEmpty ||
+                        widget.matchSku.isNotEmpty;
+    if (!hasMatchers) return [];
+    final scored = _filtered
+        .map((p) => MapEntry(_matchScore(p), p))
+        .where((e) => e.key > 0)
+        .toList()
+      ..sort((a, b) => b.key.compareTo(a.key));
+    return scored.map((e) => e.value).toList();
   }
 
   @override
@@ -2240,18 +2285,19 @@ class _ProductPickerSheetState extends State<_ProductPickerSheet> {
         Expanded(
           child: _filtered.isEmpty
               ? const Center(child: Text('No products found', style: AppTextStyles.caption))
-              : ListView.separated(
-                  padding: const EdgeInsets.symmetric(horizontal: 16),
-                  itemCount: _filtered.length,
-                  separatorBuilder: (_, __) => const Divider(height: 1),
-                  itemBuilder: (context, i) {
-                    final p = _filtered[i];
+              : Builder(builder: (_) {
+                  final suggested  = _suggested;
+                  final suggestedIds = suggested.map((p) => p['id'].toString()).toSet();
+                  final rest = _filtered.where((p) => !suggestedIds.contains(p['id'].toString())).toList();
+                  final sections = <Widget>[];
+
+                  Widget productTile(Map<String, dynamic> p, {String? badge}) {
                     final isLinked = widget.linkedIds.contains(p['id'].toString());
                     final name     = p['name'] ?? '';
                     final type     = p['type'] ?? '';
+                    final sku      = p['sku']?.toString() ?? '';
                     final price    = ((p['price'] ?? 0) as num).toDouble();
                     final imageUrl = p['image_url'] ?? '';
-
                     return Material(
                       color: Colors.transparent,
                       child: ListTile(
@@ -2263,16 +2309,65 @@ class _ProductPickerSheetState extends State<_ProductPickerSheet> {
                                   errorBuilder: (_, __, ___) => const HerbIconPlaceholder(size: 44))
                               : const HerbIconPlaceholder(size: 44),
                         ),
-                        title: Text(name, style: AppTextStyles.heading3),
-                        subtitle: Text('$type  -  R${price.toInt()}', style: AppTextStyles.caption),
+                        title: Row(children: [
+                          Expanded(child: Text(name, style: AppTextStyles.heading3)),
+                          if (badge != null) ...[
+                            const SizedBox(width: 6),
+                            Container(
+                              padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                              decoration: BoxDecoration(color: AppColors.primary, borderRadius: BorderRadius.circular(4)),
+                              child: Text(badge, style: const TextStyle(fontSize: 10, fontWeight: FontWeight.w700, color: AppColors.dark)),
+                            ),
+                          ],
+                        ]),
+                        subtitle: Text(
+                          [if (sku.isNotEmpty) sku, type, 'R${price.toInt()}'].join('  ·  '),
+                          style: AppTextStyles.caption,
+                        ),
                         trailing: isLinked
                             ? const Icon(Icons.check_circle, color: Colors.green, size: 20)
                             : const Icon(Icons.add_circle_outline, color: AppColors.primary, size: 20),
                         onTap: isLinked ? null : () => widget.onSelect(p),
                       ),
                     );
-                  },
-                ),
+                  }
+
+                  if (suggested.isNotEmpty) {
+                    sections.add(Padding(
+                      padding: const EdgeInsets.fromLTRB(4, 8, 4, 4),
+                      child: Row(children: [
+                        const Icon(Icons.auto_awesome, size: 14, color: AppColors.primary),
+                        const SizedBox(width: 6),
+                        Text('Suggested matches (${suggested.length})',
+                            style: const TextStyle(fontSize: 11, fontWeight: FontWeight.w700,
+                                color: AppColors.textSecondary, letterSpacing: 0.05)),
+                      ]),
+                    ));
+                    for (final p in suggested) {
+                      final score = _matchScore(p);
+                      final badge = score >= 3 ? 'SKU' : score >= 2 ? 'Constituent' : 'Herb';
+                      sections.add(productTile(p, badge: badge));
+                      sections.add(const Divider(height: 1));
+                    }
+                    if (rest.isNotEmpty) {
+                      sections.add(Padding(
+                        padding: const EdgeInsets.fromLTRB(4, 12, 4, 4),
+                        child: Text('All products (${rest.length})',
+                            style: const TextStyle(fontSize: 11, fontWeight: FontWeight.w700,
+                                color: AppColors.textSecondary, letterSpacing: 0.05)),
+                      ));
+                    }
+                  }
+                  for (final p in rest) {
+                    sections.add(productTile(p));
+                    sections.add(const Divider(height: 1));
+                  }
+
+                  return ListView(
+                    padding: const EdgeInsets.symmetric(horizontal: 16),
+                    children: sections,
+                  );
+                }),
         ),
         const SizedBox(height: 16),
       ]),
