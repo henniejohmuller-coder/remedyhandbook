@@ -49,23 +49,23 @@ class _CategoryScreenState extends State<CategoryScreen> {
 
   // ÃƒÆ’¢ÃƒÆ’¢ Derived dropdown options ÃƒÆ’¢ÃƒÆ’¢ÃƒÆ’¢ÃƒÆ’¢ÃƒÆ’¢ÃƒÆ’¢ÃƒÆ’¢ÃƒÆ’¢ÃƒÆ’¢ÃƒÆ’¢ÃƒÆ’¢ÃƒÆ’¢ÃƒÆ’¢ÃƒÆ’¢ÃƒÆ’¢ÃƒÆ’¢ÃƒÆ’¢ÃƒÆ’¢ÃƒÆ’¢ÃƒÆ’¢ÃƒÆ’¢ÃƒÆ’¢ÃƒÆ’¢ÃƒÆ’¢ÃƒÆ’¢ÃƒÆ’¢ÃƒÆ’¢ÃƒÆ’¢ÃƒÆ’¢ÃƒÆ’¢ÃƒÆ’¢ÃƒÆ’¢ÃƒÆ’¢ÃƒÆ’¢ÃƒÆ’¢ÃƒÆ’¢ÃƒÆ’¢ÃƒÆ’¢ÃƒÆ’¢ÃƒÆ’¢ÃƒÆ’¢ÃƒÆ’¢ÃƒÆ’¢ÃƒÆ’¢ÃƒÆ’¢ÃƒÆ’¢
   List<String> get _categories =>
-      _sorted(_allRows.map((r) => r['category'].toString()).toSet());
+      _sorted(_rowsWithRemedies.map((r) => r['category'].toString()).toSet());
 
   List<String> get _subcategories {
-    var rows = _allRows;
+    var rows = _rowsWithRemedies;
     if (_selCategory != null) rows = rows.where((r) => r['category'] == _selCategory).toList();
     return _sorted(rows.map((r) => r['subcategory'].toString()).toSet());
   }
 
   List<String> get _illnesses {
-    var rows = _allRows;
+    var rows = _rowsWithRemedies;
     if (_selCategory    != null) rows = rows.where((r) => r['category']    == _selCategory).toList();
     if (_selSubcategory != null) rows = rows.where((r) => r['subcategory'] == _selSubcategory).toList();
     return _sorted(rows.map((r) => r['illness'].toString()).toSet());
   }
 
   List<String> get _symptoms {
-    var rows = _allRows;
+    var rows = _rowsWithRemedies;
     if (_selCategory    != null) rows = rows.where((r) => r['category']    == _selCategory).toList();
     if (_selSubcategory != null) rows = rows.where((r) => r['subcategory'] == _selSubcategory).toList();
     if (_selIllness     != null) rows = rows.where((r) => r['illness']     == _selIllness).toList();
