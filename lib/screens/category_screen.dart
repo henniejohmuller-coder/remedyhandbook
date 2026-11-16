@@ -30,6 +30,14 @@ class _CategoryScreenState extends State<CategoryScreen> {
   List<Map<String, dynamic>> _remedies  = [];
   bool _loading = true;
 
+  // Pre-computed count caches — built once after data loads
+  List<Map<String, dynamic>> _rowsWithRemedies = []; // _allRows filtered to count > 0
+  Map<String, int> _rowCountCache  = {};  // "cat|sub|ill|sym" -> count
+  Map<String, int> _catCountCache  = {};  // category -> count
+  Map<String, int> _subCountCache  = {};  // "cat|sub" -> count
+  Map<String, int> _illCountCache  = {};  // "cat|sub|ill" -> count
+  Map<String, int> _symCountCache  = {};  // "cat|sub|ill|sym" -> count
+
   // ÃƒÆ’¢ÃƒÆ’¢ Dropdown selections ÃƒÆ’¢ÃƒÆ’¢ÃƒÆ’¢ÃƒÆ’¢ÃƒÆ’¢ÃƒÆ’¢ÃƒÆ’¢ÃƒÆ’¢ÃƒÆ’¢ÃƒÆ’¢ÃƒÆ’¢ÃƒÆ’¢ÃƒÆ’¢ÃƒÆ’¢ÃƒÆ’¢ÃƒÆ’¢ÃƒÆ’¢ÃƒÆ’¢ÃƒÆ’¢ÃƒÆ’¢ÃƒÆ’¢ÃƒÆ’¢ÃƒÆ’¢ÃƒÆ’¢ÃƒÆ’¢ÃƒÆ’¢ÃƒÆ’¢ÃƒÆ’¢ÃƒÆ’¢ÃƒÆ’¢ÃƒÆ’¢ÃƒÆ’¢ÃƒÆ’¢ÃƒÆ’¢ÃƒÆ’¢ÃƒÆ’¢ÃƒÆ’¢ÃƒÆ’¢ÃƒÆ’¢ÃƒÆ’¢ÃƒÆ’¢ÃƒÆ’¢ÃƒÆ’¢ÃƒÆ’¢ÃƒÆ’¢ÃƒÆ’¢ÃƒÆ’¢ÃƒÆ’¢ÃƒÆ’¢ÃƒÆ’¢ÃƒÆ’¢
   String? _selCategory;
   String? _selSubcategory;
@@ -66,57 +74,94 @@ class _CategoryScreenState extends State<CategoryScreen> {
 
   // ÃƒÆ’¢ÃƒÆ’¢ Filter matrix rows shown in table ÃƒÆ’¢ÃƒÆ’¢ÃƒÆ’¢ÃƒÆ’¢ÃƒÆ’¢ÃƒÆ’¢ÃƒÆ’¢ÃƒÆ’¢ÃƒÆ’¢ÃƒÆ’¢ÃƒÆ’¢ÃƒÆ’¢ÃƒÆ’¢ÃƒÆ’¢ÃƒÆ’¢ÃƒÆ’¢ÃƒÆ’¢ÃƒÆ’¢ÃƒÆ’¢ÃƒÆ’¢ÃƒÆ’¢ÃƒÆ’¢ÃƒÆ’¢ÃƒÆ’¢ÃƒÆ’¢ÃƒÆ’¢ÃƒÆ’¢ÃƒÆ’¢ÃƒÆ’¢ÃƒÆ’¢ÃƒÆ’¢ÃƒÆ’¢ÃƒÆ’¢ÃƒÆ’¢ÃƒÆ’¢ÃƒÆ’¢
   List<Map<String, dynamic>> get _filteredRows {
-    var rows = _allRows;
+    // Use pre-filtered list (count > 0 already guaranteed)
+    var rows = _rowsWithRemedies;
     if (_selCategory    != null) rows = rows.where((r) => r['category']    == _selCategory).toList();
     if (_selSubcategory != null) rows = rows.where((r) => r['subcategory'] == _selSubcategory).toList();
     if (_selIllness     != null) rows = rows.where((r) => r['illness']     == _selIllness).toList();
     if (_selSymptom     != null) rows = rows.where((r) => r['symptom']     == _selSymptom).toList();
-    // Hide rows with no matching remedies
-    return rows.where((r) => _countForRow(r) > 0).toList();
+    return rows;
   }
 
 
   String _normalize(dynamic value) =>
       (value ?? '').toString().trim().toLowerCase().replaceAll(RegExp(r'\s+'), ' ');
 
+  // Build all count caches once after data loads — O(n) instead of O(n*m) per render
+  void _buildCountCaches() {
+    final rowCount  = <String, int>{};
+    final catCount  = <String, int>{};
+    final subCount  = <String, int>{};
+    final illCount  = <String, int>{};
+    final symCount  = <String, int>{};
+
+    for (final rem in _remedies) {
+      final cat = _normalize(rem['filter_category']);
+      final sub = _normalize(rem['filter_subcategory']);
+      final ill = _normalize(rem['filter_illness']);
+      final symsRaw = rem['filter_symptoms'];
+      final syms = symsRaw is List
+          ? symsRaw.map((s) => _normalize(s)).toList()
+          : <String>[];
+
+      catCount[cat] = (catCount[cat] ?? 0) + 1;
+      final subKey = '$cat|$sub';
+      subCount[subKey] = (subCount[subKey] ?? 0) + 1;
+      final illKey = '$cat|$sub|$ill';
+      illCount[illKey] = (illCount[illKey] ?? 0) + 1;
+
+      for (final sym in syms) {
+        final symKey = '$cat|$sub|$ill|$sym';
+        symCount[symKey] = (symCount[symKey] ?? 0) + 1;
+
+        final rowKey = '$cat|$sub|$ill|$sym';
+        rowCount[rowKey] = (rowCount[rowKey] ?? 0) + 1;
+      }
+    }
+
+    // Pre-filter rows that have at least one matching remedy
+    final filtered = _allRows.where((row) {
+      final key = '${_normalize(row['category'])}|${_normalize(row['subcategory'])}|${_normalize(row['illness'])}|${_normalize(row['symptom'])}';
+      return (rowCount[key] ?? 0) > 0;
+    }).toList();
+
+    _rowCountCache  = rowCount;
+    _catCountCache  = catCount;
+    _subCountCache  = subCount;
+    _illCountCache  = illCount;
+    _symCountCache  = symCount;
+    _rowsWithRemedies = filtered;
+  }
+
   int _countForCategory(String cat) =>
-      _remedies.where((r) => _normalize(r['filter_category']) == _normalize(cat)).length;
+      _catCountCache[_normalize(cat)] ?? 0;
 
   int _countForSubcategory(String sub) {
-    var rems = _remedies;
-    if (_selCategory != null) rems = rems.where((r) => _normalize(r['filter_category']) == _normalize(_selCategory)).toList();
-    return rems.where((r) => _normalize(r['filter_subcategory']) == _normalize(sub)).length;
+    final catKey = _selCategory != null ? _normalize(_selCategory) : '';
+    final subKey = '$catKey|${_normalize(sub)}';
+    return _subCountCache[subKey] ?? (_selCategory == null ? (_catCountCache.entries
+        .where((e) => e.key.endsWith('|${_normalize(sub)}'))
+        .fold(0, (s, e) => s + e.value)) : 0);
   }
 
   int _countForIllness(String ill) {
-    var rems = _remedies;
-    if (_selCategory != null) rems = rems.where((r) => _normalize(r['filter_category']) == _normalize(_selCategory)).toList();
-    if (_selSubcategory != null) rems = rems.where((r) => _normalize(r['filter_subcategory']) == _normalize(_selSubcategory)).toList();
-    return rems.where((r) => _normalize(r['filter_illness']) == _normalize(ill)).length;
+    final catKey = _normalize(_selCategory ?? '');
+    final subKey = _normalize(_selSubcategory ?? '');
+    final illKey = '$catKey|$subKey|${_normalize(ill)}';
+    return _illCountCache[illKey] ?? 0;
   }
 
   int _countForSymptom(String sym) {
-    var rems = _remedies;
-    if (_selCategory != null) rems = rems.where((r) => _normalize(r['filter_category']) == _normalize(_selCategory)).toList();
-    if (_selSubcategory != null) rems = rems.where((r) => _normalize(r['filter_subcategory']) == _normalize(_selSubcategory)).toList();
-    if (_selIllness != null) rems = rems.where((r) => _normalize(r['filter_illness']) == _normalize(_selIllness)).toList();
-    return rems.where((r) {
-      final syms = r['filter_symptoms'];
-      if (syms is List) return syms.any((s) => _normalize(s) == _normalize(sym));
-      return false;
-    }).length;
+    final catKey = _normalize(_selCategory ?? '');
+    final subKey = _normalize(_selSubcategory ?? '');
+    final illKey = _normalize(_selIllness ?? '');
+    final symKey = '$catKey|$subKey|$illKey|${_normalize(sym)}';
+    return _symCountCache[symKey] ?? 0;
   }
 
   int _countForRow(Map<String, dynamic> row) {
-    return _remedies.where((r) {
-      final catMatch = _normalize(r['filter_category']) == _normalize(row['category']);
-      final subMatch = _normalize(r['filter_subcategory']) == _normalize(row['subcategory']);
-      final illMatch = _normalize(r['filter_illness']) == _normalize(row['illness']);
-      final syms = r['filter_symptoms'];
-      final symMatch = syms is List &&
-          syms.any((s) => _normalize(s) == _normalize(row['symptom']));
-      return catMatch && subMatch && illMatch && symMatch;
-    }).length;
+    final key = '${_normalize(row['category'])}|${_normalize(row['subcategory'])}|${_normalize(row['illness'])}|${_normalize(row['symptom'])}';
+    return _rowCountCache[key] ?? 0;
   }
 
   List<String> _sorted(Set<String> items) =>
@@ -188,6 +233,7 @@ class _CategoryScreenState extends State<CategoryScreen> {
         _remedies  = allRemedies;
         _loading = false;
       });
+      _buildCountCaches();
     } catch (e, st) {
       debugPrint('ERROR loading matrix/remedies: $e');
       debugPrint('$st');
