@@ -272,6 +272,14 @@ class _CategoryScreenState extends State<CategoryScreen> {
     }
   }
 
+  Widget _headerCell(String label, {int flex = 1}) => Expanded(
+    flex: flex,
+    child: Text(label,
+        style: const TextStyle(
+            fontSize: 10, color: Colors.white,
+            fontWeight: FontWeight.w700, letterSpacing: 0.3)),
+  );
+
   bool _rowSelected(Map<String, dynamic> row) =>
       _selectedRow != null &&
       _selectedRow!['category']    == row['category'] &&
@@ -317,37 +325,82 @@ class _CategoryScreenState extends State<CategoryScreen> {
             ),
 
 
-            // ÃƒÆ’¢ÃƒÆ’¢ Results count ÃƒÆ’¢ÃƒÆ’¢ÃƒÆ’¢ÃƒÆ’¢ÃƒÆ’¢ÃƒÆ’¢ÃƒÆ’¢ÃƒÆ’¢ÃƒÆ’¢ÃƒÆ’¢ÃƒÆ’¢ÃƒÆ’¢ÃƒÆ’¢ÃƒÆ’¢ÃƒÆ’¢ÃƒÆ’¢ÃƒÆ’¢ÃƒÆ’¢ÃƒÆ’¢ÃƒÆ’¢ÃƒÆ’¢ÃƒÆ’¢ÃƒÆ’¢ÃƒÆ’¢ÃƒÆ’¢ÃƒÆ’¢ÃƒÆ’¢ÃƒÆ’¢ÃƒÆ’¢ÃƒÆ’¢ÃƒÆ’¢ÃƒÆ’¢ÃƒÆ’¢ÃƒÆ’¢ÃƒÆ’¢ÃƒÆ’¢ÃƒÆ’¢ÃƒÆ’¢ÃƒÆ’¢ÃƒÆ’¢ÃƒÆ’¢ÃƒÆ’¢ÃƒÆ’¢ÃƒÆ’¢ÃƒÆ’¢ÃƒÆ’¢ÃƒÆ’¢ÃƒÆ’¢
+            // ── Filter dropdowns (separate panel above table) ─────────────────────
             if (!_loading)
               Container(
-                width: double.infinity,
-                 child: Row(
-                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                   children: [
-                     Expanded(
-                       child: Text(
-                         _hasFilter
-                             ? '${filtered.length} filter set${filtered.length == 1 ? '' : 's'} - tap a row to select'
-                             : 'All ${_allRows.length} filter sets - select a filter above',
-                         style: const TextStyle(fontSize: 11, color: AppColors.textSecondary),
-                       ),
-                     ),
-
-                    if (_hasFilter)
-                      Padding(
-                        padding: const EdgeInsets.only(right: 4),
-                        child: GestureDetector(
-                          onTap: _clearAll,
-                          child: const Text('Clear',
-                              style: TextStyle(fontSize: 12, color: Colors.red,
-                                  fontWeight: FontWeight.bold)),
+                color: Colors.white,
+                padding: const EdgeInsets.fromLTRB(10, 8, 10, 8),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    // Row 1: Symptom | Illness
+                    Row(
+                      children: [
+                        Expanded(child: _Dropdown(
+                          label: 'Symptom',
+                          value: _selSymptom,
+                          items: _symptoms,
+                          onChanged: _onSymptomChanged,
+                          enabled: _symptoms.isNotEmpty,
+                          counts: Map.fromEntries(_symptoms.map((s) => MapEntry(s, _countForSymptom(s)))),
+                        )),
+                        const SizedBox(width: 8),
+                        Expanded(child: _Dropdown(
+                          label: 'Illness',
+                          value: _selIllness,
+                          items: _illnesses,
+                          onChanged: _onIllnessChanged,
+                          enabled: _illnesses.isNotEmpty,
+                          counts: Map.fromEntries(_illnesses.map((i) => MapEntry(i, _countForIllness(i)))),
+                        )),
+                      ],
+                    ),
+                    const SizedBox(height: 6),
+                    // Row 2: Category | Subcategory
+                    Row(
+                      children: [
+                        Expanded(child: _Dropdown(
+                          label: 'Category',
+                          value: _selCategory,
+                          items: _categories,
+                          onChanged: _onCategoryChanged,
+                          counts: Map.fromEntries(_categories.map((c) => MapEntry(c, _countForCategory(c)))),
+                        )),
+                        const SizedBox(width: 8),
+                        Expanded(child: _Dropdown(
+                          label: 'Subcategory',
+                          value: _selSubcategory,
+                          items: _subcategories,
+                          onChanged: _onSubcategoryChanged,
+                          enabled: _selCategory != null || _subcategories.isNotEmpty,
+                          counts: Map.fromEntries(_subcategories.map((s) => MapEntry(s, _countForSubcategory(s)))),
+                        )),
+                      ],
+                    ),
+                    const SizedBox(height: 4),
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        Text(
+                          _hasFilter
+                              ? '${filtered.length} result${filtered.length == 1 ? '' : 's'} — tap a row to select'
+                              : 'All ${_allRows.length} entries — use filters above',
+                          style: const TextStyle(fontSize: 10, color: AppColors.textSecondary),
                         ),
-                      ),
-                   ],
-                 ),
+                        if (_hasFilter)
+                          GestureDetector(
+                            onTap: _clearAll,
+                            child: const Text('Clear all',
+                                style: TextStyle(fontSize: 11, color: Colors.red,
+                                    fontWeight: FontWeight.bold)),
+                          ),
+                      ],
+                    ),
+                  ],
+                ),
               ),
 
-            // ÃƒÆ’¢ÃƒÆ’¢ Filter matrix table ÃƒÆ’¢ÃƒÆ’¢ÃƒÆ’¢ÃƒÆ’¢ÃƒÆ’¢ÃƒÆ’¢ÃƒÆ’¢ÃƒÆ’¢ÃƒÆ’¢ÃƒÆ’¢ÃƒÆ’¢ÃƒÆ’¢ÃƒÆ’¢ÃƒÆ’¢ÃƒÆ’¢ÃƒÆ’¢ÃƒÆ’¢ÃƒÆ’¢ÃƒÆ’¢ÃƒÆ’¢ÃƒÆ’¢ÃƒÆ’¢ÃƒÆ’¢ÃƒÆ’¢ÃƒÆ’¢ÃƒÆ’¢ÃƒÆ’¢ÃƒÆ’¢ÃƒÆ’¢ÃƒÆ’¢ÃƒÆ’¢ÃƒÆ’¢ÃƒÆ’¢ÃƒÆ’¢ÃƒÆ’¢ÃƒÆ’¢ÃƒÆ’¢ÃƒÆ’¢ÃƒÆ’¢ÃƒÆ’¢ÃƒÆ’¢ÃƒÆ’¢
+            // ── Filter matrix table ────────────────────────────────────────────────
             if (!_loading)
               Expanded(
                 child: filtered.isEmpty
@@ -356,62 +409,27 @@ class _CategoryScreenState extends State<CategoryScreen> {
                             style: TextStyle(color: AppColors.textSecondary, fontSize: 13)))
                     : Column(
                         children: [
-                          // Table header with dropdowns
+                          // Simple table header — plain labels, no dropdowns
                           Container(
                             color: AppColors.dark,
-                            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 7),
                             child: Row(
                               children: [
-                                Expanded(flex: 3, child: _Dropdown(
-                                  label: 'Category',
-                                  value: _selCategory,
-                                  items: _categories,
-                                  onChanged: _onCategoryChanged,
-                                  isDark: true,
-                                  counts: Map.fromEntries(_categories.map((c) => MapEntry(c, _countForCategory(c)))),
-                                )),
-                                const SizedBox(width: 4),
-                                Expanded(flex: 3, child: _Dropdown(
-                                  label: 'Subcategory',
-                                  value: _selSubcategory,
-                                  items: _subcategories,
-                                  onChanged: _onSubcategoryChanged,
-                                  enabled: _selCategory != null || _subcategories.isNotEmpty,
-                                  isDark: true,
-                                  counts: Map.fromEntries(_subcategories.map((s) => MapEntry(s, _countForSubcategory(s)))),
-                                )),
-                                const SizedBox(width: 4),
-                                Expanded(flex: 3, child: _Dropdown(
-                                  label: 'Illness',
-                                  value: _selIllness,
-                                  items: _illnesses,
-                                  onChanged: _onIllnessChanged,
-                                  enabled: _illnesses.isNotEmpty,
-                                  isDark: true,
-                                  counts: Map.fromEntries(_illnesses.map((i) => MapEntry(i, _countForIllness(i)))),
-                                )),
-                                const SizedBox(width: 4),
-                                Expanded(flex: 3, child: _Dropdown(
-                                  label: 'Symptom',
-                                  value: _selSymptom,
-                                  items: _symptoms,
-                                  onChanged: _onSymptomChanged,
-                                  enabled: _symptoms.isNotEmpty,
-                                  isDark: true,
-                                  counts: Map.fromEntries(_symptoms.map((s) => MapEntry(s, _countForSymptom(s)))),
-                                )),
-                                const SizedBox(width: 4),
-                                SizedBox(
+                                _headerCell('Symptom',     flex: 3),
+                                _headerCell('Illness',     flex: 3),
+                                _headerCell('Subcategory', flex: 3),
+                                _headerCell('Category',    flex: 3),
+                                const SizedBox(
                                   width: 32,
                                   child: Text('#',
                                     textAlign: TextAlign.right,
-                                    style: const TextStyle(fontSize: 10,
+                                    style: TextStyle(fontSize: 10,
                                         color: Colors.white70, fontWeight: FontWeight.w600)),
                                 ),
                               ],
                             ),
                           ),
-                          // Table rows
+                          // Table rows — Symptom | Illness | Subcategory | Category
                           Expanded(
                             child: ListView.builder(
                               itemCount: filtered.length,
@@ -423,69 +441,43 @@ class _CategoryScreenState extends State<CategoryScreen> {
                                   child: Container(
                                     color: isSelected
                                         ? AppColors.primary.withOpacity(0.15)
-                                        : i.isEven
-                                            ? Colors.white
-                                            : AppColors.background,
+                                        : i.isEven ? Colors.white : AppColors.background,
                                     padding: const EdgeInsets.symmetric(
                                         horizontal: 10, vertical: 7),
                                     child: Row(
                                       children: [
+                                        Expanded(flex: 3, child: Row(children: [
+                                          Expanded(child: Text(
+                                            row['symptom']?.toString() ?? '',
+                                            style: TextStyle(fontSize: 11, color: AppColors.dark,
+                                              fontWeight: isSelected ? FontWeight.w700 : FontWeight.normal),
+                                          )),
+                                          if (isSelected)
+                                            const Icon(Icons.check_circle,
+                                                size: 14, color: AppColors.primary),
+                                        ])),
                                         Expanded(flex: 3, child: Text(
-                                          row['category']?.toString() ?? '',
-                                          style: TextStyle(
-                                            fontSize: 11,
-                                            color: AppColors.dark,
-                                            fontWeight: isSelected
-                                                ? FontWeight.w700
-                                                : FontWeight.normal,
-                                          ),
+                                          row['illness']?.toString() ?? '',
+                                          style: TextStyle(fontSize: 11, color: AppColors.dark,
+                                            fontWeight: isSelected ? FontWeight.w700 : FontWeight.normal),
                                         )),
                                         Expanded(flex: 3, child: Text(
                                           row['subcategory']?.toString() ?? '',
-                                          style: TextStyle(
-                                            fontSize: 11,
-                                            color: AppColors.dark,
-                                            fontWeight: isSelected
-                                                ? FontWeight.w700
-                                                : FontWeight.normal,
-                                          ),
+                                          style: TextStyle(fontSize: 11, color: AppColors.dark,
+                                            fontWeight: isSelected ? FontWeight.w700 : FontWeight.normal),
                                         )),
                                         Expanded(flex: 3, child: Text(
-                                          row['illness']?.toString() ?? '',
-                                          style: TextStyle(
-                                            fontSize: 11,
-                                            color: AppColors.dark,
-                                            fontWeight: isSelected
-                                                ? FontWeight.w700
-                                                : FontWeight.normal,
-                                          ),
+                                          row['category']?.toString() ?? '',
+                                          style: TextStyle(fontSize: 11, color: AppColors.dark,
+                                            fontWeight: isSelected ? FontWeight.w700 : FontWeight.normal),
                                         )),
-                                        Expanded(flex: 3, child: Row(
-                                          children: [
-                                            Expanded(child: Text(
-                                              row['symptom']?.toString() ?? '',
-                                              style: TextStyle(
-                                                fontSize: 11,
-                                                color: AppColors.dark,
-                                                fontWeight: isSelected
-                                                    ? FontWeight.w700
-                                                    : FontWeight.normal,
-                                              ),
-                                            )),
-                                            if (isSelected)
-                                              const Icon(Icons.check_circle,
-                                                  size: 14, color: AppColors.primary),
-                                          ],
-                                        )),
-                                         SizedBox(
-                                           width: 32,
-                                           child: Text(
-                                             '${_countForRow(row)}',
-                                             textAlign: TextAlign.right,
-                                             style: const TextStyle(fontSize: 11,
-                                                 fontWeight: FontWeight.bold, color: Colors.red),
-                                           ),
-                                         ),
+                                        SizedBox(
+                                          width: 32,
+                                          child: Text('${_countForRow(row)}',
+                                            textAlign: TextAlign.right,
+                                            style: const TextStyle(fontSize: 11,
+                                                fontWeight: FontWeight.bold, color: Colors.red)),
+                                        ),
                                       ],
                                     ),
                                   ),
