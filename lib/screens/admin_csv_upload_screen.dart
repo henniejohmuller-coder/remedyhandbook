@@ -1,8 +1,7 @@
-import 'dart:convert';
-import 'package:flutter/foundation.dart' show kIsWeb, debugPrint;
+
 import 'package:flutter/material.dart';
 import 'package:excel/excel.dart' as xl;
-import '../utils/csv_download.dart';
+import '../utils/xlsx_download.dart';
 import 'package:file_picker/file_picker.dart';
 import '../theme/app_theme.dart';
 import '../widgets/shared_widgets.dart';
@@ -266,12 +265,12 @@ class _AdminCsvUploadScreenState extends State<AdminCsvUploadScreen> {
     setState(() { _rows = rows; _parsed = true; });
   }
 
-  // ── Pick file (CSV or XLSX) ────────────────────────────────────────────
+  // ── Pick XLSX file (remedy import) ────────────────────────────────────
   Future<void> _pickFile() async {
     try {
       final result = await FilePicker.platform.pickFiles(
         type: FileType.custom,
-        allowedExtensions: ['csv', 'xlsx'],
+        allowedExtensions: ['xlsx'],
         withData: true,
         allowMultiple: false,
       );
@@ -283,13 +282,7 @@ class _AdminCsvUploadScreenState extends State<AdminCsvUploadScreen> {
         return;
       }
       setState(() { _fileName = file.name; _uploadDone = false; });
-
-      final isXlsx = file.name.toLowerCase().endsWith('.xlsx');
-      if (isXlsx) {
-        _parseCsv(_xlsxToCsv(bytes));
-      } else {
-        _parseCsv(utf8.decode(bytes, allowMalformed: true));
-      }
+      _parseCsv(_xlsxToCsv(bytes));
     } catch (e) {
       setState(() => _parseErrors = ['Error reading file: $e']);
     }
@@ -515,45 +508,51 @@ class _AdminCsvUploadScreenState extends State<AdminCsvUploadScreen> {
 
   String? _val(String? v) => (v == null || v.trim().isEmpty) ? null : v.trim();
 
-  // ── Download Error Report CSV ──────────────────────────────────────────
+  // ── Build XLSX bytes from headers + rows ──────────────────────────────
+  List<int> _buildXlsxBytes(
+      String sheetName, List<String> headers, List<List<String>> dataRows) {
+    final excel = xl.Excel.createExcel();
+    // The default sheet is 'Sheet1' — rename it
+    if (excel.sheets.containsKey('Sheet1')) {
+      excel.rename('Sheet1', sheetName);
+    }
+    final sheet = excel[sheetName];
+
+    // Header row
+    sheet.appendRow(headers.map((h) => xl.TextCellValue(h)).toList());
+
+    // Data rows
+    for (final row in dataRows) {
+      sheet.appendRow(row.map((v) => xl.TextCellValue(v)).toList());
+    }
+
+    return excel.encode() ?? [];
+  }
+
+  // ── Download Error Report as XLSX ─────────────────────────────────────
   Future<void> _downloadErrorReport() async {
     if (_uploadErrors.isEmpty) return;
 
-    // Columns: error metadata + all original CSV columns
     final reportCols = ['csv_row', 'remedy_name', 'error', ..._allCols];
+    final dataRows = _uploadErrors.map((err) => [
+      err.rowNumber.toString(),
+      err.remedyName,
+      err.errorMessage,
+      ..._allCols.map((col) => err.rowData[col] ?? ''),
+    ]).toList();
 
-    // RFC 4180 quoting
-    String q(String v) {
-      if (v.contains(',') || v.contains('"') || v.contains('\n')) {
-        return '"${v.replaceAll('"', '""')}"';
-      }
-      return v;
-    }
-
-    final lines = <String>[reportCols.join(',')];
-    for (final err in _uploadErrors) {
-      final cells = <String>[
-        q(err.rowNumber.toString()),
-        q(err.remedyName),
-        q(err.errorMessage),
-        ..._allCols.map((col) => q(err.rowData[col] ?? '')),
-      ];
-      lines.add(cells.join(','));
-    }
-
-    final csv = lines.join('\n');
+    final bytes = _buildXlsxBytes('Upload Errors', reportCols, dataRows);
     final ts = DateTime.now().toIso8601String().substring(0, 16).replaceAll(':', '-');
-    final path = await downloadCsv(csv, 'upload_errors_${ts}.csv');
-    if (path != null && mounted) {
+    final path = await downloadXlsx(bytes, 'upload_errors_$ts.xlsx');
+    if (mounted) {
       ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-        content: Text('✅ Error report saved to $path'),
+        content: Text(path != null ? '✅ Error report saved to $path' : '✅ Error report downloaded'),
         duration: const Duration(seconds: 5),
       ));
     }
   }
 
-  // ── Download full database as CSV ──────────────────────────────────────
-  // Fetches all remedies from Supabase and exports as a CSV matching _allCols
+  // ── Export full remedy database as XLSX ───────────────────────────────
   Future<void> _downloadDatabase() async {
     if (_dbDownloading) return;
     setState(() => _dbDownloading = true);
@@ -588,16 +587,8 @@ class _AdminCsvUploadScreenState extends State<AdminCsvUploadScreen> {
         return;
       }
 
-      // RFC 4180 quoting helper
-      String q(String v) {
-        if (v.contains(',') || v.contains('"') || v.contains('\n')) {
-          return '"${v.replaceAll('"', '""')}"';
-        }
-        return v;
-      }
-
-      // Build CSV
-      final lines = <String>[_allCols.join(',')];
+      // Build data rows
+      final dataRows = <List<String>>[];
       for (final row in allRows) {
         // Flatten remedy_instructions into step_1..step_10
         final steps = <int, String>{};
@@ -611,20 +602,23 @@ class _AdminCsvUploadScreenState extends State<AdminCsvUploadScreen> {
         final cells = _allCols.map((col) {
           if (col.startsWith('step_')) {
             final n = int.tryParse(col.split('_')[1]) ?? 0;
-            return q(steps[n] ?? '');
+            return steps[n] ?? '';
           }
-          return q((row[col] ?? '').toString());
-        });
-        lines.add(cells.join(','));
+          return (row[col] ?? '').toString();
+        }).toList();
+        dataRows.add(cells);
       }
 
+      final bytes = _buildXlsxBytes('Remedy Database', _allCols, dataRows);
       final ts = DateTime.now().toIso8601String().substring(0, 10);
-      await downloadCsv(lines.join('\n'), 'remedy_database_$ts.csv');
+      final path = await downloadXlsx(bytes, 'remedy_database_$ts.xlsx');
 
       if (mounted) {
         setState(() => _dbDownloading = false);
         ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-          content: Text('✅ Database exported: ${allRows.length} remedies'),
+          content: Text(path != null
+              ? '✅ ${allRows.length} remedies exported to $path'
+              : '✅ ${allRows.length} remedies exported'),
           duration: const Duration(seconds: 5),
           backgroundColor: Colors.green,
         ));
@@ -641,7 +635,7 @@ class _AdminCsvUploadScreenState extends State<AdminCsvUploadScreen> {
     }
   }
 
-  // ── Export Filter Matrix ───────────────────────────────────────────────
+  // ── Export Filter Matrix as XLSX ──────────────────────────────────────
   Future<void> _exportFilterMatrix() async {
     if (_fmExporting) return;
     setState(() => _fmExporting = true);
@@ -662,22 +656,18 @@ class _AdminCsvUploadScreenState extends State<AdminCsvUploadScreen> {
         from += pageSize;
       }
 
-      // Build plain CSV
-      String q(String v) {
-        if (v.contains(',') || v.contains('"') || v.contains('\n')) {
-          return '"${v.replaceAll('"', '""')}"';
-        }
-        return v;
-      }
       const headers = ['category', 'subcategory', 'illness', 'symptom'];
-      final lines = <String>[headers.join(',')];
-      for (final r in rows) {
-        lines.add(headers.map((h) => q((r[h] ?? '').toString())).join(','));
-      }
+      final dataRows = rows
+          .map((r) => headers.map((h) => (r[h] ?? '').toString()).toList())
+          .toList();
+      final bytes = _buildXlsxBytes('Filter Matrix', headers, dataRows);
       final ts = DateTime.now().toIso8601String().substring(0, 10);
-      await downloadCsv(lines.join('\n'), 'filter_matrix_$ts.csv');
-      if (mounted) ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Filter matrix exported (${rows.length} rows)!'), backgroundColor: Colors.green));
+      final path = await downloadXlsx(bytes, 'filter_matrix_$ts.xlsx');
+      if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+        content: Text(path != null
+            ? 'Filter matrix exported (${rows.length} rows) to $path'
+            : 'Filter matrix exported (${rows.length} rows)'),
+        backgroundColor: Colors.green));
     } catch (e) {
       if (mounted) ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text('Export failed: $e')));
@@ -686,19 +676,19 @@ class _AdminCsvUploadScreenState extends State<AdminCsvUploadScreen> {
     }
   }
 
-  // ── Import Filter Matrix ───────────────────────────────────────────────
+  // ── Import Filter Matrix from XLSX ────────────────────────────────────
   Future<void> _importFilterMatrix() async {
     if (_fmImporting) return;
     setState(() => _fmImporting = true);
     try {
       final result = await FilePicker.platform.pickFiles(
-        type: FileType.custom, allowedExtensions: ['csv'], withData: true);
+        type: FileType.custom, allowedExtensions: ['xlsx'], withData: true);
       if (result == null) { setState(() => _fmImporting = false); return; }
       final bytes = result.files.first.bytes;
       if (bytes == null) { setState(() => _fmImporting = false); return; }
-      final String csvContent = utf8.decode(bytes, allowMalformed: true);
 
-      // Use the RFC 4180 parser so values containing commas are handled correctly
+      // Convert xlsx → CSV string then reuse the RFC 4180 parser
+      final csvContent = _xlsxToCsv(bytes);
       final allRows = _parseAllRows(csvContent);
       if (allRows.isEmpty) {
         if (mounted) ScaffoldMessenger.of(context).showSnackBar(
@@ -733,7 +723,6 @@ class _AdminCsvUploadScreenState extends State<AdminCsvUploadScreen> {
                 'category': cols[0], 'subcategory': cols[1],
                 'illness': cols[2],  'symptom': cols[3],
               };
-        // Skip rows where all values are empty
         if (row.values.every((v) => v.isEmpty)) continue;
         await SupabaseService.supabase.from('filter_matrix').upsert(
           row, onConflict: 'category,subcategory,illness,symptom');
@@ -749,7 +738,7 @@ class _AdminCsvUploadScreenState extends State<AdminCsvUploadScreen> {
     }
   }
 
-  // ── Export Shop CSV ────────────────────────────────────────────────────
+  // ── Export Shop Items as XLSX ──────────────────────────────────────────
   Future<void> _exportShopCsv() async {
     setState(() => _shopExporting = true);
     try {
@@ -766,43 +755,39 @@ class _AdminCsvUploadScreenState extends State<AdminCsvUploadScreen> {
         if (pageList.length < pageSize) break;
         offset += pageSize;
       }
-      final rows = allData;
-      final headers = ['id','sku','name','type','description','price','cost_price','stock','delivery_cost','active','image_url','category','brand','primary_herb','main_constituent'];
-
-      // Build plain CSV
-      String q(String v) {
-        if (v.contains(',') || v.contains('"') || v.contains('\n')) {
-          return '"${v.replaceAll('"', '""')}"';
-        }
-        return v;
-      }
-      final lines = <String>[headers.join(',')];
-      for (final r in rows) {
-        lines.add(headers.map((h) => q((r[h] ?? '').toString())).join(','));
-      }
+      const headers = ['id','sku','name','type','description','price','cost_price',
+          'stock','delivery_cost','active','image_url','category','brand',
+          'primary_herb','main_constituent'];
+      final dataRows = allData
+          .map((r) => headers.map((h) => (r[h] ?? '').toString()).toList())
+          .toList();
+      final bytes = _buildXlsxBytes('Shop Items', headers, dataRows);
       final ts = DateTime.now().toIso8601String().substring(0, 10);
-      await downloadCsv(lines.join('\n'), 'shop_items_$ts.csv');
-      if (mounted) ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Shop items exported (${rows.length} rows)!'), backgroundColor: Colors.green));
+      final path = await downloadXlsx(bytes, 'shop_items_$ts.xlsx');
+      if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+        content: Text(path != null
+            ? 'Shop items exported (${allData.length} rows) to $path'
+            : 'Shop items exported (${allData.length} rows)'),
+        backgroundColor: Colors.green));
     } catch (e) {
       if (mounted) ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Export failed: ' + e.toString()), backgroundColor: Colors.red));
+        SnackBar(content: Text('Export failed: $e'), backgroundColor: Colors.red));
     } finally {
       if (mounted) setState(() => _shopExporting = false);
     }
   }
 
-  // ── Import Shop CSV ────────────────────────────────────────────────────
+  // ── Import Shop Items from XLSX ────────────────────────────────────────
   Future<void> _importShopCsv() async {
     final result = await FilePicker.platform.pickFiles(
-      type: FileType.custom, allowedExtensions: ['csv'], withData: true);
+      type: FileType.custom, allowedExtensions: ['xlsx'], withData: true);
     if (result == null || result.files.isEmpty) return;
     final bytes = result.files.first.bytes;
     if (bytes == null) return;
     setState(() => _shopImporting = true);
     try {
-      final csv = utf8.decode(bytes, allowMalformed: true);
-      // Use the RFC 4180 parser so values containing commas are handled correctly
+      // Convert xlsx → CSV string then reuse the RFC 4180 parser
+      final csv = _xlsxToCsv(bytes);
       final allRows = _parseAllRows(csv);
       if (allRows.isEmpty) return;
       final headers = allRows[0].map((h) => h.trim()).toList();
@@ -834,19 +819,18 @@ class _AdminCsvUploadScreenState extends State<AdminCsvUploadScreen> {
         }
       }
       if (mounted) ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Imported ' + updated.toString() + ' shop items'), backgroundColor: Colors.green));
+        SnackBar(content: Text('Imported $updated shop items'), backgroundColor: Colors.green));
     } catch (e) {
       if (mounted) ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Import failed: ' + e.toString()), backgroundColor: Colors.red));
+        SnackBar(content: Text('Import failed: $e'), backgroundColor: Colors.red));
     } finally {
       if (mounted) setState(() => _shopImporting = false);
     }
   }
 
-  // ── Download Template ──────────────────────────────────────────────────
+  // ── Download Template as XLSX ──────────────────────────────────────────
   Future<void> _downloadTemplate() async {
-    final header = _allCols.join(',');
-    final example = [
+    final exampleRow = [
       'Buchu Tea',
       'Agathosma betulina (Buchu)',
       'South Africa',
@@ -867,7 +851,7 @@ class _AdminCsvUploadScreenState extends State<AdminCsvUploadScreen> {
       'Avoid in pregnancy and kidney disease',
       '',
       'https://upload.wikimedia.org/wikipedia/commons/thumb/9/9f/Agathosma_betulina.jpg/250px-Agathosma_betulina.jpg',
-      'Buchu is one of nature\'s finest urinary herbs',
+      "Buchu is one of nature's finest urinary herbs",
       '5',
       '4',
       '80',
@@ -882,12 +866,12 @@ class _AdminCsvUploadScreenState extends State<AdminCsvUploadScreen> {
       '',
       '',
       '',
-    ].join(',');
-    final csv = '$header\n$example';
-    final path = await downloadCsv(csv, 'remedy_template.csv');
-    if (path != null && mounted) {
+    ];
+    final bytes = _buildXlsxBytes('Remedy Template', _allCols, [exampleRow]);
+    final path = await downloadXlsx(bytes, 'remedy_template.xlsx');
+    if (mounted) {
       ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-        content: Text('✅ Template saved to $path'),
+        content: Text(path != null ? '✅ Template saved to $path' : '✅ Template downloaded'),
         duration: const Duration(seconds: 5),
       ));
     }
@@ -904,8 +888,8 @@ class _AdminCsvUploadScreenState extends State<AdminCsvUploadScreen> {
       backgroundColor: AppColors.background,
       body: SafeArea(child: Column(children: [
         const YellowAppBar(
-          title: 'Bulk CSV Upload',
-          subtitle: 'Upload multiple remedies at once',
+          title: 'Bulk Excel Upload',
+          subtitle: 'Export and import data as Excel files',
           showBack: true,
         ),
         Expanded(child: SingleChildScrollView(
@@ -921,25 +905,25 @@ class _AdminCsvUploadScreenState extends State<AdminCsvUploadScreen> {
                 border: Border.all(color: AppColors.primary),
               ),
               child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                const Text('CSV Format - Remedies', style: AppTextStyles.heading3),
+                const Text('Excel - Remedies', style: AppTextStyles.heading3),
                 const SizedBox(height: 6),
                 const Text(
                   'Each row = one remedy. Required: name, component.\n'
                   'Preparation steps go in step_1 ... step_10.\n'
                   'Lookup values (illness, category etc.) are auto-created.\n'
-                  'prep_time is in minutes (numbers only). Values > 100 will show "see instructions" in the app. Ratings 1–5. Efficacy 0–100.',
+                  'prep_time is in minutes. Ratings 1–5. Efficacy 0–100.',
                   style: AppTextStyles.caption,
                 ),
                 const SizedBox(height: 10),
                 Wrap(spacing: 8, runSpacing: 8, children: [
                   _SmallButton(
                     icon: _dbDownloading ? Icons.hourglass_top : Icons.download_outlined,
-                    label: _dbDownloading ? 'Exporting...' : 'Export Remedy CSV',
+                    label: _dbDownloading ? 'Exporting...' : 'Export Remedy Excel',
                     onTap: _dbDownloading ? () {} : _downloadDatabase,
                   ),
                   _SmallButton(
                     icon: _uploading ? Icons.hourglass_top : Icons.upload_outlined,
-                    label: _uploading ? 'Importing...' : 'Import Remedy CSV/XLSX',
+                    label: _uploading ? 'Importing...' : 'Import Remedy Excel',
                     onTap: _uploading ? () {} : _pickFile,
                     bgColor: AppColors.lightGreen,
                   ),
@@ -954,7 +938,7 @@ class _AdminCsvUploadScreenState extends State<AdminCsvUploadScreen> {
                 border: Border.all(color: AppColors.primary),
               ),
               child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                const Text('CSV Format - Shop Items', style: AppTextStyles.heading3),
+                const Text('Excel - Shop Items', style: AppTextStyles.heading3),
                 const SizedBox(height: 6),
                 const Text(
                   'Each row = one shop item. id required for updates.\nColumns: id, name, type, description, price, cost_price, stock, delivery_cost, active, image_url',
@@ -964,12 +948,12 @@ class _AdminCsvUploadScreenState extends State<AdminCsvUploadScreen> {
                 Wrap(spacing: 8, runSpacing: 8, children: [
                   _SmallButton(
                     icon: _shopExporting ? Icons.hourglass_top : Icons.download_outlined,
-                    label: _shopExporting ? 'Exporting...' : 'Export Shop CSV',
+                    label: _shopExporting ? 'Exporting...' : 'Export Shop Excel',
                     onTap: _shopExporting ? () {} : _exportShopCsv,
                   ),
                   _SmallButton(
                     icon: _shopImporting ? Icons.hourglass_top : Icons.upload_outlined,
-                    label: _shopImporting ? 'Importing...' : 'Import Shop CSV',
+                    label: _shopImporting ? 'Importing...' : 'Import Shop Excel',
                     onTap: _shopImporting ? () {} : _importShopCsv,
                     bgColor: AppColors.lightGreen,
                   ),
@@ -987,7 +971,7 @@ class _AdminCsvUploadScreenState extends State<AdminCsvUploadScreen> {
                 border: Border.all(color: AppColors.primary),
               ),
               child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                const Text('CSV Format - Filter Matrix', style: AppTextStyles.heading3),
+                const Text('Excel - Filter Matrix', style: AppTextStyles.heading3),
                 const SizedBox(height: 6),
                 const Text(
                   'Four-tier search taxonomy.\nColumns: category, subcategory, illness, symptom',
@@ -1002,7 +986,7 @@ class _AdminCsvUploadScreenState extends State<AdminCsvUploadScreen> {
                   ),
                   _SmallButton(
                     icon: _fmImporting ? Icons.hourglass_top : Icons.upload_outlined,
-                    label: _fmImporting ? 'Importing...' : 'Import Filter Matrix CSV',
+                    label: _fmImporting ? 'Importing...' : 'Import Filter Matrix',
                     onTap: _fmImporting ? () {} : _importFilterMatrix,
                     bgColor: AppColors.lightGreen,
                   ),
@@ -1226,7 +1210,7 @@ class _UploadResultCardState extends State<_UploadResultCard> {
             ),
             if (hasErrors)
               Text(
-                'Tap "Download Error Report" to get a CSV of failed rows',
+                'Tap "Download Error Report" to get an Excel file of failed rows',
                 style: TextStyle(fontSize: 12, color: Colors.orange.shade700),
               ),
           ])),
