@@ -57,7 +57,7 @@ class _CartScreenState extends State<CartScreen> {
   });
 
   double get shipping {
-    if (subtotal >= 500) return 0;
+    if (subtotal >= 650) return 0;
     // Use highest delivery_cost among items, fallback to R85
     double maxDelivery = 0;
     for (final i in _items) {
@@ -106,9 +106,9 @@ class _CartScreenState extends State<CartScreen> {
                   const Icon(Icons.local_shipping_outlined, size: 16, color: Colors.green),
                   const SizedBox(width: 8),
                   Text(
-                    total >= 500
+                    total >= 650
                         ? '🎉 Free delivery unlocked!'
-                        : 'Add R${(500 - subtotal).toInt()} more for free delivery!',
+                        : 'Add R${(650 - subtotal).toInt()} more for free delivery!',
                     style: const TextStyle(fontSize: 12, color: Colors.green, fontWeight: FontWeight.w500),
                   ),
                 ]),

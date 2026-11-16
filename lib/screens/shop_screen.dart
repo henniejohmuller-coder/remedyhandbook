@@ -222,7 +222,7 @@ class _ShopScreenState extends State<ShopScreen> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            const YellowAppBar(title: 'Shop', subtitle: 'Free delivery over R500'),
+            const YellowAppBar(title: 'Shop', subtitle: 'Free delivery over R650'),
             const SizedBox(height: 12),
 
             // Search
