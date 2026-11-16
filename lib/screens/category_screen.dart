@@ -232,8 +232,8 @@ class _CategoryScreenState extends State<CategoryScreen> {
         _allRows   = all;
         _remedies  = allRemedies;
         _loading = false;
+        _buildCountCaches();
       });
-      _buildCountCaches();
     } catch (e, st) {
       debugPrint('ERROR loading matrix/remedies: $e');
       debugPrint('$st');
