@@ -86,19 +86,28 @@ class _HomeScreenState extends State<HomeScreen> {
                     const SizedBox(height: 16),
                     Padding(
                       padding: const EdgeInsets.symmetric(horizontal: 16),
-                      child: PrimaryButton(
-                        label: 'Search remedies',
-                        icon: Icons.search,
+                      child: _NavButton(
+                        label: 'Find Symptoms / Illness / Support',
+                        icon: Icons.search_outlined,
                         onPressed: () => widget.onTabSwitch?.call(1),
                       ),
                     ),
                     const SizedBox(height: 10),
                     Padding(
                       padding: const EdgeInsets.symmetric(horizontal: 16),
-                      child: DarkButton(
-                        label: 'Shop Components and Remedies',
-                        icon: Icons.shopping_basket_outlined,
+                      child: _NavButton(
+                        label: 'Search Remedies',
+                        icon: Icons.menu_book_outlined,
                         onPressed: () => widget.onTabSwitch?.call(2),
+                      ),
+                    ),
+                    const SizedBox(height: 10),
+                    Padding(
+                      padding: const EdgeInsets.symmetric(horizontal: 16),
+                      child: _NavButton(
+                        label: 'Search Shop Items',
+                        icon: Icons.storefront_outlined,
+                        onPressed: () => widget.onTabSwitch?.call(3),
                       ),
                     ),
                     const SizedBox(height: 20),
@@ -217,6 +226,41 @@ class _HomeScreenState extends State<HomeScreen> {
           ),
         );
       }).toList(),
+    );
+  }
+}
+
+// ── Home nav button — icon on left, label on right ───────────────────────────
+class _NavButton extends StatelessWidget {
+  final String label;
+  final IconData icon;
+  final VoidCallback? onPressed;
+  const _NavButton({required this.label, required this.icon, this.onPressed});
+
+  @override
+  Widget build(BuildContext context) {
+    return SizedBox(
+      width: double.infinity,
+      child: OutlinedButton(
+        onPressed: onPressed,
+        style: OutlinedButton.styleFrom(
+          foregroundColor: AppColors.dark,
+          side: const BorderSide(color: AppColors.primary, width: 1.5),
+          backgroundColor: Colors.white,
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+          alignment: Alignment.centerLeft,
+        ),
+        child: Row(
+          children: [
+            Icon(icon, size: 22, color: AppColors.primary),
+            const SizedBox(width: 12),
+            Text(label,
+                style: const TextStyle(
+                    fontSize: 15, fontWeight: FontWeight.w600)),
+          ],
+        ),
+      ),
     );
   }
 }

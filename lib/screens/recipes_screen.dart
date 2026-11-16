@@ -415,7 +415,7 @@ class _RecipesScreenState extends State<RecipesScreen>
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             YellowAppBar(
-              title: 'Recipes',
+              title: 'Remedies',
               subtitle: '${_filtered.length} remedies - evidence-rated',
             ),
             if (_encouragement.isNotEmpty)
