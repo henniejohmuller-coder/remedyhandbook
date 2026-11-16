@@ -1294,19 +1294,40 @@ class _DuplicateDialogState extends State<_DuplicateDialog> {
   @override
   void initState() {
     super.initState();
-    _skip = Set.from(widget.existingNames); // default: skip all duplicates
+    _skip = {}; // default: overwrite all duplicates
   }
 
   @override
   Widget build(BuildContext context) {
+    final allSkipped = _skip.length == widget.existingNames.length;
     return AlertDialog(
       title: const Text('Duplicate Remedies Found'),
       content: SizedBox(
         width: double.maxFinite,
         child: Column(mainAxisSize: MainAxisSize.min, children: [
-          Text('${widget.existingNames.length} remedy name(s) already exist in the database. '
-              'Choose which to skip (checked = skip / keep existing):'),
-          const SizedBox(height: 8),
+          Text('${widget.existingNames.length} remedy name(s) already exist. '
+              'Checked = skip (keep existing). Unchecked = overwrite.'),
+          const SizedBox(height: 6),
+          Row(children: [
+            TextButton(
+              onPressed: () => setState(() => _skip = Set.from(widget.existingNames)),
+              child: const Text('Skip All'),
+            ),
+            TextButton(
+              onPressed: () => setState(() => _skip = {}),
+              child: const Text('Overwrite All'),
+            ),
+            Expanded(child: Text(
+              allSkipped
+                  ? 'All duplicates will be skipped'
+                  : _skip.isEmpty
+                      ? 'All duplicates will be overwritten'
+                      : '${_skip.length} skipped, ${widget.existingNames.length - _skip.length} overwritten',
+              style: const TextStyle(fontSize: 11, color: Colors.grey),
+              textAlign: TextAlign.right,
+            )),
+          ]),
+          const SizedBox(height: 4),
           Flexible(
             child: ListView(
               shrinkWrap: true,
@@ -1329,7 +1350,7 @@ class _DuplicateDialogState extends State<_DuplicateDialog> {
         ),
         ElevatedButton(
           onPressed: () => Navigator.pop(context, _skip),
-          child: const Text('Continue Upload'),
+          child: Text(allSkipped ? 'Skip All & Close' : 'Continue Upload'),
         ),
       ],
     );
