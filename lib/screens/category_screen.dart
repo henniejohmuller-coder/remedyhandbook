@@ -380,30 +380,7 @@ class _CategoryScreenState extends State<CategoryScreen> {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    // Row 1: Symptom | Illness
-                    Row(
-                      children: [
-                        Expanded(child: _Dropdown(
-                          label: 'Symptom',
-                          value: _selSymptom,
-                          items: _symptoms,
-                          onChanged: _onSymptomChanged,
-                          enabled: _symptoms.isNotEmpty,
-                          counts: Map.fromEntries(_symptoms.map((s) => MapEntry(s, _countForSymptom(s)))),
-                        )),
-                        const SizedBox(width: 8),
-                        Expanded(child: _Dropdown(
-                          label: 'Illness',
-                          value: _selIllness,
-                          items: _illnesses,
-                          onChanged: _onIllnessChanged,
-                          enabled: _illnesses.isNotEmpty,
-                          counts: Map.fromEntries(_illnesses.map((i) => MapEntry(i, _countForIllness(i)))),
-                        )),
-                      ],
-                    ),
-                    const SizedBox(height: 6),
-                    // Row 2: Category | Subcategory
+                    // Row 1: Category | Subcategory
                     Row(
                       children: [
                         Expanded(child: _Dropdown(
@@ -421,6 +398,29 @@ class _CategoryScreenState extends State<CategoryScreen> {
                           onChanged: _onSubcategoryChanged,
                           enabled: _selCategory != null || _subcategories.isNotEmpty,
                           counts: Map.fromEntries(_subcategories.map((s) => MapEntry(s, _countForSubcategory(s)))),
+                        )),
+                      ],
+                    ),
+                    const SizedBox(height: 6),
+                    // Row 2: Illness | Symptom
+                    Row(
+                      children: [
+                        Expanded(child: _Dropdown(
+                          label: 'Illness',
+                          value: _selIllness,
+                          items: _illnesses,
+                          onChanged: _onIllnessChanged,
+                          enabled: _illnesses.isNotEmpty,
+                          counts: Map.fromEntries(_illnesses.map((i) => MapEntry(i, _countForIllness(i)))),
+                        )),
+                        const SizedBox(width: 8),
+                        Expanded(child: _Dropdown(
+                          label: 'Symptom',
+                          value: _selSymptom,
+                          items: _symptoms,
+                          onChanged: _onSymptomChanged,
+                          enabled: _symptoms.isNotEmpty,
+                          counts: Map.fromEntries(_symptoms.map((s) => MapEntry(s, _countForSymptom(s)))),
                         )),
                       ],
                     ),
@@ -462,10 +462,10 @@ class _CategoryScreenState extends State<CategoryScreen> {
                             padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 7),
                             child: Row(
                               children: [
-                                _headerCell('Symptom',     flex: 3),
-                                _headerCell('Illness',     flex: 3),
-                                _headerCell('Subcategory', flex: 3),
                                 _headerCell('Category',    flex: 3),
+                                _headerCell('Subcategory', flex: 3),
+                                _headerCell('Illness',     flex: 3),
+                                _headerCell('Symptom',     flex: 3),
                                 const SizedBox(
                                   width: 32,
                                   child: Text('#',
@@ -495,7 +495,7 @@ class _CategoryScreenState extends State<CategoryScreen> {
                                       children: [
                                         Expanded(flex: 3, child: Row(children: [
                                           Expanded(child: Text(
-                                            row['symptom']?.toString() ?? '',
+                                            row['category']?.toString() ?? '',
                                             style: TextStyle(fontSize: 11, color: AppColors.dark,
                                               fontWeight: isSelected ? FontWeight.w700 : FontWeight.normal),
                                           )),
@@ -504,17 +504,17 @@ class _CategoryScreenState extends State<CategoryScreen> {
                                                 size: 14, color: AppColors.primary),
                                         ])),
                                         Expanded(flex: 3, child: Text(
-                                          row['illness']?.toString() ?? '',
-                                          style: TextStyle(fontSize: 11, color: AppColors.dark,
-                                            fontWeight: isSelected ? FontWeight.w700 : FontWeight.normal),
-                                        )),
-                                        Expanded(flex: 3, child: Text(
                                           row['subcategory']?.toString() ?? '',
                                           style: TextStyle(fontSize: 11, color: AppColors.dark,
                                             fontWeight: isSelected ? FontWeight.w700 : FontWeight.normal),
                                         )),
                                         Expanded(flex: 3, child: Text(
-                                          row['category']?.toString() ?? '',
+                                          row['illness']?.toString() ?? '',
+                                          style: TextStyle(fontSize: 11, color: AppColors.dark,
+                                            fontWeight: isSelected ? FontWeight.w700 : FontWeight.normal),
+                                        )),
+                                        Expanded(flex: 3, child: Text(
+                                          row['symptom']?.toString() ?? '',
                                           style: TextStyle(fontSize: 11, color: AppColors.dark,
                                             fontWeight: isSelected ? FontWeight.w700 : FontWeight.normal),
                                         )),
