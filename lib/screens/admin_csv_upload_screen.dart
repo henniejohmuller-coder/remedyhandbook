@@ -888,7 +888,7 @@ class _AdminCsvUploadScreenState extends State<AdminCsvUploadScreen> {
       backgroundColor: AppColors.background,
       body: SafeArea(child: Column(children: [
         const YellowAppBar(
-          title: 'Bulk Excel Upload',
+          title: 'Bulk Data Upload',
           subtitle: 'Export and import data as Excel files',
           showBack: true,
         ),

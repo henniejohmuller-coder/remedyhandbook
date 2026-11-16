@@ -582,7 +582,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                           child: Column(children: [
                             _MenuRow(
                               icon: Icons.upload_file_outlined,
-                              label: 'Bulk CSV upload',
+                              label: 'Bulk data upload',
                               onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const AdminCsvUploadScreen())),
                             ),
                             const Divider(height: 1, indent: 48),
