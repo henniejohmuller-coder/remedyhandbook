@@ -708,7 +708,8 @@ class _AdminCsvUploadScreenState extends State<AdminCsvUploadScreen> {
       final useHeader = catIdx >= 0 && subIdx >= 0 && illIdx >= 0 && symIdx >= 0;
       final startRow  = useHeader ? 1 : 0;
 
-      int inserted = 0;
+      // Build all rows first, then batch-upsert in chunks of 500
+      final batch = <Map<String, String>>[];
       for (int ri = startRow; ri < allRows.length; ri++) {
         final cols = allRows[ri].map((c) => c.trim()).toList();
         if (cols.length < 4) continue;
@@ -724,12 +725,16 @@ class _AdminCsvUploadScreenState extends State<AdminCsvUploadScreen> {
                 'illness': cols[2],  'symptom': cols[3],
               };
         if (row.values.every((v) => v.isEmpty)) continue;
+        batch.add(row);
+      }
+      const chunkSize = 500;
+      for (int i = 0; i < batch.length; i += chunkSize) {
+        final chunk = batch.sublist(i, (i + chunkSize).clamp(0, batch.length));
         await SupabaseService.supabase.from('filter_matrix').upsert(
-          row, onConflict: 'category,subcategory,illness,symptom');
-        inserted++;
+          chunk, onConflict: 'category,subcategory,illness,symptom');
       }
       if (mounted) ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('$inserted rows imported!'), backgroundColor: Colors.green));
+        SnackBar(content: Text('${batch.length} rows imported!'), backgroundColor: Colors.green));
     } catch (e) {
       if (mounted) ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text('Import failed: $e'), backgroundColor: Colors.red));
@@ -791,7 +796,10 @@ class _AdminCsvUploadScreenState extends State<AdminCsvUploadScreen> {
       final allRows = _parseAllRows(csv);
       if (allRows.isEmpty) return;
       final headers = allRows[0].map((h) => h.trim()).toList();
-      int updated = 0;
+
+      // Parse all data rows, separating rows-with-id (upsert) from new rows (insert)
+      final upsertRows  = <Map<String, dynamic>>[];
+      final insertRows  = <Map<String, dynamic>>[];
       for (int i = 1; i < allRows.length; i++) {
         final values = allRows[i].map((v) => v.trim()).toList();
         if (values.length < 2) continue;
@@ -809,17 +817,32 @@ class _AdminCsvUploadScreenState extends State<AdminCsvUploadScreen> {
             if (v.isNotEmpty) row[h] = v;
           }
         }
-        if (row.containsKey('id') && row['id'] != null && row['id'].toString().isNotEmpty) {
-          await SupabaseService.supabase.from('products').upsert(row, onConflict: 'id');
-          updated++;
+        final hasId = row.containsKey('id') &&
+            row['id'] != null &&
+            row['id'].toString().isNotEmpty;
+        if (hasId) {
+          upsertRows.add(row);
         } else {
           row.remove('id');
-          await SupabaseService.supabase.from('products').insert(row);
-          updated++;
+          insertRows.add(row);
         }
       }
+
+      // Batch upsert rows with id (500 per call)
+      const chunkSize = 500;
+      for (int i = 0; i < upsertRows.length; i += chunkSize) {
+        final chunk = upsertRows.sublist(i, (i + chunkSize).clamp(0, upsertRows.length));
+        await SupabaseService.supabase.from('products').upsert(chunk, onConflict: 'id');
+      }
+      // Batch insert new rows
+      for (int i = 0; i < insertRows.length; i += chunkSize) {
+        final chunk = insertRows.sublist(i, (i + chunkSize).clamp(0, insertRows.length));
+        await SupabaseService.supabase.from('products').insert(chunk);
+      }
+
+      final total = upsertRows.length + insertRows.length;
       if (mounted) ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Imported $updated shop items'), backgroundColor: Colors.green));
+        SnackBar(content: Text('Imported $total shop items'), backgroundColor: Colors.green));
     } catch (e) {
       if (mounted) ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text('Import failed: $e'), backgroundColor: Colors.red));
