@@ -719,7 +719,8 @@ class _AdminCsvUploadScreenState extends State<AdminCsvUploadScreen> {
               };
         // Skip rows where all values are empty
         if (row.values.every((v) => v.isEmpty)) continue;
-        await SupabaseService.supabase.from('filter_matrix').upsert(row);
+        await SupabaseService.supabase.from('filter_matrix').upsert(
+          row, onConflict: 'category,subcategory,illness,symptom');
         inserted++;
       }
       if (mounted) ScaffoldMessenger.of(context).showSnackBar(
