@@ -142,7 +142,7 @@ class _AuthGateState extends State<_AuthGate> {
     if (!_checked) return const Scaffold(
       body: Center(child: CircularProgressIndicator(color: AppColors.primary)));
     if (!_loggedIn) return const LoginScreen();
-    return AppShell(initialIndex: 1);
+    return AppShell(initialIndex: 0);
   }
 }
 

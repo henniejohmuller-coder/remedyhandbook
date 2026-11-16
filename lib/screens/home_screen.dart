@@ -239,25 +239,26 @@ class _NavButton extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return SizedBox(
-      width: double.infinity,
-      child: OutlinedButton(
-        onPressed: onPressed,
-        style: OutlinedButton.styleFrom(
-          foregroundColor: AppColors.dark,
-          side: const BorderSide(color: AppColors.primary, width: 1.5),
-          backgroundColor: Colors.white,
-          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-          alignment: Alignment.centerLeft,
+    return GestureDetector(
+      onTap: onPressed,
+      child: Container(
+        width: double.infinity,
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+        decoration: BoxDecoration(
+          color: AppColors.primary,
+          borderRadius: BorderRadius.circular(10),
+          boxShadow: [BoxShadow(
+              color: Colors.black.withOpacity(0.08),
+              blurRadius: 4, offset: const Offset(0, 2))],
         ),
         child: Row(
           children: [
-            Icon(icon, size: 22, color: AppColors.primary),
+            Icon(icon, size: 22, color: AppColors.dark),
             const SizedBox(width: 12),
             Text(label,
                 style: const TextStyle(
-                    fontSize: 15, fontWeight: FontWeight.w600)),
+                    fontSize: 15, fontWeight: FontWeight.w600,
+                    color: AppColors.dark)),
           ],
         ),
       ),
