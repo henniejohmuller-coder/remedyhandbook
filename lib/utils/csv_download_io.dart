@@ -21,3 +21,22 @@ Future<String?> downloadCsv(String csvContent, String filename) async {
     return null;
   }
 }
+
+/// Saves raw [bytes] (e.g. an xlsx file) as [filename] in the Downloads folder.
+/// Returns the full saved path, or null if saving failed.
+Future<String?> downloadXlsx(List<int> bytes, String filename) async {
+  try {
+    Directory? dir;
+    try {
+      dir = await getDownloadsDirectory();
+    } catch (_) {}
+    dir ??= await getApplicationDocumentsDirectory();
+
+    final file = File('${dir.path}/$filename');
+    await file.writeAsBytes(bytes, flush: true);
+    return file.path;
+  } catch (e) {
+    debugPrint('XLSX save error: $e');
+    return null;
+  }
+}
