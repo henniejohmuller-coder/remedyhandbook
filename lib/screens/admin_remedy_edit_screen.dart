@@ -276,13 +276,11 @@ class _AdminRemedyEditScreenState extends State<AdminRemedyEditScreen> {
   }
 
   void _openProductPicker({required String type}) async {
-    // Fetch ALL products of this type Ã¢ not filtered by linked_remedy_id,
-    // so all 3 slots can be selected regardless of prior linking.
-    final data = await SupabaseService.supabase
-        .from('products')
-        .select()
-        .eq('type', type)
-        .order('name', ascending: true);
+    // Fetch products — if type is empty, fetch all; otherwise filter by type.
+    final baseQuery = SupabaseService.supabase.from('products').select().order('name', ascending: true);
+    final data = type.isEmpty
+        ? await baseQuery
+        : await SupabaseService.supabase.from('products').select().eq('type', type).order('name', ascending: true);
     final filtered = (data as List).cast<Map<String, dynamic>>();
     if (!mounted) return;
     showModalBottomSheet(
@@ -1242,6 +1240,144 @@ class _AdminRemedyEditScreenState extends State<AdminRemedyEditScreen> {
                       ),
                     ],
 
+
+                    // ── Linked Shop Products ─────────────────────────────
+                    const SizedBox(height: 20),
+                    const SectionLabel('LINKED SHOP PRODUCTS'),
+                    Container(
+                      padding: const EdgeInsets.all(12),
+                      decoration: BoxDecoration(
+                        color: Colors.white,
+                        borderRadius: BorderRadius.circular(12),
+                        boxShadow: [BoxShadow(color: Colors.black12, blurRadius: 6)],
+                      ),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          if (_linkedProducts.isEmpty)
+                            const Padding(
+                              padding: EdgeInsets.symmetric(vertical: 8),
+                              child: Text(
+                                'No shop products linked yet.',
+                                style: TextStyle(fontSize: 13, color: AppColors.textSecondary),
+                              ),
+                            )
+                          else
+                            ..._linkedProducts.map((product) {
+                              final sku = product['sku']?.toString() ?? '';
+                              final name = product['name']?.toString() ?? '';
+                              final type = product['type']?.toString() ?? '';
+                              return Container(
+                                margin: const EdgeInsets.only(bottom: 8),
+                                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                                decoration: BoxDecoration(
+                                  color: AppColors.surface,
+                                  borderRadius: BorderRadius.circular(8),
+                                  border: Border.all(color: Colors.grey.shade200),
+                                ),
+                                child: Row(
+                                  children: [
+                                    Container(
+                                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                                      decoration: BoxDecoration(
+                                        color: AppColors.dark,
+                                        borderRadius: BorderRadius.circular(6),
+                                      ),
+                                      child: Text(
+                                        sku.isNotEmpty ? sku : type,
+                                        style: const TextStyle(
+                                          color: AppColors.primary,
+                                          fontSize: 11,
+                                          fontWeight: FontWeight.w700,
+                                        ),
+                                      ),
+                                    ),
+                                    const SizedBox(width: 10),
+                                    Expanded(
+                                      child: Text(
+                                        name,
+                                        style: const TextStyle(
+                                          fontSize: 13,
+                                          color: AppColors.dark,
+                                          fontWeight: FontWeight.w500,
+                                        ),
+                                        overflow: TextOverflow.ellipsis,
+                                      ),
+                                    ),
+                                    GestureDetector(
+                                      onTap: () => _unlinkProduct(product['id'].toString()),
+                                      child: const Icon(
+                                        Icons.link_off,
+                                        size: 18,
+                                        color: AppColors.textSecondary,
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              );
+                            }),
+                          const SizedBox(height: 8),
+                          Row(
+                            children: [
+                              Expanded(
+                                child: OutlinedButton.icon(
+                                  onPressed: () => _openProductPicker(type: 'tincture'),
+                                  icon: const Icon(Icons.add, size: 16, color: AppColors.dark),
+                                  label: const Text('Tincture',
+                                      style: TextStyle(color: AppColors.dark, fontSize: 12, fontWeight: FontWeight.w600)),
+                                  style: OutlinedButton.styleFrom(
+                                    padding: const EdgeInsets.symmetric(vertical: 8),
+                                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                                    side: const BorderSide(color: AppColors.dark),
+                                  ),
+                                ),
+                              ),
+                              const SizedBox(width: 8),
+                              Expanded(
+                                child: OutlinedButton.icon(
+                                  onPressed: () => _openProductPicker(type: 'capsule'),
+                                  icon: const Icon(Icons.add, size: 16, color: AppColors.dark),
+                                  label: const Text('Capsule',
+                                      style: TextStyle(color: AppColors.dark, fontSize: 12, fontWeight: FontWeight.w600)),
+                                  style: OutlinedButton.styleFrom(
+                                    padding: const EdgeInsets.symmetric(vertical: 8),
+                                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                                    side: const BorderSide(color: AppColors.dark),
+                                  ),
+                                ),
+                              ),
+                              const SizedBox(width: 8),
+                              Expanded(
+                                child: OutlinedButton.icon(
+                                  onPressed: () => _openProductPicker(type: 'tea'),
+                                  icon: const Icon(Icons.add, size: 16, color: AppColors.dark),
+                                  label: const Text('Tea',
+                                      style: TextStyle(color: AppColors.dark, fontSize: 12, fontWeight: FontWeight.w600)),
+                                  style: OutlinedButton.styleFrom(
+                                    padding: const EdgeInsets.symmetric(vertical: 8),
+                                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                                    side: const BorderSide(color: AppColors.dark),
+                                  ),
+                                ),
+                              ),
+                            ],
+                          ),
+                          const SizedBox(height: 4),
+                          OutlinedButton.icon(
+                            onPressed: () => _openProductPicker(type: ''),
+                            icon: const Icon(Icons.search, size: 16, color: AppColors.dark),
+                            label: const Text('Browse all products',
+                                style: TextStyle(color: AppColors.dark, fontSize: 12, fontWeight: FontWeight.w600)),
+                            style: OutlinedButton.styleFrom(
+                              minimumSize: const Size(double.infinity, 36),
+                              padding: const EdgeInsets.symmetric(vertical: 8),
+                              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                              side: const BorderSide(color: AppColors.dark),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
 
                     const SizedBox(height: 20),
                     if (_submitted)
