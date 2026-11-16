@@ -343,41 +343,7 @@ class _ShopScreenState extends State<ShopScreen> {
               padding: const EdgeInsets.symmetric(horizontal: 16),
               child: Row(
                 children: [
-                  // Category
-                  Expanded(
-                    child: Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 10),
-                      decoration: BoxDecoration(
-                        color: Colors.white,
-                        borderRadius: BorderRadius.circular(10),
-                        border: Border.all(
-                          color: _catFilter != 'All'
-                              ? AppColors.primary : Colors.grey.shade200),
-                        boxShadow: [BoxShadow(
-                            color: Colors.black.withOpacity(0.03), blurRadius: 4)],
-                      ),
-                      child: GestureDetector(
-                        onTap: () => _showSearchDropdown(
-                          context, 'Category', _catOptions, _catFilter,
-                          (v) => setState(() => _catFilter = v)),
-                        child: Padding(
-                          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 10),
-                          child: Row(children: [
-                            Expanded(child: Text(
-                              _catFilter,
-                              style: TextStyle(fontSize: 12,
-                                  color: _catFilter != 'All' ? AppColors.dark : AppColors.textSecondary,
-                                  fontWeight: _catFilter != 'All' ? FontWeight.w500 : FontWeight.normal),
-                              overflow: TextOverflow.ellipsis,
-                            )),
-                            const Icon(Icons.keyboard_arrow_down, size: 16),
-                          ]),
-                        ),
-                      ),
-                    ),
-                  ),
-                  const SizedBox(width: 8),
-                  // Brand
+                  // Brand (left)
                   Expanded(
                     child: Container(
                       padding: const EdgeInsets.symmetric(horizontal: 10),
@@ -402,6 +368,40 @@ class _ShopScreenState extends State<ShopScreen> {
                               style: TextStyle(fontSize: 12,
                                   color: _brandFilter != 'All' ? AppColors.dark : AppColors.textSecondary,
                                   fontWeight: _brandFilter != 'All' ? FontWeight.w500 : FontWeight.normal),
+                              overflow: TextOverflow.ellipsis,
+                            )),
+                            const Icon(Icons.keyboard_arrow_down, size: 16),
+                          ]),
+                        ),
+                      ),
+                    ),
+                  ),
+                  const SizedBox(width: 8),
+                  // Category (right)
+                  Expanded(
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 10),
+                      decoration: BoxDecoration(
+                        color: Colors.white,
+                        borderRadius: BorderRadius.circular(10),
+                        border: Border.all(
+                          color: _catFilter != 'All'
+                              ? AppColors.primary : Colors.grey.shade200),
+                        boxShadow: [BoxShadow(
+                            color: Colors.black.withOpacity(0.03), blurRadius: 4)],
+                      ),
+                      child: GestureDetector(
+                        onTap: () => _showSearchDropdown(
+                          context, 'Category', _catOptions, _catFilter,
+                          (v) => setState(() => _catFilter = v)),
+                        child: Padding(
+                          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 10),
+                          child: Row(children: [
+                            Expanded(child: Text(
+                              _catFilter,
+                              style: TextStyle(fontSize: 12,
+                                  color: _catFilter != 'All' ? AppColors.dark : AppColors.textSecondary,
+                                  fontWeight: _catFilter != 'All' ? FontWeight.w500 : FontWeight.normal),
                               overflow: TextOverflow.ellipsis,
                             )),
                             const Icon(Icons.keyboard_arrow_down, size: 16),
