@@ -759,8 +759,15 @@ class _Dropdown extends StatelessWidget {
               overflow: TextOverflow.ellipsis,
             ),
           ),
-          Icon(Icons.keyboard_arrow_down, size: 16,
-              color: isDark ? Colors.white70 : (enabled ? AppColors.dark : Colors.grey.shade400)),
+          if (effectiveValue != null)
+            GestureDetector(
+              onTap: () => onChanged(null),
+              child: Icon(Icons.close, size: 16,
+                  color: isDark ? Colors.white70 : AppColors.dark),
+            )
+          else
+            Icon(Icons.keyboard_arrow_down, size: 16,
+                color: isDark ? Colors.white70 : (enabled ? AppColors.dark : Colors.grey.shade400)),
         ]),
       ),
     );
