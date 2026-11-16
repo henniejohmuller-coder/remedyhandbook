@@ -56,7 +56,7 @@ class AppBottomNavBar extends StatelessWidget {
         _navItem(Icons.search_outlined, Icons.search, 'Find', 1),
         _navItem(Icons.eco_outlined, Icons.eco, 'Remedy', 2),
         _navItem(Icons.storefront_outlined, Icons.storefront, 'Shop', 3),
-        _navItem(Icons.bookmark_border, Icons.bookmark, 'My Recipes', 4),
+        _navItem(Icons.bookmark_border, Icons.bookmark, 'My Remedy', 4),
         _navItem(Icons.person_outline, Icons.person, 'Profile', 6),
       ],
     );

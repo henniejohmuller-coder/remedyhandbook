@@ -15,14 +15,13 @@ class _MyRecipesScreenState extends State<MyRecipesScreen>
     with SingleTickerProviderStateMixin {
   late TabController _tabController;
   List<Map<String, dynamic>> _saved       = [];
-  List<Map<String, dynamic>> _submissions = [];
   List<Map<String, dynamic>> _orders      = [];
   bool _loading = true;
 
   @override
   void initState() {
     super.initState();
-    _tabController = TabController(length: 3, vsync: this);
+    _tabController = TabController(length: 2, vsync: this);
     _loadData();
   }
 
@@ -40,16 +39,13 @@ class _MyRecipesScreenState extends State<MyRecipesScreen>
       print('Loading data for user: $userId');
       final results = await Future.wait([
         SupabaseService.getSavedRemedies(),
-        SupabaseService.getMySubmissions(),
         SupabaseService.getOrders(),
       ]);
-      print('Saved: ${results[0].length}, Submissions: ${results[1].length}, Orders: ${results[2].length}');
       if (!mounted) return;
       setState(() {
-        _saved       = results[0];
-        _submissions = results[1];
-        _orders      = results[2];
-        _loading     = false;
+        _saved   = results[0];
+        _orders  = results[1];
+        _loading = false;
       });
     } catch (e) {
       print('Error loading my recipes: $e');
@@ -66,7 +62,7 @@ class _MyRecipesScreenState extends State<MyRecipesScreen>
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            const YellowAppBar(title: 'My Recipes', subtitle: 'Favourites · Submissions · Orders'),
+            const YellowAppBar(title: 'My Remedy', subtitle: 'Favourites · Orders'),
             const SizedBox(height: 12),
             Padding(
               padding: const EdgeInsets.symmetric(horizontal: 16),
@@ -84,7 +80,6 @@ class _MyRecipesScreenState extends State<MyRecipesScreen>
                   labelStyle: const TextStyle(fontWeight: FontWeight.w600, fontSize: 13),
                   tabs: [
                     Tab(text: 'Favourites (${_saved.length})'),
-                    Tab(text: 'Submissions (${_submissions.length})'),
                     Tab(text: 'Orders (${_orders.length})'),
                   ],
                 ),
@@ -98,7 +93,6 @@ class _MyRecipesScreenState extends State<MyRecipesScreen>
                       controller: _tabController,
                       children: [
                         _SavedTab(saved: _saved, onRefresh: _loadData),
-                        _SubmissionsTab(submissions: _submissions, onRefresh: _loadData),
                         _OrdersTab(orders: _orders, onRefresh: _loadData),
                       ],
                     ),
