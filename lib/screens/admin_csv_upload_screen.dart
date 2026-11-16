@@ -2,7 +2,6 @@ import 'dart:convert';
 import 'package:flutter/foundation.dart' show kIsWeb, debugPrint;
 import 'package:flutter/material.dart';
 import 'package:excel/excel.dart' as xl;
-import 'dart:html' as html;
 import '../utils/csv_download.dart';
 import 'package:file_picker/file_picker.dart';
 import '../theme/app_theme.dart';
@@ -573,12 +572,16 @@ class _AdminCsvUploadScreenState extends State<AdminCsvUploadScreen> {
         return;
       }
 
-      // Export as Excel so each value lands in its own column
-      final excel = xl.Excel.createExcel();
-      final sheet = excel['Remedies'];
-      // Header row
-      sheet.appendRow(_allCols.map((h) => xl.TextCellValue(h)).toList());
+      // RFC 4180 quoting helper
+      String q(String v) {
+        if (v.contains(',') || v.contains('"') || v.contains('\n')) {
+          return '"${v.replaceAll('"', '""')}"';
+        }
+        return v;
+      }
 
+      // Build CSV
+      final lines = <String>[_allCols.join(',')];
       for (final row in allRows) {
         // Flatten remedy_instructions into step_1..step_10
         final steps = <int, String>{};
@@ -589,29 +592,18 @@ class _AdminCsvUploadScreenState extends State<AdminCsvUploadScreen> {
             steps[num] = inst['instruction']?.toString() ?? '';
           }
         }
-
         final cells = _allCols.map((col) {
           if (col.startsWith('step_')) {
             final n = int.tryParse(col.split('_')[1]) ?? 0;
-            return xl.TextCellValue(steps[n] ?? '');
+            return q(steps[n] ?? '');
           }
-          return xl.TextCellValue((row[col] ?? '').toString());
-        }).toList();
-
-        sheet.appendRow(cells);
+          return q((row[col] ?? '').toString());
+        });
+        lines.add(cells.join(','));
       }
 
-      excel.delete('Sheet1');
-      final bytes = excel.encode();
-      if (bytes != null) {
-        final ts = DateTime.now().toIso8601String().substring(0, 10);
-        final blob = html.Blob([bytes], 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
-        final url = html.Url.createObjectUrlFromBlob(blob);
-        final anchor = html.AnchorElement(href: url)
-          ..setAttribute('download', 'remedy_database_$ts.xlsx')
-          ..click();
-        html.Url.revokeObjectUrl(url);
-      }
+      final ts = DateTime.now().toIso8601String().substring(0, 10);
+      await downloadCsv(lines.join('\n'), 'remedy_database_$ts.csv');
 
       if (mounted) {
         setState(() => _dbDownloading = false);
@@ -654,24 +646,20 @@ class _AdminCsvUploadScreenState extends State<AdminCsvUploadScreen> {
         from += pageSize;
       }
 
-      // Export as Excel so columns open correctly regardless of regional settings
-      final excel = xl.Excel.createExcel();
-      final sheet = excel['FilterMatrix'];
+      // Build plain CSV
+      String q(String v) {
+        if (v.contains(',') || v.contains('"') || v.contains('\n')) {
+          return '"${v.replaceAll('"', '""')}"';
+        }
+        return v;
+      }
       const headers = ['category', 'subcategory', 'illness', 'symptom'];
-      sheet.appendRow(headers.map((h) => xl.TextCellValue(h)).toList());
+      final lines = <String>[headers.join(',')];
       for (final r in rows) {
-        sheet.appendRow(headers.map((h) => xl.TextCellValue((r[h] ?? '').toString())).toList());
+        lines.add(headers.map((h) => q((r[h] ?? '').toString())).join(','));
       }
-      excel.delete('Sheet1');
-      final bytes = excel.encode();
-      if (bytes != null) {
-        final blob = html.Blob([bytes], 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
-        final url = html.Url.createObjectUrlFromBlob(blob);
-        final anchor = html.AnchorElement(href: url)
-          ..setAttribute('download', 'filter_matrix_${DateTime.now().millisecondsSinceEpoch}.xlsx')
-          ..click();
-        html.Url.revokeObjectUrl(url);
-      }
+      final ts = DateTime.now().toIso8601String().substring(0, 10);
+      await downloadCsv(lines.join('\n'), 'filter_matrix_$ts.csv');
       if (mounted) ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text('Filter matrix exported (${rows.length} rows)!'), backgroundColor: Colors.green));
     } catch (e) {
@@ -688,19 +676,11 @@ class _AdminCsvUploadScreenState extends State<AdminCsvUploadScreen> {
     setState(() => _fmImporting = true);
     try {
       final result = await FilePicker.platform.pickFiles(
-        type: FileType.custom, allowedExtensions: ['csv', 'xlsx'], withData: true);
+        type: FileType.custom, allowedExtensions: ['csv'], withData: true);
       if (result == null) { setState(() => _fmImporting = false); return; }
-      final file = result.files.first;
-      final bytes = file.bytes;
+      final bytes = result.files.first.bytes;
       if (bytes == null) { setState(() => _fmImporting = false); return; }
-
-      // Convert xlsx → CSV string, or decode CSV bytes directly
-      final String csvContent;
-      if (file.name.toLowerCase().endsWith('.xlsx')) {
-        csvContent = _xlsxToCsv(bytes);
-      } else {
-        csvContent = utf8.decode(bytes, allowMalformed: true);
-      }
+      final String csvContent = utf8.decode(bytes, allowMalformed: true);
 
       // Use the RFC 4180 parser so values containing commas are handled correctly
       final allRows = _parseAllRows(csvContent);
@@ -772,27 +752,19 @@ class _AdminCsvUploadScreenState extends State<AdminCsvUploadScreen> {
       final rows = allData;
       final headers = ['id','sku','name','type','description','price','cost_price','stock','delivery_cost','active','image_url','category','brand','primary_herb','main_constituent'];
 
-      final excel = xl.Excel.createExcel();
-      final sheet = excel['Products'];
-      // Header row
-      sheet.appendRow(headers.map((h) => xl.TextCellValue(h)).toList());
-      // Data rows
+      // Build plain CSV
+      String q(String v) {
+        if (v.contains(',') || v.contains('"') || v.contains('\n')) {
+          return '"${v.replaceAll('"', '""')}"';
+        }
+        return v;
+      }
+      final lines = <String>[headers.join(',')];
       for (final r in rows) {
-        sheet.appendRow(headers.map((h) {
-          final val = (r[h] ?? '').toString();
-          return xl.TextCellValue(val);
-        }).toList());
+        lines.add(headers.map((h) => q((r[h] ?? '').toString())).join(','));
       }
-      excel.delete('Sheet1');
-      final bytes = excel.encode();
-      if (bytes != null) {
-        final blob = html.Blob([bytes], 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
-        final url = html.Url.createObjectUrlFromBlob(blob);
-        final anchor = html.AnchorElement(href: url)
-          ..setAttribute('download', 'shop_items_' + DateTime.now().millisecondsSinceEpoch.toString() + '.xlsx')
-          ..click();
-        html.Url.revokeObjectUrl(url);
-      }
+      final ts = DateTime.now().toIso8601String().substring(0, 10);
+      await downloadCsv(lines.join('\n'), 'shop_items_$ts.csv');
       if (mounted) ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text('Shop items exported (${rows.length} rows)!'), backgroundColor: Colors.green));
     } catch (e) {
@@ -806,16 +778,13 @@ class _AdminCsvUploadScreenState extends State<AdminCsvUploadScreen> {
   // ── Import Shop CSV ────────────────────────────────────────────────────
   Future<void> _importShopCsv() async {
     final result = await FilePicker.platform.pickFiles(
-      type: FileType.custom, allowedExtensions: ['csv', 'xlsx'], withData: true);
+      type: FileType.custom, allowedExtensions: ['csv'], withData: true);
     if (result == null || result.files.isEmpty) return;
-    final file = result.files.first;
-    final bytes = file.bytes;
+    final bytes = result.files.first.bytes;
     if (bytes == null) return;
     setState(() => _shopImporting = true);
     try {
-      final csv = file.name.toLowerCase().endsWith('.xlsx')
-          ? _xlsxToCsv(bytes)
-          : utf8.decode(bytes, allowMalformed: true);
+      final csv = utf8.decode(bytes, allowMalformed: true);
       // Use the RFC 4180 parser so values containing commas are handled correctly
       final allRows = _parseAllRows(csv);
       if (allRows.isEmpty) return;
@@ -983,7 +952,7 @@ class _AdminCsvUploadScreenState extends State<AdminCsvUploadScreen> {
                   ),
                   _SmallButton(
                     icon: _shopImporting ? Icons.hourglass_top : Icons.upload_outlined,
-                    label: _shopImporting ? 'Importing...' : 'Import Shop CSV/XLSX',
+                    label: _shopImporting ? 'Importing...' : 'Import Shop CSV',
                     onTap: _shopImporting ? () {} : _importShopCsv,
                     bgColor: AppColors.lightGreen,
                   ),
@@ -1016,7 +985,7 @@ class _AdminCsvUploadScreenState extends State<AdminCsvUploadScreen> {
                   ),
                   _SmallButton(
                     icon: _fmImporting ? Icons.hourglass_top : Icons.upload_outlined,
-                    label: _fmImporting ? 'Importing...' : 'Import Filter Matrix CSV/XLSX',
+                    label: _fmImporting ? 'Importing...' : 'Import Filter Matrix CSV',
                     onTap: _fmImporting ? () {} : _importFilterMatrix,
                     bgColor: AppColors.lightGreen,
                   ),
