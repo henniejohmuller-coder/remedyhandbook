@@ -269,12 +269,12 @@ class _AdminCsvUploadScreenState extends State<AdminCsvUploadScreen> {
     setState(() { _rows = rows; _parsed = true; });
   }
 
-  // ── Pick file ──────────────────────────────────────────────────────────
+  // ── Pick file (CSV or XLSX) ────────────────────────────────────────────
   Future<void> _pickFile() async {
     try {
       final result = await FilePicker.platform.pickFiles(
         type: FileType.custom,
-        allowedExtensions: ['csv'],
+        allowedExtensions: ['csv', 'xlsx'],
         withData: true,
         allowMultiple: false,
       );
@@ -282,14 +282,43 @@ class _AdminCsvUploadScreenState extends State<AdminCsvUploadScreen> {
       final file = result.files.first;
       final bytes = file.bytes;
       if (bytes == null) {
-        setState(() => _parseErrors = ['Could not read file – try re-saving the CSV in UTF-8 encoding']);
+        setState(() => _parseErrors = ['Could not read file']);
         return;
       }
       setState(() { _fileName = file.name; _uploadDone = false; });
-      _parseCsv(utf8.decode(bytes, allowMalformed: true));
+
+      final isXlsx = file.name.toLowerCase().endsWith('.xlsx');
+      if (isXlsx) {
+        _parseCsv(_xlsxToCsv(bytes));
+      } else {
+        _parseCsv(utf8.decode(bytes, allowMalformed: true));
+      }
     } catch (e) {
       setState(() => _parseErrors = ['Error reading file: $e']);
     }
+  }
+
+  // ── Convert XLSX bytes → CSV string for _parseCsv ─────────────────────
+  String _xlsxToCsv(List<int> bytes) {
+    final excel = xl.Excel.decodeBytes(bytes);
+    // Use the first sheet
+    final sheetName = excel.sheets.keys.first;
+    final sheet = excel.sheets[sheetName]!;
+
+    // RFC 4180 quoting
+    String q(String v) {
+      if (v.contains(',') || v.contains('"') || v.contains('\n')) {
+        return '"${v.replaceAll('"', '""')}"';
+      }
+      return v;
+    }
+
+    final lines = <String>[];
+    for (final row in sheet.rows) {
+      final cells = row.map((cell) => q((cell?.value?.toString() ?? ''))).toList();
+      lines.add(cells.join(','));
+    }
+    return lines.join('\n');
   }
 
   // ── Upload ─────────────────────────────────────────────────────────────
@@ -884,7 +913,7 @@ class _AdminCsvUploadScreenState extends State<AdminCsvUploadScreen> {
                   ),
                   _SmallButton(
                     icon: _uploading ? Icons.hourglass_top : Icons.upload_outlined,
-                    label: _uploading ? 'Importing...' : 'Import Remedy CSV',
+                    label: _uploading ? 'Importing...' : 'Import Remedy CSV/XLSX',
                     onTap: _uploading ? () {} : _pickFile,
                     bgColor: AppColors.lightGreen,
                   ),
