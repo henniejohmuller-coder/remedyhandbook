@@ -242,23 +242,23 @@ class _NavButton extends StatelessWidget {
     return GestureDetector(
       onTap: onPressed,
       child: Container(
-        width: double.infinity,
-        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+        height: 44,
         decoration: BoxDecoration(
           color: AppColors.primary,
           borderRadius: BorderRadius.circular(10),
-          boxShadow: [BoxShadow(
-              color: Colors.black.withOpacity(0.08),
-              blurRadius: 4, offset: const Offset(0, 2))],
+          border: Border.all(color: Colors.grey.shade300),
         ),
+        padding: const EdgeInsets.symmetric(horizontal: 14),
         child: Row(
           children: [
-            Icon(icon, size: 22, color: AppColors.dark),
-            const SizedBox(width: 12),
-            Text(label,
-                style: const TextStyle(
-                    fontSize: 15, fontWeight: FontWeight.w600,
-                    color: AppColors.dark)),
+            Icon(icon, size: 20, color: AppColors.dark),
+            const SizedBox(width: 10),
+            Expanded(
+              child: Text(label,
+                  style: const TextStyle(
+                      fontSize: 13, fontWeight: FontWeight.w600,
+                      color: AppColors.dark)),
+            ),
           ],
         ),
       ),
