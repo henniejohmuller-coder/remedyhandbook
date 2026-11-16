@@ -1271,7 +1271,7 @@ class _AdminRemedyEditScreenState extends State<AdminRemedyEditScreen> {
                                 margin: const EdgeInsets.only(bottom: 8),
                                 padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
                                 decoration: BoxDecoration(
-                                  color: AppColors.surface,
+                                  color: AppColors.background,
                                   borderRadius: BorderRadius.circular(8),
                                   border: Border.all(color: Colors.grey.shade200),
                                 ),
