@@ -334,11 +334,19 @@ class _AdminCsvUploadScreenState extends State<AdminCsvUploadScreen> {
       _uploadDone = false;
     });
 
-    // Check DB duplicates
+    try {
+    // Check DB duplicates – batch the inFilter to avoid URL-length limits
     final db = SupabaseService.supabase;
     final names = _rows.map((r) => r['name'] ?? '').toList();
-    final existing = await db.from('remedies').select('name').inFilter('name', names);
-    final existingNames = (existing as List).map((e) => e['name'].toString()).toSet();
+    final existingNames = <String>{};
+    const batchSize = 50;
+    for (int i = 0; i < names.length; i += batchSize) {
+      final batch = names.sublist(i, (i + batchSize).clamp(0, names.length));
+      final res = await db.from('remedies').select('name').inFilter('name', batch);
+      for (final e in (res as List)) {
+        existingNames.add(e['name'].toString());
+      }
+    }
 
     Set<String> skipNames = {};
     if (existingNames.isNotEmpty && mounted) {
@@ -412,6 +420,16 @@ class _AdminCsvUploadScreenState extends State<AdminCsvUploadScreen> {
         backgroundColor: Colors.green,
         duration: const Duration(seconds: 3),
       ));
+    }
+    } catch (e) {
+      if (mounted) {
+        setState(() { _uploading = false; _uploadDone = true; });
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+          content: Text('Upload failed: $e'),
+          backgroundColor: Colors.red,
+          duration: const Duration(seconds: 5),
+        ));
+      }
     }
   }
 
