@@ -24,37 +24,74 @@ class RecipesScreen extends StatefulWidget {
 
 class _RecipesScreenState extends State<RecipesScreen>
     with SingleTickerProviderStateMixin {
-  String _selectedCategory    = '';
+  // ── Legacy multi-select filter strings (kept for search chips) ────────────
   String _selectedType        = '';
-  String _selectedIllness     = '';
-  String _selectedSubCategory = '';
-  String _selectedSymptom     = '';
   String _selectedOrgan       = '';
   String _selectedCountry     = '';
   String _selectedHerb        = '';
-  int _minValidation = 0;
+  int _minValidation  = 0;
   int _minTraditional = 0;
-  int _minUserRating = 0;
-  String _difficulty = 'All';
-  String _searchQuery = '';          // live text in the search field
+  int _minUserRating  = 0;
+  String _difficulty  = 'All';
+
+  // ── Cascading dropdowns (mirror CategoryScreen logic) ────────────────────
+  String? _selCategory;
+  String? _selSubcategory;
+  String? _selIllness;
+  String? _selSymptom;
+  bool _filterExpanded = false; // collapsible panel state
+
+  // ── Filter-matrix rows (loaded once, drives cascading options) ───────────
+  List<Map<String, dynamic>> _matrixRows = [];
+
+  // ── Derived cascading options (same logic as CategoryScreen) ─────────────
+  List<String> get _catOptions =>
+      _sorted(_matrixRows.map((r) => r['category'].toString()).toSet());
+
+  List<String> get _subOptions {
+    var rows = _matrixRows;
+    if (_selCategory != null) rows = rows.where((r) => r['category'] == _selCategory).toList();
+    return _sorted(rows.map((r) => r['subcategory'].toString()).toSet());
+  }
+
+  List<String> get _illnessOptions {
+    var rows = _matrixRows;
+    if (_selCategory    != null) rows = rows.where((r) => r['category']    == _selCategory).toList();
+    if (_selSubcategory != null) rows = rows.where((r) => r['subcategory'] == _selSubcategory).toList();
+    return _sorted(rows.map((r) => r['illness'].toString()).toSet());
+  }
+
+  List<String> get _symptomOptions {
+    var rows = _matrixRows;
+    if (_selCategory    != null) rows = rows.where((r) => r['category']    == _selCategory).toList();
+    if (_selSubcategory != null) rows = rows.where((r) => r['subcategory'] == _selSubcategory).toList();
+    if (_selIllness     != null) rows = rows.where((r) => r['illness']     == _selIllness).toList();
+    return _sorted(rows.map((r) => r['symptom'].toString()).toSet());
+  }
+
+  List<String> _sorted(Set<String> items) =>
+      items.toList()..sort((a, b) => a.toLowerCase().compareTo(b.toLowerCase()));
+
+  bool get _hasMatrixFilter =>
+      _selCategory != null || _selSubcategory != null ||
+      _selIllness  != null || _selSymptom     != null;
+
+  // ── Search ────────────────────────────────────────────────────────────────
+  String _searchQuery = '';
   final ScrollController _scrollController = ScrollController();
-  List<String> _searchTerms = [];    // committed search chips (AND logic)
+  List<String> _searchTerms = [];
   FilterState _activeFilters = const FilterState();
   bool _loading = true;
   String _encouragement = '';
   final TextEditingController _searchController = TextEditingController();
 
-  // Data from Supabase
+  // ── Data ──────────────────────────────────────────────────────────────────
   List<Map<String, dynamic>> _allRemedies = [];
   Map<String, Set<String>> _remedyProductIds = {};
-  List<String> _categories    = ['All'];
-  List<String> _illnesses     = ['All'];
-  List<String> _subCategories = ['All'];
-  List<String> _symptoms      = ['All'];
-  List<String> _organs        = ['All'];
-  List<String> _countries     = ['All'];
-  List<String> _herbs         = ['All'];
-  List<String> _difficulties  = ['All'];
+  // Legacy flat lists (kept for herb/organ/country dropdowns)
+  List<String> _organs     = ['All'];
+  List<String> _countries  = ['All'];
+  List<String> _herbs      = ['All'];
 
   @override
   void initState() {
@@ -105,62 +142,85 @@ class _RecipesScreenState extends State<RecipesScreen>
     if (!mounted) return;
     setState(() => _loading = true);
     try {
+      // ── 2 queries instead of 11: remedies + filter matrix ────────────────
       final results = await Future.wait<dynamic>([
         SupabaseService.getRemedies(),
-        SupabaseService.getCategories(),
-        SupabaseService.getSubCategories(),
-        SupabaseService.getSymptoms(),
-        SupabaseService.getOrgans(),
-        SupabaseService.getComponents(),
-        SupabaseService.getProducts(),
-        SupabaseService.getIllnesses(),
-        SupabaseService.getDifficulties(),
-        SupabaseService.getCountries(),
-        SupabaseService.supabase.from('remedy_products').select('remedy_id, product_id'),
+        _loadFilterMatrix(),
       ]);
 
-      final products = results[6] as List<Map<String, dynamic>>;
-      final rpList = results[10] as List;
-      _remedyProductIds = {};
-      for (final rp in rpList) {
-        final rid = rp['remedy_id']?.toString() ?? '';
-        final pid = rp['product_id']?.toString() ?? '';
-        _remedyProductIds.putIfAbsent(rid, () => <String>{}).add(pid);
-      }
-
       if (!mounted) return;
+      final remedies = results[0] as List<Map<String, dynamic>>;
       setState(() {
-        _allRemedies  = (results[0] as List<Map<String, dynamic>>).map((r) => {
-          ...r,
-          '_has_component': products.any((p) => (p['linked_remedy_id']?.toString() == r['id']?.toString() || _remedyProductIds[r['id']?.toString()]?.contains(p['id']?.toString()) == true) && p['type'] == 'Component'),
-          '_has_remedy':    products.any((p) => (p['linked_remedy_id']?.toString() == r['id']?.toString() || _remedyProductIds[r['id']?.toString()]?.contains(p['id']?.toString()) == true) && p['type'] == 'Remedy'),
+        _allRemedies = remedies.map((r) => {...r,
+          '_has_component': false, // filled in by background product load
+          '_has_remedy':    false,
         }).toList();
-        void sortList(List<String> list) {
-          final all = list.removeAt(0); // remove 'All'
-          list.sort((a, b) => a.toLowerCase().compareTo(b.toLowerCase()));
-          list.insert(0, all); // put 'All' back at top
-        }
-        _categories      = ['All', ...(results[1] as List<String>).toSet()];
-        _subCategories   = ['All', ...(results[2] as List<String>).toSet()];
-        _symptoms        = ['All', ...(results[3] as List<String>).toSet()];
-        _organs          = ['All', ...(results[4] as List<String>).toSet()];
-        _herbs           = ['All', ...(results[5] as List<String>).toSet()];
-        _illnesses       = ['All', ...(results[7] as List<String>).toSet()];
-        _difficulties    = ['All', ...(results[8] as List<String>).toSet()];
-        _countries       = ['All', ...(results[9] as List<String>).toSet()];
-        for (final list in [_categories, _subCategories, _symptoms, _organs, _herbs, _illnesses, _countries]) {
-          sortList(list);
-        }
-        final components = _allRemedies.map((r) => r['component'] as String? ?? '').toSet().where((c) => c.isNotEmpty).toList()..sort();
-        for (final c in components) {
-          if (!_herbs.contains(c)) _herbs.add(c);
-        }
+        // Derive organs/countries/herbs from loaded remedies (no extra queries)
+        final orgSet  = remedies.map((r) => (r['organ_name'] ?? '').toString().trim()).where((v) => v.isNotEmpty).toSet();
+        final ctrySet = remedies.map((r) => (r['origin']     ?? '').toString().trim()).where((v) => v.isNotEmpty).toSet();
+        final herbSet = remedies.map((r) => (r['component']  ?? '').toString().trim()).where((v) => v.isNotEmpty).toSet();
+        _organs    = ['All', ...orgSet.toList()..sort()];
+        _countries = ['All', ...ctrySet.toList()..sort()];
+        _herbs     = ['All', ...herbSet.toList()..sort()];
         _loading = false;
       });
+
+      // Load products in the background — buy buttons fill in after ~1 s
+      _loadProductsBackground();
     } catch (e) {
       if (!mounted) return;
       setState(() => _loading = false);
     }
+  }
+
+  /// Loads filter_matrix with pagination (same as CategoryScreen).
+  Future<List<Map<String, dynamic>>> _loadFilterMatrix() async {
+    final List<Map<String, dynamic>> all = [];
+    int from = 0;
+    const pageSize = 1000;
+    while (true) {
+      final page = await SupabaseService.supabase
+          .from('filter_matrix')
+          .select('category, subcategory, illness, symptom')
+          .order('category').order('subcategory').order('illness').order('symptom')
+          .range(from, from + pageSize - 1);
+      final pageList = List<Map<String, dynamic>>.from(page);
+      all.addAll(pageList);
+      if (pageList.length < pageSize) break;
+      from += pageSize;
+    }
+    if (mounted) setState(() => _matrixRows = all);
+    return all;
+  }
+
+  /// Background product load — does NOT block the initial screen render.
+  Future<void> _loadProductsBackground() async {
+    try {
+      final products = await SupabaseService.getProducts();
+      final rpList = await SupabaseService.supabase
+          .from('remedy_products').select('remedy_id, product_id');
+      final Map<String, Set<String>> rpMap = {};
+      for (final rp in rpList) {
+        final rid = rp['remedy_id']?.toString() ?? '';
+        final pid = rp['product_id']?.toString() ?? '';
+        rpMap.putIfAbsent(rid, () => <String>{}).add(pid);
+      }
+      if (!mounted) return;
+      setState(() {
+        _remedyProductIds = rpMap;
+        _allRemedies = _allRemedies.map((r) => {
+          ...r,
+          '_has_component': products.any((p) =>
+              (p['linked_remedy_id']?.toString() == r['id']?.toString() ||
+               rpMap[r['id']?.toString()]?.contains(p['id']?.toString()) == true) &&
+              p['type'] == 'Component'),
+          '_has_remedy': products.any((p) =>
+              (p['linked_remedy_id']?.toString() == r['id']?.toString() ||
+               rpMap[r['id']?.toString()]?.contains(p['id']?.toString()) == true) &&
+              p['type'] == 'Remedy'),
+        }).toList();
+      });
+    } catch (_) {}
   }
 
   // Multi-select filter match: true if no filter is set, or if ANY selected
@@ -182,8 +242,7 @@ class _RecipesScreenState extends State<RecipesScreen>
       final component   = (r['component'] ?? '').toString().toLowerCase();
       final category    = (r['category_name'] ?? '').toString();
 
-      // - Filter matrix filters from Category screen ---------------
-
+      // ── Filter matrix filters from Category screen ───────────────────────
       if (!_activeFilters.isEmpty) {
         if (_activeFilters.category != null &&
             (r['filter_category'] ?? '').toString().toLowerCase() != _activeFilters.category!.toLowerCase()) return false;
@@ -198,6 +257,24 @@ class _RecipesScreenState extends State<RecipesScreen>
             syms = rawSyms.map((s) => s.toString().toLowerCase().trim()).toList();
           }
           if (!syms.any((s) => s == _activeFilters.symptom!.toLowerCase().trim())) return false;
+        }
+      }
+
+      // ── In-screen cascading dropdown filters (same field matching) ───────
+      if (_hasMatrixFilter) {
+        if (_selCategory != null &&
+            (r['filter_category'] ?? '').toString().toLowerCase() != _selCategory!.toLowerCase()) return false;
+        if (_selSubcategory != null &&
+            (r['filter_subcategory'] ?? '').toString().toLowerCase() != _selSubcategory!.toLowerCase()) return false;
+        if (_selIllness != null &&
+            (r['filter_illness'] ?? '').toString().toLowerCase() != _selIllness!.toLowerCase()) return false;
+        if (_selSymptom != null) {
+          final rawSyms = r['filter_symptoms'];
+          List<String> syms = [];
+          if (rawSyms is List) {
+            syms = rawSyms.map((s) => s.toString().toLowerCase().trim()).toList();
+          }
+          if (!syms.any((s) => s == _selSymptom!.toLowerCase().trim())) return false;
         }
       }
 
@@ -228,13 +305,9 @@ class _RecipesScreenState extends State<RecipesScreen>
       }
 
       if (!_matchesMulti(r['type'], _selectedType)) return false;
-      if (!_matchesMulti(r['illness_name'] ?? r['illness_display'], _selectedIllness)) return false;
       if (_selectedHerb.trim().isNotEmpty &&
           !_selectedHerb.split(RegExp(r'[,;]')).map((e) => e.trim().toLowerCase()).where((e) => e.isNotEmpty)
               .any((s) => component.contains(s))) return false;
-      if (!_matchesMulti(r['category_name'] ?? category, _selectedCategory)) return false;
-      if (!_matchesMulti(r['sub_category_name'] ?? r['sub_category_display'], _selectedSubCategory)) return false;
-      if (!_matchesMulti(r['symptom_name'], _selectedSymptom)) return false;
       if (!_matchesMulti(r['organ_name'], _selectedOrgan)) return false;
       if (!_matchesMulti(r['origin'], _selectedCountry)) return false;
       if (_minValidation  > 0 && (r['validation_level']  ?? 0) < _minValidation) return false;
@@ -250,18 +323,13 @@ class _RecipesScreenState extends State<RecipesScreen>
     final chips = <String>[];
     for (final t in _searchTerms) chips.add('Search: $t x');
     if (_searchQuery.isNotEmpty) chips.add('Search: $_searchQuery x');
-    // One chip per individually selected item - not per field
-    for (final v in _splitCsv(_selectedType))        chips.add('$v x');
-    for (final v in _splitCsv(_selectedIllness))     chips.add('$v x');
-    for (final v in _splitCsv(_selectedHerb))        chips.add('$v x');
-    for (final v in _splitCsv(_selectedCategory))    chips.add('$v x');
-    for (final v in _splitCsv(_selectedSubCategory)) chips.add('$v x');
-    for (final v in _splitCsv(_selectedSymptom))     chips.add('$v x');
-    for (final v in _splitCsv(_selectedOrgan))       chips.add('$v x');
-    for (final v in _splitCsv(_selectedCountry))     chips.add('$v x');
-    if (_minValidation > 0) chips.add('Validation $_minValidation+ x');
+    for (final v in _splitCsv(_selectedType))   chips.add('$v x');
+    for (final v in _splitCsv(_selectedHerb))   chips.add('$v x');
+    for (final v in _splitCsv(_selectedOrgan))  chips.add('$v x');
+    for (final v in _splitCsv(_selectedCountry))chips.add('$v x');
+    if (_minValidation  > 0) chips.add('Validation $_minValidation+ x');
     if (_minTraditional > 0) chips.add('Traditional $_minTraditional+ x');
-    if (_minUserRating > 0) chips.add('Rating $_minUserRating+ x');
+    if (_minUserRating  > 0) chips.add('Rating $_minUserRating+ x');
     if (_difficulty != 'All') chips.add('$_difficulty x');
     return chips;
   }
@@ -289,17 +357,11 @@ class _RecipesScreenState extends State<RecipesScreen>
       if (chip.startsWith('Rating'))      { _minUserRating = 0; return; }
       if (chip == '$_difficulty x')       { _difficulty = 'All'; return; }
 
-      // Strip trailing ' x' to get the raw item text, then remove it from
-      // whichever multi-select field currently contains it.
       final item = chip.substring(0, chip.length - 2);
-      if (_splitCsv(_selectedType).contains(item))        { _selectedType        = _removeFromCsv(_selectedType, item);        return; }
-      if (_splitCsv(_selectedIllness).contains(item))     { _selectedIllness     = _removeFromCsv(_selectedIllness, item);     return; }
-      if (_splitCsv(_selectedHerb).contains(item))        { _selectedHerb        = _removeFromCsv(_selectedHerb, item);        return; }
-      if (_splitCsv(_selectedCategory).contains(item))    { _selectedCategory    = _removeFromCsv(_selectedCategory, item);    return; }
-      if (_splitCsv(_selectedSubCategory).contains(item)) { _selectedSubCategory = _removeFromCsv(_selectedSubCategory, item); return; }
-      if (_splitCsv(_selectedSymptom).contains(item))     { _selectedSymptom     = _removeFromCsv(_selectedSymptom, item);     return; }
-      if (_splitCsv(_selectedOrgan).contains(item))       { _selectedOrgan       = _removeFromCsv(_selectedOrgan, item);       return; }
-      if (_splitCsv(_selectedCountry).contains(item))     { _selectedCountry     = _removeFromCsv(_selectedCountry, item);     return; }
+      if (_splitCsv(_selectedType).contains(item))    { _selectedType    = _removeFromCsv(_selectedType, item);    return; }
+      if (_splitCsv(_selectedHerb).contains(item))    { _selectedHerb    = _removeFromCsv(_selectedHerb, item);    return; }
+      if (_splitCsv(_selectedOrgan).contains(item))   { _selectedOrgan   = _removeFromCsv(_selectedOrgan, item);   return; }
+      if (_splitCsv(_selectedCountry).contains(item)) { _selectedCountry = _removeFromCsv(_selectedCountry, item); return; }
     });
   }
 
@@ -397,7 +459,7 @@ class _RecipesScreenState extends State<RecipesScreen>
                       ),
                     ),
                   ),
-                  if (_activeChips.isEmpty)
+                  if (_activeChips.isEmpty && !_hasMatrixFilter)
                     Padding(
                       padding: const EdgeInsets.only(top: 4, left: 2),
                       child: Text(
@@ -408,6 +470,40 @@ class _RecipesScreenState extends State<RecipesScreen>
                 ],
               ),
             ),
+            // ── Cascading filter panel ──────────────────────────────────────
+            if (_matrixRows.isNotEmpty)
+              _CascadingFilterPanel(
+                expanded: _filterExpanded,
+                onToggle: () => setState(() => _filterExpanded = !_filterExpanded),
+                selCategory:    _selCategory,
+                selSubcategory: _selSubcategory,
+                selIllness:     _selIllness,
+                selSymptom:     _selSymptom,
+                catOptions:     _catOptions,
+                subOptions:     _subOptions,
+                illnessOptions: _illnessOptions,
+                symptomOptions: _symptomOptions,
+                onCategoryChanged: (v) => setState(() {
+                  _selCategory    = v;
+                  _selSubcategory = null;
+                  _selIllness     = null;
+                  _selSymptom     = null;
+                }),
+                onSubChanged: (v) => setState(() {
+                  _selSubcategory = v;
+                  _selIllness     = null;
+                  _selSymptom     = null;
+                }),
+                onIllnessChanged: (v) => setState(() {
+                  _selIllness = v;
+                  _selSymptom = null;
+                }),
+                onSymptomChanged: (v) => setState(() => _selSymptom = v),
+                onClear: () => setState(() {
+                  _selCategory = _selSubcategory = _selIllness = _selSymptom = null;
+                }),
+                matchCount: _filtered.length,
+              ),
             // Active chips - always visible
             if (_activeChips.isNotEmpty) ...[
               const SizedBox(height: 10),
@@ -566,23 +662,176 @@ class _RecipesScreenState extends State<RecipesScreen>
     );
   }
 
-  Widget _buildDropdownRow(String label, String value, List<String> items, ValueChanged<String?> onChanged) {
+}
+
+
+// ── Cascading Filter Panel ─────────────────────────────────────────────────
+class _CascadingFilterPanel extends StatelessWidget {
+  final bool expanded;
+  final VoidCallback onToggle;
+  final String? selCategory;
+  final String? selSubcategory;
+  final String? selIllness;
+  final String? selSymptom;
+  final List<String> catOptions;
+  final List<String> subOptions;
+  final List<String> illnessOptions;
+  final List<String> symptomOptions;
+  final ValueChanged<String?> onCategoryChanged;
+  final ValueChanged<String?> onSubChanged;
+  final ValueChanged<String?> onIllnessChanged;
+  final ValueChanged<String?> onSymptomChanged;
+  final VoidCallback onClear;
+  final int matchCount;
+
+  const _CascadingFilterPanel({
+    required this.expanded,
+    required this.onToggle,
+    required this.selCategory,
+    required this.selSubcategory,
+    required this.selIllness,
+    required this.selSymptom,
+    required this.catOptions,
+    required this.subOptions,
+    required this.illnessOptions,
+    required this.symptomOptions,
+    required this.onCategoryChanged,
+    required this.onSubChanged,
+    required this.onIllnessChanged,
+    required this.onSymptomChanged,
+    required this.onClear,
+    required this.matchCount,
+  });
+
+  bool get _hasFilter =>
+      selCategory != null || selSubcategory != null ||
+      selIllness  != null || selSymptom     != null;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      margin: const EdgeInsets.fromLTRB(12, 0, 12, 8),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(10),
+        border: Border.all(color: Colors.grey.shade200),
+        boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.04), blurRadius: 4)],
+      ),
+      child: Column(
+        children: [
+          // Header row — always visible
+          InkWell(
+            onTap: onToggle,
+            borderRadius: BorderRadius.circular(10),
+            child: Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+              child: Row(
+                children: [
+                  const Icon(Icons.filter_list, size: 16, color: AppColors.dark),
+                  const SizedBox(width: 8),
+                  Expanded(
+                    child: _hasFilter
+                        ? Wrap(
+                            spacing: 4, runSpacing: 2,
+                            children: [
+                              if (selCategory    != null) _miniChip(selCategory!),
+                              if (selSubcategory != null) _miniChip(selSubcategory!),
+                              if (selIllness     != null) _miniChip(selIllness!),
+                              if (selSymptom     != null) _miniChip(selSymptom!),
+                            ],
+                          )
+                        : Text(
+                            'Filter by category, illness or symptom',
+                            style: const TextStyle(fontSize: 12, color: AppColors.textSecondary),
+                          ),
+                  ),
+                  if (_hasFilter) ...[
+                    Text(
+                      '$matchCount found',
+                      style: const TextStyle(fontSize: 11, fontWeight: FontWeight.w700, color: AppColors.dark),
+                    ),
+                    const SizedBox(width: 8),
+                    GestureDetector(
+                      onTap: onClear,
+                      child: const Icon(Icons.close, size: 16, color: AppColors.textSecondary),
+                    ),
+                    const SizedBox(width: 4),
+                  ],
+                  Icon(
+                    expanded ? Icons.keyboard_arrow_up : Icons.keyboard_arrow_down,
+                    size: 18, color: AppColors.textSecondary,
+                  ),
+                ],
+              ),
+            ),
+          ),
+          // Expandable dropdown rows
+          if (expanded) ...[
+            const Divider(height: 1),
+            Padding(
+              padding: const EdgeInsets.fromLTRB(12, 8, 12, 12),
+              child: Column(
+                children: [
+                  _dropRow('Category', selCategory, catOptions, onCategoryChanged),
+                  const SizedBox(height: 8),
+                  _dropRow('Sub-category', selSubcategory, subOptions, onSubChanged),
+                  const SizedBox(height: 8),
+                  _dropRow('Illness', selIllness, illnessOptions, onIllnessChanged),
+                  const SizedBox(height: 8),
+                  _dropRow('Symptom', selSymptom, symptomOptions, onSymptomChanged),
+                ],
+              ),
+            ),
+          ],
+        ],
+      ),
+    );
+  }
+
+  Widget _miniChip(String label) => Container(
+    padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 2),
+    decoration: BoxDecoration(
+      color: AppColors.primary.withOpacity(0.3),
+      borderRadius: BorderRadius.circular(8),
+    ),
+    child: Text(label, style: const TextStyle(fontSize: 10, fontWeight: FontWeight.w600, color: AppColors.dark)),
+  );
+
+  Widget _dropRow(String label, String? value, List<String> options, ValueChanged<String?> onChanged) {
     return Row(
       children: [
-        SizedBox(width: 90, child: Text(label, style: AppTextStyles.caption)),
+        SizedBox(
+          width: 88,
+          child: Text(label, style: const TextStyle(fontSize: 11, color: AppColors.textSecondary, fontWeight: FontWeight.w500)),
+        ),
         Expanded(
           child: Container(
-            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-            decoration: BoxDecoration(color: AppColors.background, borderRadius: BorderRadius.circular(8)),
+            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 2),
+            decoration: BoxDecoration(
+              color: value != null ? AppColors.primary.withOpacity(0.15) : AppColors.background,
+              borderRadius: BorderRadius.circular(8),
+              border: Border.all(color: value != null ? AppColors.primary.withOpacity(0.5) : Colors.grey.shade200),
+            ),
             child: DropdownButtonHideUnderline(
               child: DropdownButton<String>(
                 value: value,
+                hint: Text(
+                  options.isEmpty ? 'No options' : 'All',
+                  style: const TextStyle(fontSize: 12, color: AppColors.textSecondary),
+                ),
                 isDense: true,
                 isExpanded: true,
-                items: items.map((i) => DropdownMenuItem(
-                  value: i,
-                  child: Text(i, style: AppTextStyles.body, overflow: TextOverflow.ellipsis),
-                )).toList(),
+                icon: const Icon(Icons.keyboard_arrow_down, size: 16, color: AppColors.textSecondary),
+                items: [
+                  const DropdownMenuItem<String>(
+                    value: null,
+                    child: Text('All', style: TextStyle(fontSize: 12, color: AppColors.textSecondary)),
+                  ),
+                  ...options.map((o) => DropdownMenuItem<String>(
+                    value: o,
+                    child: Text(o, style: const TextStyle(fontSize: 12), overflow: TextOverflow.ellipsis),
+                  )),
+                ],
                 onChanged: onChanged,
               ),
             ),
@@ -591,7 +840,6 @@ class _RecipesScreenState extends State<RecipesScreen>
       ],
     );
   }
-
 }
 
 // -- Tappable Star Filter Row ----------------------------------------------
