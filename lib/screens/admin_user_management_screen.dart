@@ -466,22 +466,16 @@ class _AdminUserManagementScreenState extends State<AdminUserManagementScreen> {
                                 children: [
                                   Row(
                                     children: [
-                                      // Enrollment ID badge
+                                      // Enrollment ID
                                       SizedBox(
                                         width: 44,
-                                        child: enrollId != null
-                                            ? Container(
-                                                padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 3),
-                                                decoration: BoxDecoration(
-                                                    color: AppColors.dark,
-                                                    borderRadius: BorderRadius.circular(6)),
-                                                child: Text('#$enrollId',
-                                                    style: const TextStyle(fontSize: 10, fontWeight: FontWeight.w700,
-                                                        color: AppColors.primary),
-                                                    textAlign: TextAlign.center))
-                                            : const Text('—',
-                                                style: TextStyle(fontSize: 11, color: AppColors.textSecondary),
-                                                textAlign: TextAlign.center),
+                                        child: Text(
+                                            enrollId != null ? '#$enrollId' : '—',
+                                            style: TextStyle(
+                                                fontSize: 12,
+                                                fontWeight: FontWeight.w600,
+                                                color: enrollId != null ? AppColors.dark : AppColors.textSecondary),
+                                        ),
                                       ),
                                       Expanded(flex: 3, child: Text(name,
                                           style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: AppColors.dark),
