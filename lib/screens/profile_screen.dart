@@ -76,7 +76,20 @@ class _ProfileScreenState extends State<ProfileScreen> {
     try {
       final userId = SupabaseService.currentUser?.id;
       if (userId == null) return;
-      final profile = await SupabaseService.getProfile(userId);
+      final profileBase = await SupabaseService.getProfile(userId);
+      // Fetch enrollment_id and discount_pct separately in case getProfile doesn't include them
+      Map<String, dynamic>? enrollData;
+      try {
+        final row = await SupabaseService.supabase
+            .from('profiles')
+            .select('enrollment_id, discount_pct')
+            .eq('id', userId)
+            .single();
+        enrollData = row;
+      } catch (_) {}
+      final profile = profileBase != null
+          ? {...profileBase, ...?enrollData}
+          : enrollData;
       if (!mounted) return;
       setState(() {
         _profile             = profile;
@@ -302,7 +315,50 @@ class _ProfileScreenState extends State<ProfileScreen> {
                           Text('Member since $_joinedDate', style: AppTextStyles.caption),
                       ]),
                     ),
-                    const SizedBox(height: 20),
+                    const SizedBox(height: 16),
+
+                    // Early supporter discount card
+                    Builder(builder: (_) {
+                      final enrollId    = _profile?['enrollment_id'];
+                      final discountPct = (((_profile?['discount_pct']) ?? 0) as num).toDouble();
+                      if (enrollId == null) return const SizedBox.shrink();
+                      return Container(
+                        margin: const EdgeInsets.only(bottom: 20),
+                        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+                        decoration: BoxDecoration(
+                          color: const Color(0xFFE8F5E9),
+                          borderRadius: BorderRadius.circular(12),
+                          border: Border.all(color: const Color(0xFFA5D6A7)),
+                        ),
+                        child: Row(children: [
+                          const Icon(Icons.local_offer, color: Color(0xFF2E7D32), size: 22),
+                          const SizedBox(width: 12),
+                          Expanded(
+                            child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                              Text(
+                                discountPct > 0
+                                    ? 'Early Supporter — ${discountPct % 1 == 0 ? discountPct.toInt() : discountPct}% lifelong discount'
+                                    : 'Member',
+                                style: const TextStyle(
+                                    fontSize: 13, fontWeight: FontWeight.w700, color: Color(0xFF1B5E20)),
+                              ),
+                              const SizedBox(height: 2),
+                              Text('Enrollment #$enrollId',
+                                  style: const TextStyle(fontSize: 12, color: Color(0xFF388E3C))),
+                            ]),
+                          ),
+                          Container(
+                            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+                            decoration: BoxDecoration(
+                                color: const Color(0xFF2E7D32),
+                                borderRadius: BorderRadius.circular(20)),
+                            child: Text('#$enrollId',
+                                style: const TextStyle(
+                                    fontSize: 12, fontWeight: FontWeight.w700, color: Colors.white)),
+                          ),
+                        ]),
+                      );
+                    }),
 
                     // Personal details
                     const SectionLabel('PERSONAL DETAILS'),
