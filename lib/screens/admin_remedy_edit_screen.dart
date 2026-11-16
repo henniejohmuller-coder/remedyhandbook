@@ -276,12 +276,21 @@ class _AdminRemedyEditScreenState extends State<AdminRemedyEditScreen> {
   }
 
   void _openProductPicker({required String type}) async {
-    // Fetch products — if type is empty, fetch all; otherwise filter by type.
-    final baseQuery = SupabaseService.supabase.from('products').select().order('name', ascending: true);
-    final data = type.isEmpty
-        ? await baseQuery
-        : await SupabaseService.supabase.from('products').select().eq('type', type).order('name', ascending: true);
-    final filtered = (data as List).cast<Map<String, dynamic>>();
+    // Paginate to fetch ALL products (Supabase caps at 1000 per request).
+    final allProducts = <Map<String, dynamic>>[];
+    int offset = 0;
+    const pageSize = 1000;
+    while (true) {
+      final query = type.isEmpty
+          ? SupabaseService.supabase.from('products').select().order('name', ascending: true)
+          : SupabaseService.supabase.from('products').select().eq('type', type).order('name', ascending: true);
+      final page = await query.range(offset, offset + pageSize - 1);
+      final pageList = (page as List).cast<Map<String, dynamic>>();
+      allProducts.addAll(pageList);
+      if (pageList.length < pageSize) break;
+      offset += pageSize;
+    }
+    final filtered = allProducts;
     if (!mounted) return;
     showModalBottomSheet(
       context: context,
