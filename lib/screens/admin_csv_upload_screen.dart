@@ -687,29 +687,65 @@ class _AdminCsvUploadScreenState extends State<AdminCsvUploadScreen> {
     setState(() => _fmImporting = true);
     try {
       final result = await FilePicker.platform.pickFiles(
-        type: FileType.custom, allowedExtensions: ['csv'], withData: true);
+        type: FileType.custom, allowedExtensions: ['csv', 'xlsx'], withData: true);
       if (result == null) { setState(() => _fmImporting = false); return; }
-      final bytes = result.files.first.bytes;
+      final file = result.files.first;
+      final bytes = file.bytes;
       if (bytes == null) { setState(() => _fmImporting = false); return; }
 
+      // Convert xlsx → CSV string, or decode CSV bytes directly
+      final String csvContent;
+      if (file.name.toLowerCase().endsWith('.xlsx')) {
+        csvContent = _xlsxToCsv(bytes);
+      } else {
+        csvContent = utf8.decode(bytes, allowMalformed: true);
+      }
+
       // Use the RFC 4180 parser so values containing commas are handled correctly
-      final allRows = _parseAllRows(utf8.decode(bytes, allowMalformed: true));
+      final allRows = _parseAllRows(csvContent);
+      if (allRows.isEmpty) {
+        if (mounted) ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('File is empty')));
+        setState(() => _fmImporting = false);
+        return;
+      }
+
+      // Detect column positions from header row (supports any column order)
+      final headers = allRows[0].map((h) => h.trim().toLowerCase()).toList();
+      final catIdx  = headers.indexOf('category');
+      final subIdx  = headers.indexOf('subcategory');
+      final illIdx  = headers.indexOf('illness');
+      final symIdx  = headers.indexOf('symptom');
+
+      // Fall back to positional if no header row matches
+      final useHeader = catIdx >= 0 && subIdx >= 0 && illIdx >= 0 && symIdx >= 0;
+      final startRow  = useHeader ? 1 : 0;
+
       int inserted = 0;
-      // Skip header row (index 0)
-      for (int ri = 1; ri < allRows.length; ri++) {
+      for (int ri = startRow; ri < allRows.length; ri++) {
         final cols = allRows[ri].map((c) => c.trim()).toList();
         if (cols.length < 4) continue;
-        await SupabaseService.supabase.from('filter_matrix').upsert({
-          'category': cols[0], 'subcategory': cols[1],
-          'illness': cols[2], 'symptom': cols[3],
-        });
+        final row = useHeader
+            ? {
+                'category':    catIdx < cols.length ? cols[catIdx] : '',
+                'subcategory': subIdx < cols.length ? cols[subIdx] : '',
+                'illness':     illIdx < cols.length ? cols[illIdx] : '',
+                'symptom':     symIdx < cols.length ? cols[symIdx] : '',
+              }
+            : {
+                'category': cols[0], 'subcategory': cols[1],
+                'illness': cols[2],  'symptom': cols[3],
+              };
+        // Skip rows where all values are empty
+        if (row.values.every((v) => v.isEmpty)) continue;
+        await SupabaseService.supabase.from('filter_matrix').upsert(row);
         inserted++;
       }
       if (mounted) ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text('$inserted rows imported!'), backgroundColor: Colors.green));
     } catch (e) {
       if (mounted) ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Import failed: $e')));
+        SnackBar(content: Text('Import failed: $e'), backgroundColor: Colors.red));
     } finally {
       if (mounted) setState(() => _fmImporting = false);
     }
@@ -769,13 +805,16 @@ class _AdminCsvUploadScreenState extends State<AdminCsvUploadScreen> {
   // ── Import Shop CSV ────────────────────────────────────────────────────
   Future<void> _importShopCsv() async {
     final result = await FilePicker.platform.pickFiles(
-      type: FileType.custom, allowedExtensions: ['csv'], withData: true);
+      type: FileType.custom, allowedExtensions: ['csv', 'xlsx'], withData: true);
     if (result == null || result.files.isEmpty) return;
-    final bytes = result.files.first.bytes;
+    final file = result.files.first;
+    final bytes = file.bytes;
     if (bytes == null) return;
     setState(() => _shopImporting = true);
     try {
-      final csv = utf8.decode(bytes, allowMalformed: true);
+      final csv = file.name.toLowerCase().endsWith('.xlsx')
+          ? _xlsxToCsv(bytes)
+          : utf8.decode(bytes, allowMalformed: true);
       // Use the RFC 4180 parser so values containing commas are handled correctly
       final allRows = _parseAllRows(csv);
       if (allRows.isEmpty) return;
@@ -943,7 +982,7 @@ class _AdminCsvUploadScreenState extends State<AdminCsvUploadScreen> {
                   ),
                   _SmallButton(
                     icon: _shopImporting ? Icons.hourglass_top : Icons.upload_outlined,
-                    label: _shopImporting ? 'Importing...' : 'Import Shop CSV',
+                    label: _shopImporting ? 'Importing...' : 'Import Shop CSV/XLSX',
                     onTap: _shopImporting ? () {} : _importShopCsv,
                     bgColor: AppColors.lightGreen,
                   ),
@@ -976,7 +1015,7 @@ class _AdminCsvUploadScreenState extends State<AdminCsvUploadScreen> {
                   ),
                   _SmallButton(
                     icon: _fmImporting ? Icons.hourglass_top : Icons.upload_outlined,
-                    label: _fmImporting ? 'Importing...' : 'Import Filter Matrix',
+                    label: _fmImporting ? 'Importing...' : 'Import Filter Matrix CSV/XLSX',
                     onTap: _fmImporting ? () {} : _importFilterMatrix,
                     bgColor: AppColors.lightGreen,
                   ),
