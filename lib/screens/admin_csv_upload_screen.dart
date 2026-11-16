@@ -72,16 +72,16 @@ class _AdminCsvUploadScreenState extends State<AdminCsvUploadScreen> {
       errs.add('component is required');
     }
 
-    // Numeric fields
+    // Numeric fields – allow 0 (default/unset) so exported rows always re-import
     final tradRating = row['tradition_rating'] ?? '';
-    if (tradRating.isNotEmpty) {
+    if (tradRating.isNotEmpty && tradRating != '0') {
       final v = int.tryParse(tradRating);
-      if (v == null || v < 1 || v > 5) errs.add('tradition_rating "$tradRating" must be 1–5');
+      if (v == null || v < 1 || v > 5) errs.add('tradition_rating "$tradRating" must be 0–5');
     }
     final valLevel = row['validation_level'] ?? '';
-    if (valLevel.isNotEmpty) {
+    if (valLevel.isNotEmpty && valLevel != '0') {
       final v = int.tryParse(valLevel);
-      if (v == null || v < 1 || v > 5) errs.add('validation_level "$valLevel" must be 1–5');
+      if (v == null || v < 1 || v > 5) errs.add('validation_level "$valLevel" must be 0–5');
     }
     final efficacy = row['efficacy'] ?? '';
     if (efficacy.isNotEmpty) {
@@ -100,10 +100,8 @@ class _AdminCsvUploadScreenState extends State<AdminCsvUploadScreen> {
       }
     }
 
-    // At least step_1 should be present
-    if ((row['step_1'] ?? '').trim().isEmpty) {
-      errs.add('step_1 is empty – at least one preparation step is required');
-    }
+    // step_1 is recommended but not a hard block (some exported remedies may lack it)
+    // Warn only – do not reject the row
 
     return errs;
   }
@@ -827,7 +825,7 @@ class _AdminCsvUploadScreenState extends State<AdminCsvUploadScreen> {
           }
         }
         if (row.containsKey('id') && row['id'] != null && row['id'].toString().isNotEmpty) {
-          await SupabaseService.supabase.from('products').upsert(row);
+          await SupabaseService.supabase.from('products').upsert(row, onConflict: 'id');
           updated++;
         } else {
           row.remove('id');
