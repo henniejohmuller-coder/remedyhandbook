@@ -229,14 +229,17 @@ class _ShopScreenState extends State<ShopScreen> {
             Padding(
               padding: const EdgeInsets.symmetric(horizontal: 16),
               child: Container(
+                height: 44,
                 decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(10),
+                    border: Border.all(color: Colors.grey.shade200),
                     boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.04), blurRadius: 4)]),
                 child: TextField(
                   controller: _searchController,
                   onChanged: (v) => setState(() => _search = v),
+                  style: const TextStyle(fontSize: 12),
                   decoration: InputDecoration(
                     hintText: 'Search by name, ingredient, category... (use , or ;)',
-                    hintStyle: AppTextStyles.caption,
+                    hintStyle: const TextStyle(fontSize: 12, color: AppColors.textSecondary),
                     prefixIcon: const Icon(Icons.search, size: 18, color: AppColors.textSecondary),
                     suffixIcon: _search.isNotEmpty
                         ? GestureDetector(
@@ -244,7 +247,7 @@ class _ShopScreenState extends State<ShopScreen> {
                             child: const Icon(Icons.close, size: 18, color: AppColors.textSecondary))
                         : null,
                     border: InputBorder.none,
-                    contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
+                    contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 11),
                   ),
                 ),
               ),
@@ -346,7 +349,7 @@ class _ShopScreenState extends State<ShopScreen> {
                   // Brand (left)
                   Expanded(
                     child: Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 10),
+                      height: 44,
                       decoration: BoxDecoration(
                         color: Colors.white,
                         borderRadius: BorderRadius.circular(10),
@@ -361,7 +364,7 @@ class _ShopScreenState extends State<ShopScreen> {
                           context, 'Brand', _brandOptions, _brandFilter,
                           (v) => setState(() => _brandFilter = v)),
                         child: Padding(
-                          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 10),
+                          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 11),
                           child: Row(children: [
                             Expanded(child: RichText(
                               overflow: TextOverflow.ellipsis,
@@ -393,7 +396,7 @@ class _ShopScreenState extends State<ShopScreen> {
                   // Category (right)
                   Expanded(
                     child: Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 10),
+                      height: 44,
                       decoration: BoxDecoration(
                         color: Colors.white,
                         borderRadius: BorderRadius.circular(10),
@@ -408,7 +411,7 @@ class _ShopScreenState extends State<ShopScreen> {
                           context, 'Category', _catOptions, _catFilter,
                           (v) => setState(() => _catFilter = v)),
                         child: Padding(
-                          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 10),
+                          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 11),
                           child: Row(children: [
                             Expanded(child: RichText(
                               overflow: TextOverflow.ellipsis,

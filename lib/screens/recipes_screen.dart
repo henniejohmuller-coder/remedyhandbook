@@ -459,6 +459,7 @@ class _RecipesScreenState extends State<RecipesScreen>
                       controller: _searchController,
                       onChanged: (v) => setState(() => _searchQuery = v),
                       textInputAction: TextInputAction.search,
+                      style: const TextStyle(fontSize: 12),
                       onSubmitted: (v) {
                         final term = v.trim();
                         if (term.isNotEmpty && !_searchTerms.contains(term)) {
@@ -484,7 +485,7 @@ class _RecipesScreenState extends State<RecipesScreen>
                                 child: const Icon(Icons.close, size: 16, color: AppColors.textSecondary))
                             : null,
                         border: InputBorder.none,
-                        contentPadding: const EdgeInsets.symmetric(vertical: 12),
+                        contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 11),
                       ),
                     ),
                   ),

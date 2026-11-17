@@ -737,7 +737,8 @@ class _Dropdown extends StatelessWidget {
     return GestureDetector(
       onTap: enabled ? () => _showSearch(context) : null,
       child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 10),
+        height: 44,
+        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 11),
         decoration: isDark ? null : BoxDecoration(
           color: enabled ? Colors.white : Colors.grey.shade100,
           borderRadius: BorderRadius.circular(10),
