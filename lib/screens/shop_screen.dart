@@ -363,12 +363,25 @@ class _ShopScreenState extends State<ShopScreen> {
                         child: Padding(
                           padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 10),
                           child: Row(children: [
-                            Expanded(child: Text(
-                              _brandFilter,
-                              style: TextStyle(fontSize: 12,
-                                  color: _brandFilter != 'All' ? AppColors.dark : AppColors.textSecondary,
-                                  fontWeight: _brandFilter != 'All' ? FontWeight.w500 : FontWeight.normal),
+                            Expanded(child: RichText(
                               overflow: TextOverflow.ellipsis,
+                              text: TextSpan(
+                                style: const TextStyle(fontSize: 12),
+                                children: [
+                                  TextSpan(
+                                    text: 'Brand: ',
+                                    style: TextStyle(
+                                        color: AppColors.textSecondary,
+                                        fontWeight: FontWeight.normal),
+                                  ),
+                                  TextSpan(
+                                    text: _brandFilter == 'All' ? 'All' : _brandFilter,
+                                    style: TextStyle(
+                                        color: _brandFilter != 'All' ? AppColors.dark : AppColors.textSecondary,
+                                        fontWeight: _brandFilter != 'All' ? FontWeight.w600 : FontWeight.normal),
+                                  ),
+                                ],
+                              ),
                             )),
                             const Icon(Icons.keyboard_arrow_down, size: 16),
                           ]),
@@ -397,12 +410,25 @@ class _ShopScreenState extends State<ShopScreen> {
                         child: Padding(
                           padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 10),
                           child: Row(children: [
-                            Expanded(child: Text(
-                              _catFilter,
-                              style: TextStyle(fontSize: 12,
-                                  color: _catFilter != 'All' ? AppColors.dark : AppColors.textSecondary,
-                                  fontWeight: _catFilter != 'All' ? FontWeight.w500 : FontWeight.normal),
+                            Expanded(child: RichText(
                               overflow: TextOverflow.ellipsis,
+                              text: TextSpan(
+                                style: const TextStyle(fontSize: 12),
+                                children: [
+                                  TextSpan(
+                                    text: 'Category: ',
+                                    style: TextStyle(
+                                        color: AppColors.textSecondary,
+                                        fontWeight: FontWeight.normal),
+                                  ),
+                                  TextSpan(
+                                    text: _catFilter == 'All' ? 'All' : _catFilter,
+                                    style: TextStyle(
+                                        color: _catFilter != 'All' ? AppColors.dark : AppColors.textSecondary,
+                                        fontWeight: _catFilter != 'All' ? FontWeight.w600 : FontWeight.normal),
+                                  ),
+                                ],
+                              ),
                             )),
                             const Icon(Icons.keyboard_arrow_down, size: 16),
                           ]),
