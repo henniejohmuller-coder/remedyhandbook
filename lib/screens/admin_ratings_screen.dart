@@ -154,10 +154,12 @@ class _AdminRatingsScreenState extends State<AdminRatingsScreen> {
                             child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
                               Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [
                                 Expanded(child: Text(r['name'] ?? '',
-                                    style: AppTextStyles.heading3, overflow: TextOverflow.ellipsis)),
+                                    style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w500, color: AppColors.dark),
+                                    overflow: TextOverflow.ellipsis)),
                                 const Icon(Icons.edit_outlined, size: 16, color: AppColors.textSecondary),
                               ]),
-                              Text(r['component'] ?? '', style: AppTextStyles.caption),
+                              Text(r['component'] ?? '',
+                                  style: const TextStyle(fontSize: 10, color: AppColors.textSecondary)),
                               const SizedBox(height: 8),
                               // Ratings row
                               Row(children: [

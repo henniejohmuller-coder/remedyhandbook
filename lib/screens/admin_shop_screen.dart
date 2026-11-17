@@ -201,14 +201,16 @@ class _AdminShopScreenState extends State<AdminShopScreen> {
                                       : const Icon(Icons.inventory_2_outlined),
                                 ),
                               ),
-                              title: Text(p['name'] ?? '', style: AppTextStyles.heading3),
+                              title: Text(p['name'] ?? '',
+                                  style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w500, color: AppColors.dark)),
                               subtitle: Column(
                                 crossAxisAlignment: CrossAxisAlignment.start,
                                 children: [
-                                  Text(p['description'] ?? '', style: AppTextStyles.caption,
+                                  Text(p['description'] ?? '',
+                                      style: const TextStyle(fontSize: 10, color: AppColors.textSecondary),
                                       maxLines: 1, overflow: TextOverflow.ellipsis),
-                                  Text('${p['type']} Â· R${p['price']}',
-                                      style: AppTextStyles.caption),
+                                  Text('${p["type"]} Â· R${p["price"]}',
+                                      style: const TextStyle(fontSize: 10, color: AppColors.textSecondary)),
                                 ],
                               ),
                               trailing: Row(mainAxisSize: MainAxisSize.min, children: [

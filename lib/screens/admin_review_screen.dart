@@ -391,9 +391,12 @@ class _ItemList extends StatelessWidget {
               child: Row(children: [
                 Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
                   Text(name.isNotEmpty ? name : 'Unnamed',
-                      style: AppTextStyles.heading3, softWrap: true, overflow: TextOverflow.visible),
-                  if (comp.isNotEmpty) Text(comp, style: AppTextStyles.caption),
-                  if (date.isNotEmpty) Text(date, style: AppTextStyles.caption),
+                      style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w500, color: AppColors.dark),
+                      softWrap: true, overflow: TextOverflow.visible),
+                  if (comp.isNotEmpty) Text(comp,
+                      style: const TextStyle(fontSize: 10, color: AppColors.textSecondary)),
+                  if (date.isNotEmpty) Text(date,
+                      style: const TextStyle(fontSize: 10, color: AppColors.textSecondary)),
                 ])),
                 const SizedBox(width: 8),
                 Column(crossAxisAlignment: CrossAxisAlignment.end, children: [
