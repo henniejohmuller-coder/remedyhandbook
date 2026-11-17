@@ -386,7 +386,11 @@ class _ShopScreenState extends State<ShopScreen> {
                                 ],
                               ),
                             )),
-                            const Icon(Icons.keyboard_arrow_down, size: 16),
+                            _brandFilter != 'All'
+                                ? GestureDetector(
+                                    onTap: () => setState(() => _brandFilter = 'All'),
+                                    child: const Icon(Icons.close, size: 16, color: AppColors.textSecondary))
+                                : const Icon(Icons.keyboard_arrow_down, size: 16, color: AppColors.textSecondary),
                           ]),
                         ),
                       ),
@@ -433,30 +437,16 @@ class _ShopScreenState extends State<ShopScreen> {
                                 ],
                               ),
                             )),
-                            const Icon(Icons.keyboard_arrow_down, size: 16),
+                            _catFilter != 'All'
+                                ? GestureDetector(
+                                    onTap: () => setState(() => _catFilter = 'All'),
+                                    child: const Icon(Icons.close, size: 16, color: AppColors.textSecondary))
+                                : const Icon(Icons.keyboard_arrow_down, size: 16, color: AppColors.textSecondary),
                           ]),
                         ),
                       ),
                     ),
                   ),
-                  // Clear button when either active
-                  if (_catFilter != 'All' || _brandFilter != 'All') ...[
-                    const SizedBox(width: 6),
-                    GestureDetector(
-                      onTap: () => setState(() {
-                        _catFilter   = 'All';
-                        _brandFilter = 'All';
-                      }),
-                      child: Container(
-                        padding: const EdgeInsets.all(6),
-                        decoration: BoxDecoration(
-                          color: AppColors.primary.withOpacity(0.15),
-                          borderRadius: BorderRadius.circular(8),
-                        ),
-                        child: const Icon(Icons.clear, size: 16, color: AppColors.dark),
-                      ),
-                    ),
-                  ],
                 ],
               ),
             ),
