@@ -919,102 +919,44 @@ class _AdminCsvUploadScreenState extends State<AdminCsvUploadScreen> {
           padding: const EdgeInsets.all(16),
           child: Column(children: [
 
-            // ── Info / template card ──────────────────────────────────
-            Container(
-              padding: const EdgeInsets.all(14),
-              decoration: BoxDecoration(
-                color: AppColors.lightYellow,
-                borderRadius: BorderRadius.circular(12),
-                border: Border.all(color: AppColors.primary),
-              ),
-              child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                const Text('Excel - Remedies', style: AppTextStyles.heading3),
-                const SizedBox(height: 6),
-                const Text(
+            // ── Remedies section ──────────────────────────────────────
+            _DataSection(
+              title: 'Remedies',
+              description:
                   'Each row = one remedy. Required: name, component.\n'
-                  'Preparation steps go in step_1 ... step_10.\n'
-                  'Lookup values (illness, category etc.) are auto-created.\n'
-                  'prep_time is in minutes. Ratings 1–5. Efficacy 0–100.',
-                  style: AppTextStyles.caption,
-                ),
-                const SizedBox(height: 10),
-                Wrap(spacing: 8, runSpacing: 8, children: [
-                  _SmallButton(
-                    icon: _dbDownloading ? Icons.hourglass_top : Icons.download_outlined,
-                    label: _dbDownloading ? 'Exporting...' : 'Export Remedy Excel',
-                    onTap: _dbDownloading ? () {} : _downloadDatabase,
-                  ),
-                  _SmallButton(
-                    icon: _uploading ? Icons.hourglass_top : Icons.upload_outlined,
-                    label: _uploading ? 'Importing...' : 'Import Remedy Excel',
-                    onTap: _uploading ? () {} : _pickFile,
-                    bgColor: AppColors.lightGreen,
-                  ),
-                ]),
-              ]),
+                  'Steps go in step_1 … step_10. Lookup values auto-created.\n'
+                  'prep_time in minutes. Ratings 1–5. Efficacy 0–100.',
+              downloadBusy: _dbDownloading,
+              uploadBusy: _uploading,
+              onDownload: _dbDownloading ? null : _downloadDatabase,
+              onUpload: _uploading ? null : _pickFile,
             ),
-            Container(
-              padding: const EdgeInsets.all(14),
-              decoration: BoxDecoration(
-                color: AppColors.lightYellow,
-                borderRadius: BorderRadius.circular(12),
-                border: Border.all(color: AppColors.primary),
-              ),
-              child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                const Text('Excel - Shop Items', style: AppTextStyles.heading3),
-                const SizedBox(height: 6),
-                const Text(
-                  'Each row = one shop item. id required for updates.\nColumns: id, name, type, description, price, cost_price, stock, delivery_cost, active, image_url',
-                  style: AppTextStyles.caption,
-                ),
-                const SizedBox(height: 10),
-                Wrap(spacing: 8, runSpacing: 8, children: [
-                  _SmallButton(
-                    icon: _shopExporting ? Icons.hourglass_top : Icons.download_outlined,
-                    label: _shopExporting ? 'Exporting...' : 'Export Shop Excel',
-                    onTap: _shopExporting ? () {} : _exportShopCsv,
-                  ),
-                  _SmallButton(
-                    icon: _shopImporting ? Icons.hourglass_top : Icons.upload_outlined,
-                    label: _shopImporting ? 'Importing...' : 'Import Shop Excel',
-                    onTap: _shopImporting ? () {} : _importShopCsv,
-                    bgColor: AppColors.lightGreen,
-                  ),
-                ]),
-              ]),
+            const Divider(height: 28),
+
+            // ── Shop Items section ────────────────────────────────────
+            _DataSection(
+              title: 'Shop Items',
+              description:
+                  'Each row = one shop item. id required for updates.\n'
+                  'Columns: id, name, type, description, price, cost_price,\n'
+                  'stock, delivery_cost, active, image_url',
+              downloadBusy: _shopExporting,
+              uploadBusy: _shopImporting,
+              onDownload: _shopExporting ? null : _exportShopCsv,
+              onUpload: _shopImporting ? null : _importShopCsv,
             ),
-            const SizedBox(height: 12),
+            const Divider(height: 28),
 
             // ── Filter Matrix section ─────────────────────────────────
-            Container(
-              padding: const EdgeInsets.all(14),
-              decoration: BoxDecoration(
-                color: AppColors.lightYellow,
-                borderRadius: BorderRadius.circular(12),
-                border: Border.all(color: AppColors.primary),
-              ),
-              child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                const Text('Excel - Filter Matrix', style: AppTextStyles.heading3),
-                const SizedBox(height: 6),
-                const Text(
-                  'Four-tier search taxonomy.\nColumns: category, subcategory, illness, symptom',
-                  style: AppTextStyles.caption,
-                ),
-                const SizedBox(height: 10),
-                Wrap(spacing: 8, runSpacing: 8, children: [
-                  _SmallButton(
-                    icon: _fmExporting ? Icons.hourglass_top : Icons.download_outlined,
-                    label: _fmExporting ? 'Exporting...' : 'Export Filter Matrix',
-                    onTap: _fmExporting ? () {} : _exportFilterMatrix,
-                  ),
-                  _SmallButton(
-                    icon: _fmImporting ? Icons.hourglass_top : Icons.upload_outlined,
-                    label: _fmImporting ? 'Importing...' : 'Import Filter Matrix',
-                    onTap: _fmImporting ? () {} : _importFilterMatrix,
-                    bgColor: AppColors.lightGreen,
-                  ),
-                ]),
-              ]),
+            _DataSection(
+              title: 'Filter Matrix',
+              description:
+                  'Four-tier search taxonomy.\n'
+                  'Columns: category, subcategory, illness, symptom',
+              downloadBusy: _fmExporting,
+              uploadBusy: _fmImporting,
+              onDownload: _fmExporting ? null : _exportFilterMatrix,
+              onUpload: _fmImporting ? null : _importFilterMatrix,
             ),
             const SizedBox(height: 12),
 
@@ -1376,6 +1318,121 @@ class _DuplicateDialogState extends State<_DuplicateDialog> {
           child: Text(allSkipped ? 'Skip All & Close' : 'Continue Upload'),
         ),
       ],
+    );
+  }
+}
+
+// ── Data Section row (title + description left, buttons right) ────────────
+class _DataSection extends StatelessWidget {
+  final String title;
+  final String description;
+  final bool downloadBusy;
+  final bool uploadBusy;
+  final VoidCallback? onDownload;
+  final VoidCallback? onUpload;
+
+  const _DataSection({
+    required this.title,
+    required this.description,
+    required this.downloadBusy,
+    required this.uploadBusy,
+    this.onDownload,
+    this.onUpload,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Row(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        // Left: title + description
+        Expanded(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(title,
+                  style: const TextStyle(
+                      fontSize: 14,
+                      fontWeight: FontWeight.w700,
+                      color: AppColors.dark)),
+              const SizedBox(height: 4),
+              Text(description,
+                  style: const TextStyle(
+                      fontSize: 11,
+                      color: AppColors.textSecondary,
+                      height: 1.5)),
+            ],
+          ),
+        ),
+        const SizedBox(width: 12),
+        // Right: download + upload buttons stacked
+        Column(
+          crossAxisAlignment: CrossAxisAlignment.end,
+          children: [
+            _IconBtn(
+              icon: downloadBusy ? Icons.hourglass_top : Icons.download_outlined,
+              label: downloadBusy ? 'Exporting…' : 'Download',
+              onTap: onDownload ?? () {},
+              busy: downloadBusy,
+            ),
+            const SizedBox(height: 6),
+            _IconBtn(
+              icon: uploadBusy ? Icons.hourglass_top : Icons.upload_outlined,
+              label: uploadBusy ? 'Importing…' : 'Upload',
+              onTap: onUpload ?? () {},
+              busy: uploadBusy,
+              isUpload: true,
+            ),
+          ],
+        ),
+      ],
+    );
+  }
+}
+
+class _IconBtn extends StatelessWidget {
+  final IconData icon;
+  final String label;
+  final VoidCallback onTap;
+  final bool busy;
+  final bool isUpload;
+
+  const _IconBtn({
+    required this.icon,
+    required this.label,
+    required this.onTap,
+    this.busy = false,
+    this.isUpload = false,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final bg = isUpload ? const Color(0xFFE8F5E9) : const Color(0xFFFFF9E6);
+    final fg = isUpload ? Colors.green.shade700 : AppColors.dark;
+    return GestureDetector(
+      onTap: busy ? null : onTap,
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 7),
+        decoration: BoxDecoration(
+          color: busy ? Colors.grey.shade100 : bg,
+          borderRadius: BorderRadius.circular(8),
+          border: Border.all(
+              color: busy ? Colors.grey.shade300
+                  : (isUpload ? Colors.green.shade200 : AppColors.primary)),
+        ),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(icon, size: 14, color: busy ? Colors.grey : fg),
+            const SizedBox(width: 5),
+            Text(label,
+                style: TextStyle(
+                    fontSize: 11,
+                    fontWeight: FontWeight.w600,
+                    color: busy ? Colors.grey : fg)),
+          ],
+        ),
+      ),
     );
   }
 }
