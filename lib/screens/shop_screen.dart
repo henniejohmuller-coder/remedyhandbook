@@ -527,6 +527,7 @@ class _ProductCard extends StatelessWidget {
     final name     = product['name']        ?? '';
     final type     = product['type']        ?? '';
     final category = product['category']    ?? '';
+    final brand    = product['brand']       ?? '';
     final desc     = product['description'] ?? '';
     final price    = num.tryParse(product['price']?.toString() ?? '0')?.toDouble() ?? 0.0;
     final imageUrl = product['image_url']   ?? '';
@@ -590,9 +591,12 @@ class _ProductCard extends StatelessWidget {
                       ),
                     ],
                   ),
-                  if (category.isNotEmpty) ...[
+                  if (category.isNotEmpty || brand.isNotEmpty) ...[
                     const SizedBox(height: 2),
-                    Text(category, style: AppTextStyles.caption),
+                    Text(
+                      [if (category.isNotEmpty) category, if (brand.isNotEmpty) brand].join(' · '),
+                      style: AppTextStyles.caption,
+                    ),
                   ],
                   if (desc.isNotEmpty) ...[
                     const SizedBox(height: 2),
