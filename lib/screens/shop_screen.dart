@@ -8,12 +8,21 @@ class ShopScreen extends StatefulWidget {
   final String? initialPrimaryHerb;
   final String? initialMainConstituent;
   final String? initialType;
+  // Taxonomy filters from Find screen (Shop Products mode)
+  final String? initialCategoryName;
+  final String? initialSubCategoryName;
+  final String? initialIllnessName;
+  final String? initialSymptomName;
 
   const ShopScreen({
     super.key,
     this.initialPrimaryHerb,
     this.initialMainConstituent,
     this.initialType,
+    this.initialCategoryName,
+    this.initialSubCategoryName,
+    this.initialIllnessName,
+    this.initialSymptomName,
   });
 
   static VoidCallback? _reloadCallback;
@@ -30,6 +39,11 @@ class _ShopScreenState extends State<ShopScreen> {
   String _constituentSearch = '';
   String _catFilter         = 'All';
   String _brandFilter       = 'All';
+  // Taxonomy filters (from Find → Shop Products)
+  String? _taxCategory;
+  String? _taxSubCategory;
+  String? _taxIllness;
+  String? _taxSymptom;
   List<Map<String, dynamic>> _products = [];
   List<String> _catOptions   = ['All'];
   List<String> _brandOptions = ['All'];
@@ -42,6 +56,11 @@ class _ShopScreenState extends State<ShopScreen> {
   void initState() {
     super.initState();
     ShopScreen._reloadCallback = _loadProducts;
+    // Pre-populate taxonomy filters from Find screen
+    _taxCategory    = widget.initialCategoryName;
+    _taxSubCategory = widget.initialSubCategoryName;
+    _taxIllness     = widget.initialIllnessName;
+    _taxSymptom     = widget.initialSymptomName;
     // Pre-populate Primary Herb box
     if (widget.initialPrimaryHerb != null && widget.initialPrimaryHerb!.isNotEmpty) {
       _herbSearch = widget.initialPrimaryHerb!;
@@ -153,7 +172,15 @@ class _ShopScreenState extends State<ShopScreen> {
               == _brandFilter.toLowerCase();
 
       final matchHerbOrConst = (herbTerms.isEmpty && constTerms.isEmpty) || herbTerms.any((t) => (p['name'] ?? '').toString().toLowerCase().contains(t)) || constTerms.any((t) => (p['description'] ?? '').toString().toLowerCase().contains(t));
-      return matchFilter && matchSearch && matchHerbOrConst && matchCat && matchBrand;
+
+      // Taxonomy filters (Find → Shop Products mode)
+      final matchTaxCategory    = _taxCategory    == null || (p['category_name']    ?? '') == _taxCategory;
+      final matchTaxSubCategory = _taxSubCategory == null || (p['sub_category_name'] ?? '') == _taxSubCategory;
+      final matchTaxIllness     = _taxIllness     == null || (p['illness_name']     ?? '') == _taxIllness;
+      final matchTaxSymptom     = _taxSymptom     == null || (p['symptom_name']     ?? '') == _taxSymptom;
+
+      return matchFilter && matchSearch && matchHerbOrConst && matchCat && matchBrand
+          && matchTaxCategory && matchTaxSubCategory && matchTaxIllness && matchTaxSymptom;
     }).toList();
   }
 
@@ -223,6 +250,37 @@ class _ShopScreenState extends State<ShopScreen> {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             const YellowAppBar(title: 'Shop', subtitle: 'Free delivery over R650'),
+
+            // ── Taxonomy filter banner (shown when arriving from Find → Shop Products) ──
+            if (_taxCategory != null || _taxIllness != null)
+              Container(
+                color: AppColors.primary.withOpacity(0.12),
+                padding: const EdgeInsets.fromLTRB(14, 7, 14, 7),
+                child: Row(children: [
+                  const Icon(Icons.filter_alt, size: 14, color: AppColors.dark),
+                  const SizedBox(width: 6),
+                  Expanded(
+                    child: Text(
+                      [
+                        if (_taxCategory    != null) _taxCategory!,
+                        if (_taxSubCategory != null) _taxSubCategory!,
+                        if (_taxIllness     != null) _taxIllness!,
+                        if (_taxSymptom     != null) _taxSymptom!,
+                      ].join(' › '),
+                      style: const TextStyle(fontSize: 11, color: AppColors.dark, fontWeight: FontWeight.w500),
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                  ),
+                  GestureDetector(
+                    onTap: () => setState(() {
+                      _taxCategory = null; _taxSubCategory = null;
+                      _taxIllness  = null; _taxSymptom     = null;
+                    }),
+                    child: const Icon(Icons.close, size: 16, color: AppColors.dark),
+                  ),
+                ]),
+              ),
+
             const SizedBox(height: 12),
 
             // Search

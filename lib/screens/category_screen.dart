@@ -2,6 +2,10 @@ import 'package:flutter/material.dart';
 import '../theme/app_theme.dart';
 import '../services/supabase_service.dart';
 import '../models/filter_state.dart';
+import 'shop_screen.dart';
+
+// ─── Toggle enum ────────────────────────────────────────────────────────────
+enum _FindMode { herbal, products }
 
 class CategoryScreen extends StatefulWidget {
   final FilterState? initialFilters;
@@ -14,10 +18,12 @@ class CategoryScreen extends StatefulWidget {
   static String? _savedIllness;
   static String? _savedSymptom;
   static Map<String, dynamic>? _savedRow;
+  static _FindMode _savedMode = _FindMode.herbal;
 
   static void clearSaved() {
     _savedCategory = _savedSubcategory = _savedIllness = _savedSymptom = null;
     _savedRow = null;
+    _savedMode = _FindMode.herbal;
   }
 
   @override
@@ -25,57 +31,71 @@ class CategoryScreen extends StatefulWidget {
 }
 
 class _CategoryScreenState extends State<CategoryScreen> {
-  // ÃƒÆ’¢ÃƒÆ’¢ All matrix rows loaded once ÃƒÆ’¢ÃƒÆ’¢ÃƒÆ’¢ÃƒÆ’¢ÃƒÆ’¢ÃƒÆ’¢ÃƒÆ’¢ÃƒÆ’¢ÃƒÆ’¢ÃƒÆ’¢ÃƒÆ’¢ÃƒÆ’¢ÃƒÆ’¢ÃƒÆ’¢ÃƒÆ’¢ÃƒÆ’¢ÃƒÆ’¢ÃƒÆ’¢ÃƒÆ’¢ÃƒÆ’¢ÃƒÆ’¢ÃƒÆ’¢ÃƒÆ’¢ÃƒÆ’¢ÃƒÆ’¢ÃƒÆ’¢ÃƒÆ’¢ÃƒÆ’¢ÃƒÆ’¢ÃƒÆ’¢ÃƒÆ’¢ÃƒÆ’¢ÃƒÆ’¢ÃƒÆ’¢ÃƒÆ’¢ÃƒÆ’¢ÃƒÆ’¢ÃƒÆ’¢ÃƒÆ’¢ÃƒÆ’¢ÃƒÆ’¢ÃƒÆ’¢ÃƒÆ’¢
-  List<Map<String, dynamic>> _allRows   = [];
-  List<Map<String, dynamic>> _remedies  = [];
+  // ── Mode toggle ─────────────────────────────────────────────────────────
+  _FindMode _mode = CategoryScreen._savedMode;
+
+  // ── Matrix rows loaded once ─────────────────────────────────────────────
+  List<Map<String, dynamic>> _allRows      = [];   // herbal filter_matrix
+  List<Map<String, dynamic>> _productRows  = [];   // products taxonomy matrix
+  List<Map<String, dynamic>> _remedies     = [];
   bool _loading = true;
 
-  // Pre-computed count caches — built once after data loads
-  List<Map<String, dynamic>> _rowsWithRemedies = []; // _allRows filtered to count > 0
-  Map<String, int> _rowCountCache  = {};  // "cat|sub|ill|sym" -> count
-  Map<String, int> _catCountCache  = {};  // category -> count
-  Map<String, int> _subCountCache  = {};  // "cat|sub" -> count
-  Map<String, int> _illCountCache  = {};  // "cat|sub|ill" -> count
-  Map<String, int> _symCountCache  = {};  // "cat|sub|ill|sym" -> count
+  // Count caches for herbal mode
+  List<Map<String, dynamic>> _rowsWithRemedies = [];
+  Map<String, int> _rowCountCache = {};
+  Map<String, int> _catCountCache = {};
+  Map<String, int> _subCountCache = {};
+  Map<String, int> _illCountCache = {};
+  Map<String, int> _symCountCache = {};
 
-  // ÃƒÆ’¢ÃƒÆ’¢ Dropdown selections ÃƒÆ’¢ÃƒÆ’¢ÃƒÆ’¢ÃƒÆ’¢ÃƒÆ’¢ÃƒÆ’¢ÃƒÆ’¢ÃƒÆ’¢ÃƒÆ’¢ÃƒÆ’¢ÃƒÆ’¢ÃƒÆ’¢ÃƒÆ’¢ÃƒÆ’¢ÃƒÆ’¢ÃƒÆ’¢ÃƒÆ’¢ÃƒÆ’¢ÃƒÆ’¢ÃƒÆ’¢ÃƒÆ’¢ÃƒÆ’¢ÃƒÆ’¢ÃƒÆ’¢ÃƒÆ’¢ÃƒÆ’¢ÃƒÆ’¢ÃƒÆ’¢ÃƒÆ’¢ÃƒÆ’¢ÃƒÆ’¢ÃƒÆ’¢ÃƒÆ’¢ÃƒÆ’¢ÃƒÆ’¢ÃƒÆ’¢ÃƒÆ’¢ÃƒÆ’¢ÃƒÆ’¢ÃƒÆ’¢ÃƒÆ’¢ÃƒÆ’¢ÃƒÆ’¢ÃƒÆ’¢ÃƒÆ’¢ÃƒÆ’¢ÃƒÆ’¢ÃƒÆ’¢ÃƒÆ’¢ÃƒÆ’¢ÃƒÆ’¢
+  // Count caches for products mode
+  Map<String, int> _prodRowCountCache = {};
+  Map<String, int> _prodCatCountCache = {};
+  Map<String, int> _prodSubCountCache = {};
+  Map<String, int> _prodIllCountCache = {};
+  Map<String, int> _prodSymCountCache = {};
+
+  // ── Dropdown selections ─────────────────────────────────────────────────
   String? _selCategory;
   String? _selSubcategory;
   String? _selIllness;
   String? _selSymptom;
-
-  // ÃƒÆ’¢ÃƒÆ’¢ Selected filter set (the row the user tapped) ÃƒÆ’¢ÃƒÆ’¢ÃƒÆ’¢ÃƒÆ’¢ÃƒÆ’¢ÃƒÆ’¢ÃƒÆ’¢ÃƒÆ’¢ÃƒÆ’¢ÃƒÆ’¢ÃƒÆ’¢ÃƒÆ’¢ÃƒÆ’¢ÃƒÆ’¢ÃƒÆ’¢ÃƒÆ’¢ÃƒÆ’¢ÃƒÆ’¢ÃƒÆ’¢ÃƒÆ’¢ÃƒÆ’¢ÃƒÆ’¢ÃƒÆ’¢ÃƒÆ’¢ÃƒÆ’¢
   Map<String, dynamic>? _selectedRow;
 
-  // ÃƒÆ’¢ÃƒÆ’¢ Derived dropdown options ÃƒÆ’¢ÃƒÆ’¢ÃƒÆ’¢ÃƒÆ’¢ÃƒÆ’¢ÃƒÆ’¢ÃƒÆ’¢ÃƒÆ’¢ÃƒÆ’¢ÃƒÆ’¢ÃƒÆ’¢ÃƒÆ’¢ÃƒÆ’¢ÃƒÆ’¢ÃƒÆ’¢ÃƒÆ’¢ÃƒÆ’¢ÃƒÆ’¢ÃƒÆ’¢ÃƒÆ’¢ÃƒÆ’¢ÃƒÆ’¢ÃƒÆ’¢ÃƒÆ’¢ÃƒÆ’¢ÃƒÆ’¢ÃƒÆ’¢ÃƒÆ’¢ÃƒÆ’¢ÃƒÆ’¢ÃƒÆ’¢ÃƒÆ’¢ÃƒÆ’¢ÃƒÆ’¢ÃƒÆ’¢ÃƒÆ’¢ÃƒÆ’¢ÃƒÆ’¢ÃƒÆ’¢ÃƒÆ’¢ÃƒÆ’¢ÃƒÆ’¢ÃƒÆ’¢ÃƒÆ’¢ÃƒÆ’¢ÃƒÆ’¢
+  // ── Active row source based on mode ────────────────────────────────────
+  List<Map<String, dynamic>> get _activeAllRows =>
+      _mode == _FindMode.herbal ? _rowsWithRemedies : _productRowsWithProducts;
+
+  List<Map<String, dynamic>> _productRowsWithProducts = [];
+
+  // ── Derived dropdown options ────────────────────────────────────────────
   List<String> get _categories =>
-      _sorted(_rowsWithRemedies.map((r) => r['category'].toString()).toSet());
+      _sorted(_activeAllRows.map((r) => r['category'].toString()).toSet());
 
   List<String> get _subcategories {
-    var rows = _rowsWithRemedies;
+    var rows = _activeAllRows;
     if (_selCategory != null) rows = rows.where((r) => r['category'] == _selCategory).toList();
     return _sorted(rows.map((r) => r['subcategory'].toString()).toSet());
   }
 
   List<String> get _illnesses {
-    var rows = _rowsWithRemedies;
+    var rows = _activeAllRows;
     if (_selCategory    != null) rows = rows.where((r) => r['category']    == _selCategory).toList();
     if (_selSubcategory != null) rows = rows.where((r) => r['subcategory'] == _selSubcategory).toList();
     return _sorted(rows.map((r) => r['illness'].toString()).toSet());
   }
 
   List<String> get _symptoms {
-    var rows = _rowsWithRemedies;
+    var rows = _activeAllRows;
     if (_selCategory    != null) rows = rows.where((r) => r['category']    == _selCategory).toList();
     if (_selSubcategory != null) rows = rows.where((r) => r['subcategory'] == _selSubcategory).toList();
     if (_selIllness     != null) rows = rows.where((r) => r['illness']     == _selIllness).toList();
     return _sorted(rows.map((r) => r['symptom'].toString()).toSet());
   }
 
-  // ÃƒÆ’¢ÃƒÆ’¢ Filter matrix rows shown in table ÃƒÆ’¢ÃƒÆ’¢ÃƒÆ’¢ÃƒÆ’¢ÃƒÆ’¢ÃƒÆ’¢ÃƒÆ’¢ÃƒÆ’¢ÃƒÆ’¢ÃƒÆ’¢ÃƒÆ’¢ÃƒÆ’¢ÃƒÆ’¢ÃƒÆ’¢ÃƒÆ’¢ÃƒÆ’¢ÃƒÆ’¢ÃƒÆ’¢ÃƒÆ’¢ÃƒÆ’¢ÃƒÆ’¢ÃƒÆ’¢ÃƒÆ’¢ÃƒÆ’¢ÃƒÆ’¢ÃƒÆ’¢ÃƒÆ’¢ÃƒÆ’¢ÃƒÆ’¢ÃƒÆ’¢ÃƒÆ’¢ÃƒÆ’¢ÃƒÆ’¢ÃƒÆ’¢ÃƒÆ’¢ÃƒÆ’¢
+  // ── Filter matrix rows shown in table ──────────────────────────────────
   List<Map<String, dynamic>> get _filteredRows {
-    // Use pre-filtered list (count > 0 already guaranteed)
-    var rows = _rowsWithRemedies;
+    var rows = _activeAllRows;
     if (_selCategory    != null) rows = rows.where((r) => r['category']    == _selCategory).toList();
     if (_selSubcategory != null) rows = rows.where((r) => r['subcategory'] == _selSubcategory).toList();
     if (_selIllness     != null) rows = rows.where((r) => r['illness']     == _selIllness).toList();
@@ -83,22 +103,21 @@ class _CategoryScreenState extends State<CategoryScreen> {
     return rows;
   }
 
+  String _normalize(dynamic v) =>
+      (v ?? '').toString().trim().toLowerCase().replaceAll(RegExp(r'\s+'), ' ');
 
-  String _normalize(dynamic value) =>
-      (value ?? '').toString().trim().toLowerCase().replaceAll(RegExp(r'\s+'), ' ');
-
-  // Build all count caches once after data loads — O(n) instead of O(n*m) per render
+  // ── Build herbal count caches ────────────────────────────────────────────
   void _buildCountCaches() {
-    final rowCount  = <String, int>{};
-    final catCount  = <String, int>{};
-    final subCount  = <String, int>{};
-    final illCount  = <String, int>{};
-    final symCount  = <String, int>{};
+    final rowCount = <String, int>{};
+    final catCount = <String, int>{};
+    final subCount = <String, int>{};
+    final illCount = <String, int>{};
+    final symCount = <String, int>{};
 
     for (final rem in _remedies) {
-      final cat = _normalize(rem['filter_category']);
-      final sub = _normalize(rem['filter_subcategory']);
-      final ill = _normalize(rem['filter_illness']);
+      final cat  = _normalize(rem['filter_category']);
+      final sub  = _normalize(rem['filter_subcategory']);
+      final ill  = _normalize(rem['filter_illness']);
       final symsRaw = rem['filter_symptoms'];
       final syms = symsRaw is List
           ? symsRaw.map((s) => _normalize(s)).toList()
@@ -113,55 +132,93 @@ class _CategoryScreenState extends State<CategoryScreen> {
       for (final sym in syms) {
         final symKey = '$cat|$sub|$ill|$sym';
         symCount[symKey] = (symCount[symKey] ?? 0) + 1;
-
-        final rowKey = '$cat|$sub|$ill|$sym';
-        rowCount[rowKey] = (rowCount[rowKey] ?? 0) + 1;
+        rowCount[symKey] = (rowCount[symKey] ?? 0) + 1;
       }
     }
 
-    // Pre-filter rows that have at least one matching remedy
     final filtered = _allRows.where((row) {
       final key = '${_normalize(row['category'])}|${_normalize(row['subcategory'])}|${_normalize(row['illness'])}|${_normalize(row['symptom'])}';
       return (rowCount[key] ?? 0) > 0;
     }).toList();
 
-    _rowCountCache  = rowCount;
-    _catCountCache  = catCount;
-    _subCountCache  = subCount;
-    _illCountCache  = illCount;
-    _symCountCache  = symCount;
+    _rowCountCache    = rowCount;
+    _catCountCache    = catCount;
+    _subCountCache    = subCount;
+    _illCountCache    = illCount;
+    _symCountCache    = symCount;
     _rowsWithRemedies = filtered;
   }
 
-  int _countForCategory(String cat) =>
-      _catCountCache[_normalize(cat)] ?? 0;
+  // ── Build products count caches ──────────────────────────────────────────
+  void _buildProductCountCaches(List<Map<String, dynamic>> products) {
+    final rowCount = <String, int>{};
+    final catCount = <String, int>{};
+    final subCount = <String, int>{};
+    final illCount = <String, int>{};
+    final symCount = <String, int>{};
+
+    for (final p in products) {
+      final cat = _normalize(p['category_name']);
+      final sub = _normalize(p['sub_category_name']);
+      final ill = _normalize(p['illness_name']);
+      final sym = _normalize(p['symptom_name']);
+
+      if (cat.isEmpty) continue;
+
+      catCount[cat] = (catCount[cat] ?? 0) + 1;
+      final subKey = '$cat|$sub';
+      subCount[subKey] = (subCount[subKey] ?? 0) + 1;
+      final illKey = '$cat|$sub|$ill';
+      illCount[illKey] = (illCount[illKey] ?? 0) + 1;
+      final symKey = '$cat|$sub|$ill|$sym';
+      symCount[symKey] = (symCount[symKey] ?? 0) + 1;
+      rowCount[symKey] = (rowCount[symKey] ?? 0) + 1;
+    }
+
+    _prodRowCountCache = rowCount;
+    _prodCatCountCache = catCount;
+    _prodSubCountCache = subCount;
+    _prodIllCountCache = illCount;
+    _prodSymCountCache = symCount;
+
+    // Pre-filter product rows to those with count > 0
+    _productRowsWithProducts = _productRows.where((row) {
+      final key = '${_normalize(row['category'])}|${_normalize(row['subcategory'])}|${_normalize(row['illness'])}|${_normalize(row['symptom'])}';
+      return (rowCount[key] ?? 0) > 0;
+    }).toList();
+  }
+
+  // ── Count helpers ────────────────────────────────────────────────────────
+  int _countForCategory(String cat) {
+    final cache = _mode == _FindMode.herbal ? _catCountCache : _prodCatCountCache;
+    return cache[_normalize(cat)] ?? 0;
+  }
 
   int _countForSubcategory(String sub) {
+    final cache = _mode == _FindMode.herbal ? _subCountCache : _prodSubCountCache;
     final catKey = _selCategory != null ? _normalize(_selCategory) : '';
-    final subKey = '$catKey|${_normalize(sub)}';
-    return _subCountCache[subKey] ?? (_selCategory == null ? (_catCountCache.entries
-        .where((e) => e.key.endsWith('|${_normalize(sub)}'))
-        .fold(0, (s, e) => s + e.value)) : 0);
+    return cache['$catKey|${_normalize(sub)}'] ?? 0;
   }
 
   int _countForIllness(String ill) {
+    final cache = _mode == _FindMode.herbal ? _illCountCache : _prodIllCountCache;
     final catKey = _normalize(_selCategory ?? '');
     final subKey = _normalize(_selSubcategory ?? '');
-    final illKey = '$catKey|$subKey|${_normalize(ill)}';
-    return _illCountCache[illKey] ?? 0;
+    return cache['$catKey|$subKey|${_normalize(ill)}'] ?? 0;
   }
 
   int _countForSymptom(String sym) {
+    final cache = _mode == _FindMode.herbal ? _symCountCache : _prodSymCountCache;
     final catKey = _normalize(_selCategory ?? '');
     final subKey = _normalize(_selSubcategory ?? '');
     final illKey = _normalize(_selIllness ?? '');
-    final symKey = '$catKey|$subKey|$illKey|${_normalize(sym)}';
-    return _symCountCache[symKey] ?? 0;
+    return cache['$catKey|$subKey|$illKey|${_normalize(sym)}'] ?? 0;
   }
 
   int _countForRow(Map<String, dynamic> row) {
+    final cache = _mode == _FindMode.herbal ? _rowCountCache : _prodRowCountCache;
     final key = '${_normalize(row['category'])}|${_normalize(row['subcategory'])}|${_normalize(row['illness'])}|${_normalize(row['symptom'])}';
-    return _rowCountCache[key] ?? 0;
+    return cache[key] ?? 0;
   }
 
   List<String> _sorted(Set<String> items) =>
@@ -174,8 +231,8 @@ class _CategoryScreenState extends State<CategoryScreen> {
   @override
   void initState() {
     super.initState();
-    _loadMatrix();
-    // Restore saved state if no initial filters provided
+    _mode = CategoryScreen._savedMode;
+    _loadAll();
     final f = widget.initialFilters;
     if (f != null && !f.isEmpty) {
       _selCategory    = f.category;
@@ -191,10 +248,10 @@ class _CategoryScreenState extends State<CategoryScreen> {
     }
   }
 
-  Future<void> _loadMatrix() async {
+  Future<void> _loadAll() async {
     setState(() => _loading = true);
     try {
-      // Load in pages to avoid row limit
+      // Load herbal filter_matrix + remedies
       final List<Map<String, dynamic>> all = [];
       int from = 0;
       const pageSize = 1000;
@@ -202,19 +259,14 @@ class _CategoryScreenState extends State<CategoryScreen> {
         final page = await SupabaseService.supabase
             .from('filter_matrix')
             .select('category, subcategory, illness, symptom')
-            .order('category', ascending: true)
-            .order('subcategory', ascending: true)
-            .order('illness', ascending: true)
-            .order('symptom', ascending: true)
+            .order('category').order('subcategory').order('illness').order('symptom')
             .range(from, from + pageSize - 1);
         final pageList = List<Map<String, dynamic>>.from(page);
         all.addAll(pageList);
         if (pageList.length < pageSize) break;
         from += pageSize;
       }
-      if (!mounted) return;
-      // Load remedies for counts
-      // Paginated remedy fetch
+
       final List<Map<String, dynamic>> allRemedies = [];
       int remFrom = 0;
       while (true) {
@@ -228,63 +280,66 @@ class _CategoryScreenState extends State<CategoryScreen> {
         if (remList.length < 1000) break;
         remFrom += 1000;
       }
+
+      // Load products taxonomy matrix
+      final prodMatrix = await SupabaseService.getProductTaxonomyMatrix();
+
+      // Load all products for count caches
+      final List<Map<String, dynamic>> allProducts = [];
+      int pFrom = 0;
+      while (true) {
+        final pPage = await SupabaseService.supabase
+            .from('products')
+            .select('category_name, sub_category_name, illness_name, symptom_name')
+            .not('category_name', 'is', null)
+            .range(pFrom, pFrom + 999);
+        final pList = List<Map<String, dynamic>>.from(pPage);
+        allProducts.addAll(pList);
+        if (pList.length < 1000) break;
+        pFrom += 1000;
+      }
+
+      if (!mounted) return;
       setState(() {
-        _allRows   = all;
-        _remedies  = allRemedies;
-        _loading = false;
+        _allRows     = all;
+        _remedies    = allRemedies;
+        _productRows = prodMatrix;
+        _loading     = false;
         _buildCountCaches();
+        _buildProductCountCaches(allProducts);
       });
     } catch (e, st) {
-      debugPrint('ERROR loading matrix/remedies: $e');
-      debugPrint('$st');
+      debugPrint('ERROR loading matrix: $e\n$st');
       if (!mounted) return;
       setState(() => _loading = false);
     }
   }
 
-  void _onCategoryChanged(String? val) {
-    setState(() {
-      _selCategory    = val;
-      _selSubcategory = null;
-      _selIllness     = null;
-      _selSymptom     = null;
-      _selectedRow    = null;
-    });
-  }
+  void _onCategoryChanged(String? val) => setState(() {
+    _selCategory = val; _selSubcategory = null;
+    _selIllness = null; _selSymptom = null; _selectedRow = null;
+  });
 
-  void _onSubcategoryChanged(String? val) {
-    setState(() {
-      _selSubcategory = val;
-      _selIllness     = null;
-      _selSymptom     = null;
-      _selectedRow    = null;
-    });
-  }
+  void _onSubcategoryChanged(String? val) => setState(() {
+    _selSubcategory = val; _selIllness = null;
+    _selSymptom = null; _selectedRow = null;
+  });
 
-  void _onIllnessChanged(String? val) {
-    setState(() {
-      _selIllness  = val;
-      _selSymptom  = null;
-      _selectedRow = null;
-    });
-  }
+  void _onIllnessChanged(String? val) => setState(() {
+    _selIllness = val; _selSymptom = null; _selectedRow = null;
+  });
 
-  void _onSymptomChanged(String? val) {
-    setState(() {
-      _selSymptom  = val;
-      _selectedRow = null;
-    });
-  }
+  void _onSymptomChanged(String? val) => setState(() {
+    _selSymptom = val; _selectedRow = null;
+  });
 
-  void _onRowTap(Map<String, dynamic> row) {
-    setState(() {
-      _selectedRow    = row;
-      _selCategory    = row['category']?.toString();
-      _selSubcategory = row['subcategory']?.toString();
-      _selIllness     = row['illness']?.toString();
-      _selSymptom     = row['symptom']?.toString();
-    });
-  }
+  void _onRowTap(Map<String, dynamic> row) => setState(() {
+    _selectedRow    = row;
+    _selCategory    = row['category']?.toString();
+    _selSubcategory = row['subcategory']?.toString();
+    _selIllness     = row['illness']?.toString();
+    _selSymptom     = row['symptom']?.toString();
+  });
 
   void _saveState() {
     CategoryScreen._savedCategory    = _selCategory;
@@ -292,20 +347,32 @@ class _CategoryScreenState extends State<CategoryScreen> {
     CategoryScreen._savedIllness     = _selIllness;
     CategoryScreen._savedSymptom     = _selSymptom;
     CategoryScreen._savedRow         = _selectedRow;
+    CategoryScreen._savedMode        = _mode;
   }
 
   void _clearAll() {
     setState(() {
-      _selCategory    = null;
-      _selSubcategory = null;
-      _selIllness     = null;
-      _selSymptom     = null;
-      _selectedRow    = null;
+      _selCategory = null; _selSubcategory = null;
+      _selIllness  = null; _selSymptom     = null;
+      _selectedRow = null;
     });
     CategoryScreen.clearSaved();
+    CategoryScreen._savedMode = _mode;
+  }
+
+  void _switchMode(_FindMode m) {
+    if (_mode == m) return;
+    setState(() {
+      _mode = m;
+      _selCategory = null; _selSubcategory = null;
+      _selIllness  = null; _selSymptom     = null;
+      _selectedRow = null;
+    });
+    CategoryScreen._savedMode = m;
   }
 
   void _goToRemedies() {
+    _saveState();
     final fs = FilterState(
       category:    _selCategory,
       subcategory: _selSubcategory,
@@ -317,6 +384,19 @@ class _CategoryScreenState extends State<CategoryScreen> {
     } else {
       Navigator.of(context).pop(fs);
     }
+  }
+
+  void _goToProducts() {
+    _saveState();
+    Navigator.push(
+      context,
+      MaterialPageRoute(builder: (_) => ShopScreen(
+        initialCategoryName:   _selCategory,
+        initialSubCategoryName: _selSubcategory,
+        initialIllnessName:    _selIllness,
+        initialSymptomName:    _selSymptom,
+      )),
+    );
   }
 
   Widget _headerCell(String label, {int flex = 1}) => Expanded(
@@ -342,7 +422,7 @@ class _CategoryScreenState extends State<CategoryScreen> {
       body: SafeArea(
         child: Column(
           children: [
-            // ÃƒÆ’¢ÃƒÆ’¢ Header ÃƒÆ’¢ÃƒÆ’¢ÃƒÆ’¢ÃƒÆ’¢ÃƒÆ’¢ÃƒÆ’¢ÃƒÆ’¢ÃƒÆ’¢ÃƒÆ’¢ÃƒÆ’¢ÃƒÆ’¢ÃƒÆ’¢ÃƒÆ’¢ÃƒÆ’¢ÃƒÆ’¢ÃƒÆ’¢ÃƒÆ’¢ÃƒÆ’¢ÃƒÆ’¢ÃƒÆ’¢ÃƒÆ’¢ÃƒÆ’¢ÃƒÆ’¢ÃƒÆ’¢ÃƒÆ’¢ÃƒÆ’¢ÃƒÆ’¢ÃƒÆ’¢ÃƒÆ’¢ÃƒÆ’¢ÃƒÆ’¢ÃƒÆ’¢ÃƒÆ’¢ÃƒÆ’¢ÃƒÆ’¢ÃƒÆ’¢ÃƒÆ’¢ÃƒÆ’¢ÃƒÆ’¢ÃƒÆ’¢ÃƒÆ’¢ÃƒÆ’¢ÃƒÆ’¢ÃƒÆ’¢ÃƒÆ’¢ÃƒÆ’¢ÃƒÆ’¢ÃƒÆ’¢ÃƒÆ’¢ÃƒÆ’¢ÃƒÆ’¢ÃƒÆ’¢ÃƒÆ’¢ÃƒÆ’¢
+            // ── Header ────────────────────────────────────────────────────
             Container(
               color: AppColors.dark,
               padding: const EdgeInsets.fromLTRB(16, 14, 16, 14),
@@ -353,7 +433,7 @@ class _CategoryScreenState extends State<CategoryScreen> {
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        Text('Find a Remedy',
+                        Text('Find',
                             style: TextStyle(color: AppColors.primary, fontSize: 18,
                                 fontWeight: FontWeight.w600)),
                         Text('Select filters then tap a row',
@@ -371,8 +451,30 @@ class _CategoryScreenState extends State<CategoryScreen> {
               ),
             ),
 
+            // ── Toggle cards: Herbal Remedies | Shop Products ─────────────
+            Container(
+              color: AppColors.dark,
+              padding: const EdgeInsets.fromLTRB(12, 0, 12, 12),
+              child: Row(
+                children: [
+                  Expanded(child: _ToggleCard(
+                    label: 'Herbal Remedies',
+                    icon: Icons.eco,
+                    active: _mode == _FindMode.herbal,
+                    onTap: () => _switchMode(_FindMode.herbal),
+                  )),
+                  const SizedBox(width: 10),
+                  Expanded(child: _ToggleCard(
+                    label: 'Shop Products',
+                    icon: Icons.shopping_bag_outlined,
+                    active: _mode == _FindMode.products,
+                    onTap: () => _switchMode(_FindMode.products),
+                  )),
+                ],
+              ),
+            ),
 
-            // ── Filter dropdowns (separate panel above table) ─────────────────────
+            // ── Filter dropdowns ───────────────────────────────────────────
             if (!_loading)
               Container(
                 color: Colors.white,
@@ -380,7 +482,6 @@ class _CategoryScreenState extends State<CategoryScreen> {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    // Row 1: Category | Subcategory
                     Row(
                       children: [
                         Expanded(child: _Dropdown(
@@ -402,7 +503,6 @@ class _CategoryScreenState extends State<CategoryScreen> {
                       ],
                     ),
                     const SizedBox(height: 6),
-                    // Row 2: Illness | Symptom
                     Row(
                       children: [
                         Expanded(child: _Dropdown(
@@ -431,7 +531,7 @@ class _CategoryScreenState extends State<CategoryScreen> {
                         Text(
                           _hasFilter
                               ? '${filtered.length} result${filtered.length == 1 ? '' : 's'} — tap a row to select'
-                              : 'All ${_allRows.length} entries — use filters above',
+                              : 'All ${_activeAllRows.length} entries — use filters above',
                           style: const TextStyle(fontSize: 10, color: AppColors.textSecondary),
                         ),
                         if (_hasFilter)
@@ -447,7 +547,7 @@ class _CategoryScreenState extends State<CategoryScreen> {
                 ),
               ),
 
-            // ── Filter matrix table ────────────────────────────────────────────────
+            // ── Filter matrix table ────────────────────────────────────────
             if (!_loading)
               Expanded(
                 child: filtered.isEmpty
@@ -456,7 +556,6 @@ class _CategoryScreenState extends State<CategoryScreen> {
                             style: TextStyle(color: AppColors.textSecondary, fontSize: 13)))
                     : Column(
                         children: [
-                          // Simple table header — plain labels, no dropdowns
                           Container(
                             color: AppColors.dark,
                             padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 7),
@@ -476,7 +575,6 @@ class _CategoryScreenState extends State<CategoryScreen> {
                               ],
                             ),
                           ),
-                          // Table rows — Symptom | Illness | Subcategory | Category
                           Expanded(
                             child: ListView.builder(
                               itemCount: filtered.length,
@@ -536,7 +634,10 @@ class _CategoryScreenState extends State<CategoryScreen> {
                       ),
               ),
 
-            // ÃƒÆ’¢ÃƒÆ’¢ Bottom bar ÃƒÆ’¢ÃƒÆ’¢ÃƒÆ’¢ÃƒÆ’¢ÃƒÆ’¢ÃƒÆ’¢ÃƒÆ’¢ÃƒÆ’¢ÃƒÆ’¢ÃƒÆ’¢ÃƒÆ’¢ÃƒÆ’¢ÃƒÆ’¢ÃƒÆ’¢ÃƒÆ’¢ÃƒÆ’¢ÃƒÆ’¢ÃƒÆ’¢ÃƒÆ’¢ÃƒÆ’¢ÃƒÆ’¢ÃƒÆ’¢ÃƒÆ’¢ÃƒÆ’¢ÃƒÆ’¢ÃƒÆ’¢ÃƒÆ’¢ÃƒÆ’¢ÃƒÆ’¢ÃƒÆ’¢ÃƒÆ’¢ÃƒÆ’¢ÃƒÆ’¢ÃƒÆ’¢ÃƒÆ’¢ÃƒÆ’¢ÃƒÆ’¢ÃƒÆ’¢ÃƒÆ’¢ÃƒÆ’¢ÃƒÆ’¢ÃƒÆ’¢ÃƒÆ’¢ÃƒÆ’¢ÃƒÆ’¢ÃƒÆ’¢ÃƒÆ’¢ÃƒÆ’¢ÃƒÆ’¢ÃƒÆ’¢ÃƒÆ’¢
+            if (_loading)
+              const Expanded(child: Center(child: CircularProgressIndicator())),
+
+            // ── Bottom action bar ─────────────────────────────────────────
             Container(
               padding: const EdgeInsets.fromLTRB(14, 10, 14, 14),
               decoration: BoxDecoration(
@@ -563,16 +664,24 @@ class _CategoryScreenState extends State<CategoryScreen> {
                         ),
                         if (_hasFilter || _selectedRow != null)
                           FutureBuilder<int>(
-                            future: SupabaseService.getFilteredRemedyCount(
-                              category:    _selCategory,
-                              subcategory: _selSubcategory,
-                              illness:     _selIllness,
-                              symptom:     _selSymptom,
-                            ),
+                            future: _mode == _FindMode.herbal
+                                ? SupabaseService.getFilteredRemedyCount(
+                                    category:    _selCategory,
+                                    subcategory: _selSubcategory,
+                                    illness:     _selIllness,
+                                    symptom:     _selSymptom,
+                                  )
+                                : SupabaseService.getFilteredProductCount(
+                                    category:    _selCategory,
+                                    subcategory: _selSubcategory,
+                                    illness:     _selIllness,
+                                    symptom:     _selSymptom,
+                                  ),
                             builder: (context, snap) {
                               final count = snap.data ?? 0;
+                              final noun = _mode == _FindMode.herbal ? 'recipe' : 'product';
                               return Text(
-                                '$count recipe${count == 1 ? '' : 's'} matching',
+                                '$count ${noun}${count == 1 ? '' : 's'} matching',
                                 style: const TextStyle(fontSize: 11,
                                     color: AppColors.textSecondary),
                               );
@@ -587,10 +696,10 @@ class _CategoryScreenState extends State<CategoryScreen> {
                       ],
                     ),
                   ),
-
-
                   GestureDetector(
-                    onTap: _hasFilter ? _goToRemedies : null,
+                    onTap: _hasFilter
+                        ? (_mode == _FindMode.herbal ? _goToRemedies : _goToProducts)
+                        : null,
                     child: Container(
                       padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 10),
                       decoration: BoxDecoration(
@@ -600,10 +709,11 @@ class _CategoryScreenState extends State<CategoryScreen> {
                       child: Row(
                         mainAxisSize: MainAxisSize.min,
                         children: [
-                          Text('Go to Remedies',
-                              style: TextStyle(
-                                  fontSize: 13, fontWeight: FontWeight.w600,
-                                  color: _hasFilter ? AppColors.primary : Colors.grey.shade500)),
+                          Text(
+                            _mode == _FindMode.herbal ? 'Go to Remedies' : 'Go to Products',
+                            style: TextStyle(
+                                fontSize: 13, fontWeight: FontWeight.w600,
+                                color: _hasFilter ? AppColors.primary : Colors.grey.shade500)),
                           const SizedBox(width: 6),
                           Icon(Icons.arrow_forward, size: 14,
                               color: _hasFilter ? AppColors.primary : Colors.grey.shade500),
@@ -621,7 +731,47 @@ class _CategoryScreenState extends State<CategoryScreen> {
   }
 }
 
-// ÃƒÆ’¢ÃƒÆ’¢ Dropdown widget ÃƒÆ’¢ÃƒÆ’¢ÃƒÆ’¢ÃƒÆ’¢ÃƒÆ’¢ÃƒÆ’¢ÃƒÆ’¢ÃƒÆ’¢ÃƒÆ’¢ÃƒÆ’¢ÃƒÆ’¢ÃƒÆ’¢ÃƒÆ’¢ÃƒÆ’¢ÃƒÆ’¢ÃƒÆ’¢ÃƒÆ’¢ÃƒÆ’¢ÃƒÆ’¢ÃƒÆ’¢ÃƒÆ’¢ÃƒÆ’¢ÃƒÆ’¢ÃƒÆ’¢ÃƒÆ’¢ÃƒÆ’¢ÃƒÆ’¢ÃƒÆ’¢ÃƒÆ’¢ÃƒÆ’¢ÃƒÆ’¢ÃƒÆ’¢ÃƒÆ’¢ÃƒÆ’¢ÃƒÆ’¢ÃƒÆ’¢ÃƒÆ’¢ÃƒÆ’¢ÃƒÆ’¢ÃƒÆ’¢ÃƒÆ’¢ÃƒÆ’¢ÃƒÆ’¢ÃƒÆ’¢ÃƒÆ’¢ÃƒÆ’¢ÃƒÆ’¢ÃƒÆ’¢ÃƒÆ’¢ÃƒÆ’¢ÃƒÆ’¢ÃƒÆ’¢ÃƒÆ’¢ÃƒÆ’¢ÃƒÆ’¢ÃƒÆ’¢ÃƒÆ’¢ÃƒÆ’¢ÃƒÆ’¢
+// ─── Toggle card widget ───────────────────────────────────────────────────────
+class _ToggleCard extends StatelessWidget {
+  final String label;
+  final IconData icon;
+  final bool active;
+  final VoidCallback onTap;
+  const _ToggleCard({required this.label, required this.icon, required this.active, required this.onTap});
+
+  @override
+  Widget build(BuildContext context) {
+    return GestureDetector(
+      onTap: onTap,
+      child: AnimatedContainer(
+        duration: const Duration(milliseconds: 180),
+        padding: const EdgeInsets.symmetric(vertical: 10, horizontal: 12),
+        decoration: BoxDecoration(
+          color: active ? AppColors.primary : const Color(0xFF2A2A2A),
+          borderRadius: BorderRadius.circular(10),
+          border: Border.all(
+            color: active ? AppColors.primary : Colors.white24,
+            width: 1.5,
+          ),
+        ),
+        child: Row(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(icon, size: 16,
+                color: active ? AppColors.dark : Colors.white60),
+            const SizedBox(width: 6),
+            Text(label,
+                style: TextStyle(
+                    fontSize: 12, fontWeight: FontWeight.w600,
+                    color: active ? AppColors.dark : Colors.white60)),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+// ─── Dropdown widget ───────────────────────────────────────────────────────────
 class _Dropdown extends StatelessWidget {
   final String label;
   final String? value;
@@ -673,7 +823,6 @@ class _Dropdown extends StatelessWidget {
                 }),
               ),
               const SizedBox(height: 4),
-              // Clear option
               InkWell(
                 onTap: () { onChanged(null); Navigator.pop(ctx); },
                 child: Padding(

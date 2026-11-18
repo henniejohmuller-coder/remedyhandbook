@@ -1,4 +1,5 @@
-﻿import 'package:supabase_flutter/supabase_flutter.dart';
+﻿import 'package:flutter/foundation.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 final supabase = Supabase.instance.client;
@@ -501,6 +502,64 @@ class SupabaseService {
         .select('category, subcategory, illness')
         .eq('symptom', symptom);
     return List<Map<String, dynamic>>.from(response);
+  }
+
+  /// Build a virtual filter matrix from products taxonomy columns
+  static Future<List<Map<String, dynamic>>> getProductTaxonomyMatrix() async {
+    try {
+      final data = await supabase
+          .from('products')
+          .select('category_name, sub_category_name, illness_name, symptom_name')
+          .not('category_name', 'is', null)
+          .not('sub_category_name', 'is', null)
+          .not('illness_name', 'is', null)
+          .not('symptom_name', 'is', null);
+      // Deduplicate into unique rows
+      final seen = <String>{};
+      final rows = <Map<String, dynamic>>[];
+      for (final p in List<Map<String, dynamic>>.from(data)) {
+        final key = '${p['category_name']}|${p['sub_category_name']}|${p['illness_name']}|${p['symptom_name']}';
+        if (seen.add(key)) {
+          rows.add({
+            'category':    p['category_name'],
+            'subcategory': p['sub_category_name'],
+            'illness':     p['illness_name'],
+            'symptom':     p['symptom_name'],
+          });
+        }
+      }
+      rows.sort((a, b) {
+        final c = a['category'].compareTo(b['category']);
+        if (c != 0) return c;
+        final s = a['subcategory'].compareTo(b['subcategory']);
+        if (s != 0) return s;
+        return a['illness'].compareTo(b['illness']);
+      });
+      return rows;
+    } catch (e) {
+      debugPrint('getProductTaxonomyMatrix error: $e');
+      return [];
+    }
+  }
+
+  /// Count products matching selected taxonomy filters
+  static Future<int> getFilteredProductCount({
+    String? category,
+    String? subcategory,
+    String? illness,
+    String? symptom,
+  }) async {
+    try {
+      var query = supabase.from('products').select('id');
+      if (category    != null) query = query.eq('category_name',    category);
+      if (subcategory != null) query = query.eq('sub_category_name', subcategory);
+      if (illness     != null) query = query.eq('illness_name',     illness);
+      if (symptom     != null) query = query.eq('symptom_name',     symptom);
+      final result = await query;
+      return List.from(result).length;
+    } catch (_) {
+      return 0;
+    }
   }
 
   /// Count remedies matching the current filter state
