@@ -26,17 +26,17 @@ class AppBottomNavBar extends StatelessWidget {
 
   static const Color _herbGreen = Color(0xFF43A047); // green.shade600
 
-  BottomNavigationBarItem _navItem(IconData outline, IconData filled, String label, {Color? iconColor}) {
+  BottomNavigationBarItem _navItem(IconData outline, IconData filled, String label, {Color? activeIconColor}) {
     return BottomNavigationBarItem(
       label: label,
-      icon: Icon(outline, color: iconColor),
+      icon: Icon(outline),
       activeIcon: Container(
         padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 4),
         decoration: BoxDecoration(
           color: AppColors.primary,
           borderRadius: BorderRadius.circular(20),
         ),
-        child: Icon(filled, color: AppColors.dark, size: 20),
+        child: Icon(filled, color: activeIconColor ?? AppColors.dark, size: 20),
       ),
     );
   }
@@ -56,8 +56,8 @@ class AppBottomNavBar extends StatelessWidget {
       items: [
         _navItem(Icons.home_outlined, Icons.home, 'Home'),
         _navItem(Icons.search_outlined, Icons.search, 'Find'),
-        _navItem(Icons.eco_outlined, Icons.eco, 'Herbal Remedies', iconColor: _herbGreen),
-        _navItem(Icons.storefront_outlined, Icons.storefront, 'Shop', iconColor: _herbGreen),
+        _navItem(Icons.eco_outlined, Icons.eco, 'Herbal Remedies', activeIconColor: _herbGreen),
+        _navItem(Icons.storefront_outlined, Icons.storefront, 'Shop', activeIconColor: _herbGreen),
         _navItem(Icons.bookmark_border, Icons.bookmark, 'My Remedy'),
         _navItem(Icons.person_outline, Icons.person, 'Profile'),
       ],
