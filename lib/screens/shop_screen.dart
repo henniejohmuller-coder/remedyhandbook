@@ -582,7 +582,7 @@ class _ProductCard extends StatelessWidget {
                           color: isComp ? AppColors.lightGreen : AppColors.lightYellow,
                           borderRadius: BorderRadius.circular(6),
                         ),
-                        child: Text(isComp ? 'Component' : 'Herbal Remedy',
+                        child: Text(isComp ? 'Component' : 'Herbal Remedies',
                             style: TextStyle(
                                 fontSize: 9,
                                 fontWeight: FontWeight.w700,
