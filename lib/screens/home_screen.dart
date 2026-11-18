@@ -96,7 +96,7 @@ class _HomeScreenState extends State<HomeScreen> {
                     Padding(
                       padding: const EdgeInsets.symmetric(horizontal: 16),
                       child: _NavButton(
-                        label: 'Search Remedies',
+                        label: 'Search Herbal Remedies',
                         icon: Icons.menu_book_outlined,
                         onPressed: () => widget.onTabSwitch?.call(2),
                       ),
