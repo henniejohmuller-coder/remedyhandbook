@@ -138,7 +138,7 @@ class _QtyBtn extends StatelessWidget {
       onTap: onTap,
       child: Container(
         width: 32, height: 32,
-        decoration: BoxDecoration(border: Border.all(color: Colors.grey.shade300), borderRadius: BorderRadius.circular(8), color: Colors.white),
+        decoration: BoxDecoration(border: Border.all(color: Colors.grey.shade300), borderRadius: BorderRadius.circular(10), color: Colors.white),
         child: Icon(icon, size: 16, color: AppColors.dark),
       ),
     );

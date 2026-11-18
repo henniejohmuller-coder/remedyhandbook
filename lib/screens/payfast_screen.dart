@@ -212,7 +212,7 @@ $fields
   void _onPaymentCancelled() {
     if (mounted) {
       ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Payment cancelled'), backgroundColor: Colors.orange));
+          const SnackBar(content: Text('Payment cancelled'), backgroundColor: Colors.red));
       Navigator.pop(context);
     }
   }

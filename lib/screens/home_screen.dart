@@ -155,8 +155,8 @@ class _HomeScreenState extends State<HomeScreen> {
                 end: Alignment.bottomCenter,
                 colors: [
                   Colors.transparent,
-                  Colors.black.withOpacity(0.3),
-                  Colors.black.withOpacity(0.75),
+                  AppColors.dark.withOpacity(0.3),
+                  AppColors.dark.withOpacity(0.75),
                 ],
                 stops: const [0.0, 0.5, 1.0],
               ),
@@ -283,7 +283,7 @@ class _StatCard extends StatelessWidget {
                 color: AppColors.dark)),
         Text(label,
             style: const TextStyle(
-                fontSize: 9,
+                fontSize: 11,
                 color: AppColors.textSecondary)),
       ],
     );

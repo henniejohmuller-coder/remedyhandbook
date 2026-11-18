@@ -636,7 +636,7 @@ class _RecipesScreenState extends State<RecipesScreen>
                                     child: Text(
                                       letter,
                                       style: TextStyle(
-                                        fontSize: 9,
+                                        fontSize: 11,
                                         fontWeight: FontWeight.w700,
                                         color: hasMatch ? AppColors.dark : Colors.grey.shade300,
                                       ),

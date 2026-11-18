@@ -271,7 +271,7 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
         if (kIsWeb) {
           ScaffoldMessenger.of(context).showSnackBar(
             const SnackBar(content: Text('Complete payment in browser. Return here after payment.'),
-              backgroundColor: Colors.blue, duration: Duration(seconds: 8)));
+              backgroundColor: AppColors.dark, duration: Duration(seconds: 8)));
         } else {
           Navigator.of(context).popUntil((route) => route.isFirst);
           Navigator.push(context, MaterialPageRoute(builder: (_) => const OrderConfirmationScreen()));

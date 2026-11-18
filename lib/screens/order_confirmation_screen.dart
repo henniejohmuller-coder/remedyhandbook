@@ -11,11 +11,14 @@ class OrderConfirmationScreen extends StatelessWidget {
     return Scaffold(
       backgroundColor: AppColors.background,
       body: SafeArea(
-        child: SingleChildScrollView(
-          padding: const EdgeInsets.symmetric(horizontal: 24),
-          child: Column(
-            children: [
-              const SizedBox(height: 40),
+        child: Column(
+          children: [
+            const YellowAppBar(title: 'Order Confirmed', subtitle: 'Thank you for your order', showBack: false),
+            Expanded(child: SingleChildScrollView(
+              padding: const EdgeInsets.symmetric(horizontal: 24),
+              child: Column(
+                children: [
+                  const SizedBox(height: 40),
               const Text('Order confirmed!', style: AppTextStyles.heading1),
               const SizedBox(height: 40),
               // Check icon
@@ -77,6 +80,9 @@ class OrderConfirmationScreen extends StatelessWidget {
               ),
             ],
           ),
+        )),
+          ],
+        ),
         ),
       ),
     );

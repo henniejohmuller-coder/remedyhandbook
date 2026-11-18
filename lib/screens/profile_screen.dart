@@ -423,7 +423,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                     // Account
                     const SectionLabel('ACCOUNT'),
                     Material(
-                      color: Colors.white, borderRadius: BorderRadius.circular(12), elevation: 1, shadowColor: Colors.black12,
+                      color: Colors.white, borderRadius: BorderRadius.circular(10), elevation: 1, shadowColor: Colors.black12,
                       child: Column(children: [
                         // Font size slider
                         Padding(
