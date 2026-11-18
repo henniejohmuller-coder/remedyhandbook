@@ -284,13 +284,14 @@ class _CategoryScreenState extends State<CategoryScreen> {
       // Load products taxonomy matrix
       final prodMatrix = await SupabaseService.getProductTaxonomyMatrix();
 
-      // Load all products for count caches
+      // Load all ACTIVE products for count caches
       final List<Map<String, dynamic>> allProducts = [];
       int pFrom = 0;
       while (true) {
         final pPage = await SupabaseService.supabase
             .from('products')
             .select('category_name, sub_category_name, illness_name, symptom_name')
+            .eq('active', true)
             .not('category_name', 'is', null)
             .range(pFrom, pFrom + 999);
         final pList = List<Map<String, dynamic>>.from(pPage);

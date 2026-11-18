@@ -510,6 +510,7 @@ class SupabaseService {
       final data = await supabase
           .from('products')
           .select('category_name, sub_category_name, illness_name, symptom_name')
+          .eq('active', true)
           .not('category_name', 'is', null)
           .not('sub_category_name', 'is', null)
           .not('illness_name', 'is', null)
@@ -550,7 +551,7 @@ class SupabaseService {
     String? symptom,
   }) async {
     try {
-      var query = supabase.from('products').select('id');
+      var query = supabase.from('products').select('id').eq('active', true);
       if (category    != null) query = query.eq('category_name',    category);
       if (subcategory != null) query = query.eq('sub_category_name', subcategory);
       if (illness     != null) query = query.eq('illness_name',     illness);
