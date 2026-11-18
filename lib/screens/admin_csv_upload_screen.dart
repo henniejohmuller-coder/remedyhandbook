@@ -921,7 +921,7 @@ class _AdminCsvUploadScreenState extends State<AdminCsvUploadScreen> {
 
             // ── Remedies section ──────────────────────────────────────
             _DataSection(
-              title: 'Remedies',
+              title: 'Herbal Remedies',
               description:
                   'Each row = one remedy. Required: name, component.\n'
                   'Steps go in step_1 … step_10. Lookup values auto-created.\n'

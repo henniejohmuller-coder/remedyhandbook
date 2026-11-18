@@ -54,7 +54,7 @@ class _ShopScreenState extends State<ShopScreen> {
     }
     // Pre-select tab
     if (widget.initialType == 'Component') _filter = 'Components';
-    if (widget.initialType == 'Remedy')    _filter = 'Remedies';
+    if (widget.initialType == 'Remedy')    _filter = 'Herbal Remedies';
     _loadProducts();
   }
 
@@ -104,7 +104,7 @@ class _ShopScreenState extends State<ShopScreen> {
       // Tab filter
       final matchFilter = _filter == 'All'
           || (_filter == 'Components' && type == 'Component')
-          || (_filter == 'Remedies'   && type == 'Remedy');
+          || (_filter == 'Herbal Remedies'   && type == 'Remedy');
 
       // Search all data fields — product matches if ANY term found in ANY field
       final bool matchSearch;
@@ -456,7 +456,7 @@ class _ShopScreenState extends State<ShopScreen> {
             Padding(
               padding: const EdgeInsets.symmetric(horizontal: 16),
               child: Row(
-                children: ['All', 'Components', 'Remedies'].map((tab) => Padding(
+                children: ['All', 'Components', 'Herbal Remedies'].map((tab) => Padding(
                   padding: const EdgeInsets.only(right: 8),
                   child: GestureDetector(
                     onTap: () => setState(() => _filter = tab),
@@ -582,7 +582,7 @@ class _ProductCard extends StatelessWidget {
                           color: isComp ? AppColors.lightGreen : AppColors.lightYellow,
                           borderRadius: BorderRadius.circular(6),
                         ),
-                        child: Text(isComp ? 'Component' : 'Remedy',
+                        child: Text(isComp ? 'Component' : 'Herbal Remedy',
                             style: TextStyle(
                                 fontSize: 9,
                                 fontWeight: FontWeight.w700,

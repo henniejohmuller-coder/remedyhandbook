@@ -210,7 +210,7 @@ class _HomeScreenState extends State<HomeScreen> {
 
   Widget _buildStatsRow() {
     final stats = [
-      (_statsLoaded ? '$_remedyCount'   : '...', 'Remedies'),
+      (_statsLoaded ? '$_remedyCount'   : '...', 'Herbal Remedies'),
       (_statsLoaded ? '$_categoryCount' : '...', 'Categories'),
       (_statsLoaded ? '$_studyCount'    : '...', 'Studies'),
       (_statsLoaded ? '$_countryCount'  : '...', 'Countries'),

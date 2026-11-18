@@ -397,7 +397,7 @@ class _RecipesScreenState extends State<RecipesScreen>
   void _goToProduct(BuildContext context, Map<String, dynamic> remedy, bool isHerb) {
     final primaryHerb = remedy['primary_herb']?.toString().isNotEmpty == true ? remedy['primary_herb']!.toString() : remedy['component']?.toString() ?? '';
     final mainConstituent = remedy['main_constituent']?.toString().isNotEmpty == true ? remedy['main_constituent']!.toString() : remedy['constituent']?.toString() ?? '';
-    final type = isHerb ? 'Components' : 'Remedies';
+    final type = isHerb ? 'Components' : 'Herbal Remedies';
     Navigator.push(context, MaterialPageRoute(
       builder: (_) => ShopScreen(
         initialPrimaryHerb: primaryHerb,
@@ -415,8 +415,8 @@ class _RecipesScreenState extends State<RecipesScreen>
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             YellowAppBar(
-              title: 'Remedies',
-              subtitle: '${_filtered.length} remedies - evidence-rated',
+              title: 'Herbal Remedies',
+              subtitle: '${_filtered.length} herbal remedies - evidence-rated',
             ),
             if (_encouragement.isNotEmpty)
               EncouragementBanner(text: _encouragement),
