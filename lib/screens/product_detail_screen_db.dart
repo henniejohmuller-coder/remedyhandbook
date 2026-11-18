@@ -47,8 +47,8 @@ class _ProductDetailScreenDBState extends State<ProductDetailScreenDB> {
                   children: [
                     p['image_url'] != null
                         ? ClipRRect(borderRadius: BorderRadius.circular(12),
-                            child: Image.network(p['image_url'], height: 140, width: double.infinity, fit: BoxFit.cover))
-                        : HerbIconPlaceholder(size: 140, icon: type == 'Component' ? Icons.eco : Icons.science),
+                            child: Image.network(p['image_url'], height: 280, width: double.infinity, fit: BoxFit.cover))
+                        : HerbIconPlaceholder(size: 280, icon: type == 'Component' ? Icons.eco : Icons.science),
                     const SizedBox(height: 16),
                     Row(children: [
                       Text('R${price.toInt()}', style: const TextStyle(fontSize: 24, fontWeight: FontWeight.bold, color: AppColors.dark)),
