@@ -195,6 +195,39 @@ class SupabaseService {
 
   // â”€â”€ Products â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
   // â”€â”€ Cart â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+
+  // ── Saved Products ────────────────────────────────────────────────────────
+  static Future<List<Map<String, dynamic>>> getSavedProducts() async {
+    final userId = currentUser?.id;
+    if (userId == null) return [];
+    final response = await supabase
+        .from('saved_products')
+        .select('*, products(*)')
+        .eq('user_id', userId)
+        .order('created_at', ascending: false);
+    return List<Map<String, dynamic>>.from(response as List);
+  }
+
+  static Future<void> saveProduct(String productId) async {
+    final userId = currentUser?.id;
+    if (userId == null) return;
+    await supabase.from('saved_products').upsert({'user_id': userId, 'product_id': productId});
+  }
+
+  static Future<void> unsaveProduct(String productId) async {
+    final userId = currentUser?.id;
+    if (userId == null) return;
+    await supabase.from('saved_products').delete().eq('user_id', userId).eq('product_id', productId);
+  }
+
+  static Future<bool> isProductSaved(String productId) async {
+    final userId = currentUser?.id;
+    if (userId == null) return false;
+    final response = await supabase.from('saved_products').select()
+        .eq('user_id', userId).eq('product_id', productId);
+    return (response as List).isNotEmpty;
+  }
+
   static Future<List<Map<String, dynamic>>> getCart() async {
     final userId = currentUser?.id;
     if (userId == null) return [];

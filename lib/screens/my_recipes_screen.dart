@@ -3,6 +3,7 @@ import '../theme/app_theme.dart';
 import '../widgets/shared_widgets.dart';
 import '../services/supabase_service.dart';
 import 'recipe_detail_screen.dart';
+import 'product_detail_screen_db.dart';
 
 class MyRecipesScreen extends StatefulWidget {
   const MyRecipesScreen({super.key});
@@ -14,8 +15,9 @@ class MyRecipesScreen extends StatefulWidget {
 class _MyRecipesScreenState extends State<MyRecipesScreen>
     with SingleTickerProviderStateMixin {
   late TabController _tabController;
-  List<Map<String, dynamic>> _saved       = [];
-  List<Map<String, dynamic>> _orders      = [];
+  List<Map<String, dynamic>> _saved         = [];
+  List<Map<String, dynamic>> _savedProducts = [];
+  List<Map<String, dynamic>> _orders        = [];
   bool _loading = true;
 
   @override
@@ -39,13 +41,15 @@ class _MyRecipesScreenState extends State<MyRecipesScreen>
       print('Loading data for user: $userId');
       final results = await Future.wait([
         SupabaseService.getSavedRemedies(),
+        SupabaseService.getSavedProducts(),
         SupabaseService.getOrders(),
       ]);
       if (!mounted) return;
       setState(() {
-        _saved   = results[0];
-        _orders  = results[1];
-        _loading = false;
+        _saved          = results[0];
+        _savedProducts  = results[1];
+        _orders         = results[2];
+        _loading        = false;
       });
     } catch (e) {
       print('Error loading my recipes: $e');
@@ -79,7 +83,7 @@ class _MyRecipesScreenState extends State<MyRecipesScreen>
                   indicator: BoxDecoration(color: AppColors.primary, borderRadius: BorderRadius.circular(10)),
                   labelStyle: const TextStyle(fontWeight: FontWeight.w600, fontSize: 13),
                   tabs: [
-                    Tab(text: 'Favourites (${_saved.length})'),
+                    Tab(text: 'Favourites (${_saved.length + _savedProducts.length})'),
                     Tab(text: 'Orders (${_orders.length})'),
                   ],
                 ),
@@ -92,7 +96,7 @@ class _MyRecipesScreenState extends State<MyRecipesScreen>
                   : TabBarView(
                       controller: _tabController,
                       children: [
-                        _SavedTab(saved: _saved, onRefresh: _loadData),
+                        _SavedTab(saved: _saved, savedProducts: _savedProducts, onRefresh: _loadData),
                         _OrdersTab(orders: _orders, onRefresh: _loadData),
                       ],
                     ),
@@ -108,88 +112,188 @@ class _MyRecipesScreenState extends State<MyRecipesScreen>
 
 class _SavedTab extends StatelessWidget {
   final List<Map<String, dynamic>> saved;
+  final List<Map<String, dynamic>> savedProducts;
   final VoidCallback onRefresh;
-  const _SavedTab({required this.saved, required this.onRefresh});
+  const _SavedTab({required this.saved, required this.savedProducts, required this.onRefresh});
 
   @override
   Widget build(BuildContext context) {
-    if (saved.isEmpty) {
+    if (saved.isEmpty && savedProducts.isEmpty) {
       return _EmptyState(icon: Icons.bookmark_border, message: 'No favourites yet',
-          hint: 'Tap the bookmark on any remedy to save it', onRefresh: onRefresh);
+          hint: 'Tap the heart on any remedy or product to save it', onRefresh: onRefresh);
     }
+    final remedyItems   = saved;
+    final productItems  = savedProducts;
+    final totalCount    = remedyItems.length + productItems.length;
+
     return RefreshIndicator(
       onRefresh: () async => onRefresh(),
       color: AppColors.primary,
-      child: ListView.separated(
+      child: ListView.builder(
         padding: const EdgeInsets.symmetric(horizontal: 16),
-        itemCount: saved.length,
-        separatorBuilder: (_, __) => const SizedBox(height: 12),
-        itemBuilder: (context, i) {
-          final item      = saved[i];
-          final remedy    = item['remedies_full'] ?? item;
-          final remedyId  = (remedy['id'] ?? item['remedy_id'])?.toString() ?? '';
-          final name      = remedy['name'] ?? '';
-          final component = remedy['component'] ?? '';
-          final origin    = remedy['origin'] ?? '';
-          final rating    = ((remedy['avg_user_rating'] ?? 0.0) as num).toDouble();
-          final votes     = (remedy['total_votes'] ?? 0) as int;
-          return GestureDetector(
-            onTap: () => Navigator.push(context, MaterialPageRoute(
-                builder: (_) => RecipeDetailScreenDB(remedy: remedy))),
-            child: Container(
-              padding: const EdgeInsets.all(14),
-              decoration: BoxDecoration(
-                color: Colors.white, borderRadius: BorderRadius.circular(12),
-                boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.04), blurRadius: 6)],
-              ),
-              child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [
-                  Expanded(child: Text(name, style: AppTextStyles.heading3, overflow: TextOverflow.ellipsis)),
-                  Row(children: [
-                    GestureDetector(
-                      onTap: () async {
-                        final confirm = await showDialog<bool>(
-                          context: context,
-                          builder: (ctx) => AlertDialog(
-                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-                            title: const Text('Remove saved remedy?', style: AppTextStyles.heading3),
-                            content: Text('Remove "$name" from your saved recipes?'),
-                            actions: [
-                              TextButton(onPressed: () => Navigator.pop(ctx, false),
-                                  child: const Text('Cancel', style: TextStyle(color: AppColors.textSecondary))),
-                              ElevatedButton(
-                                onPressed: () => Navigator.pop(ctx, true),
-                                style: ElevatedButton.styleFrom(backgroundColor: AppColors.dark,
-                                    foregroundColor: AppColors.primary, elevation: 0,
-                                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10))),
-                                child: const Text('Remove'),
-                              ),
-                            ],
-                          ),
-                        );
-                        if (confirm == true && context.mounted) {
-                          await SupabaseService.unsaveRemedy(remedyId);
-                          onRefresh();
-                        }
-                      },
-                      child: Container(
-                        padding: const EdgeInsets.all(4),
-                        decoration: BoxDecoration(
-                            color: const Color(0xFFFFEBEE),
-                            borderRadius: BorderRadius.circular(6)),
-                        child: const Icon(Icons.delete_outline, size: 16, color: Colors.red),
-                      ),
+        itemCount: totalCount + (remedyItems.isNotEmpty ? 1 : 0) + (productItems.isNotEmpty ? 1 : 0),
+        itemBuilder: (context, index) {
+          // Build a flat list: [Remedies header], [...remedies], [Products header], [...products]
+          int cursor = 0;
+
+          // Remedies section
+          if (remedyItems.isNotEmpty) {
+            if (index == cursor) {
+              return Padding(
+                padding: const EdgeInsets.only(top: 4, bottom: 8),
+                child: Text('HERBAL REMEDIES', style: const TextStyle(fontSize: 11, fontWeight: FontWeight.w700, color: AppColors.textSecondary, letterSpacing: 1.0)),
+              );
+            }
+            cursor++;
+            if (index < cursor + remedyItems.length) {
+              final i     = index - cursor;
+              final item  = remedyItems[i];
+              final remedy   = item['remedies_full'] ?? item;
+              final remedyId = (remedy['id'] ?? item['remedy_id'])?.toString() ?? '';
+              final name     = remedy['name'] ?? '';
+              final component = remedy['component'] ?? '';
+              final origin   = remedy['origin'] ?? '';
+              final rating   = ((remedy['avg_user_rating'] ?? 0.0) as num).toDouble();
+              final votes    = (remedy['total_votes'] ?? 0) as int;
+              return Padding(
+                padding: const EdgeInsets.only(bottom: 12),
+                child: GestureDetector(
+                  onTap: () => Navigator.push(context, MaterialPageRoute(
+                      builder: (_) => RecipeDetailScreenDB(remedy: remedy))),
+                  child: Container(
+                    padding: const EdgeInsets.all(14),
+                    decoration: BoxDecoration(
+                      color: Colors.white, borderRadius: BorderRadius.circular(12),
+                      boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.04), blurRadius: 6)],
                     ),
-                    const SizedBox(width: 8),
-                    const Icon(Icons.favorite, color: AppColors.primary, size: 20),
-                  ]),
-                ]),
-                Text('$component${origin.isNotEmpty ? ' · $origin' : ''}', style: AppTextStyles.caption),
-                const SizedBox(height: 6),
-                StarRating(rating: rating, votes: votes),
-              ]),
-            ),
-          );
+                    child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                      Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [
+                        Expanded(child: Text(name, style: AppTextStyles.heading3, overflow: TextOverflow.ellipsis)),
+                        Row(children: [
+                          GestureDetector(
+                            onTap: () async {
+                              final confirm = await showDialog<bool>(context: context,
+                                builder: (ctx) => AlertDialog(
+                                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                                  title: const Text('Remove saved remedy?', style: AppTextStyles.heading3),
+                                  content: Text('Remove "$name" from favourites?'),
+                                  actions: [
+                                    TextButton(onPressed: () => Navigator.pop(ctx, false),
+                                        child: const Text('Cancel', style: TextStyle(color: AppColors.textSecondary))),
+                                    ElevatedButton(onPressed: () => Navigator.pop(ctx, true),
+                                      style: ElevatedButton.styleFrom(backgroundColor: AppColors.dark,
+                                          foregroundColor: AppColors.primary, elevation: 0,
+                                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10))),
+                                      child: const Text('Remove')),
+                                  ],
+                                ),
+                              );
+                              if (confirm == true && context.mounted) {
+                                await SupabaseService.unsaveRemedy(remedyId);
+                                onRefresh();
+                              }
+                            },
+                            child: Container(
+                              padding: const EdgeInsets.all(4),
+                              decoration: BoxDecoration(color: const Color(0xFFFFEBEE), borderRadius: BorderRadius.circular(6)),
+                              child: const Icon(Icons.delete_outline, size: 16, color: Colors.red),
+                            ),
+                          ),
+                          const SizedBox(width: 8),
+                          const Icon(Icons.favorite, color: AppColors.primary, size: 20),
+                        ]),
+                      ]),
+                      Text('$component${origin.isNotEmpty ? ' · $origin' : ''}', style: AppTextStyles.caption),
+                      const SizedBox(height: 6),
+                      StarRating(rating: rating, votes: votes),
+                    ]),
+                  ),
+                ),
+              );
+            }
+            cursor += remedyItems.length;
+          }
+
+          // Products section
+          if (productItems.isNotEmpty) {
+            if (index == cursor) {
+              return Padding(
+                padding: const EdgeInsets.only(top: 8, bottom: 8),
+                child: Text('SHOP PRODUCTS', style: const TextStyle(fontSize: 11, fontWeight: FontWeight.w700, color: AppColors.textSecondary, letterSpacing: 1.0)),
+              );
+            }
+            cursor++;
+            if (index < cursor + productItems.length) {
+              final i     = index - cursor;
+              final item  = productItems[i];
+              final p     = item['products'] ?? item;
+              final productId = (p['id'] ?? item['product_id'])?.toString() ?? '';
+              final name  = p['name'] ?? '';
+              final type  = p['type'] ?? '';
+              final price = p['price'] != null ? 'R${(p['price'] as num).toInt()}' : '';
+              return Padding(
+                padding: const EdgeInsets.only(bottom: 12),
+                child: GestureDetector(
+                  onTap: () => Navigator.push(context, MaterialPageRoute(
+                      builder: (_) => ProductDetailScreenDB(product: p))),
+                  child: Container(
+                    padding: const EdgeInsets.all(14),
+                    decoration: BoxDecoration(
+                      color: Colors.white, borderRadius: BorderRadius.circular(12),
+                      boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.04), blurRadius: 6)],
+                    ),
+                    child: Row(children: [
+                      Expanded(
+                        child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                          Text(name, style: AppTextStyles.heading3, overflow: TextOverflow.ellipsis),
+                          if (type.isNotEmpty) Text(type, style: AppTextStyles.caption),
+                          if (price.isNotEmpty) ...[
+                            const SizedBox(height: 4),
+                            Text(price, style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: AppColors.dark)),
+                          ],
+                        ]),
+                      ),
+                      Row(children: [
+                        GestureDetector(
+                          onTap: () async {
+                            final confirm = await showDialog<bool>(context: context,
+                              builder: (ctx) => AlertDialog(
+                                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                                title: const Text('Remove saved product?', style: AppTextStyles.heading3),
+                                content: Text('Remove "$name" from favourites?'),
+                                actions: [
+                                  TextButton(onPressed: () => Navigator.pop(ctx, false),
+                                      child: const Text('Cancel', style: TextStyle(color: AppColors.textSecondary))),
+                                  ElevatedButton(onPressed: () => Navigator.pop(ctx, true),
+                                    style: ElevatedButton.styleFrom(backgroundColor: AppColors.dark,
+                                        foregroundColor: AppColors.primary, elevation: 0,
+                                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10))),
+                                    child: const Text('Remove')),
+                                ],
+                              ),
+                            );
+                            if (confirm == true && context.mounted) {
+                              await SupabaseService.unsaveProduct(productId);
+                              onRefresh();
+                            }
+                          },
+                          child: Container(
+                            padding: const EdgeInsets.all(4),
+                            decoration: BoxDecoration(color: const Color(0xFFFFEBEE), borderRadius: BorderRadius.circular(6)),
+                            child: const Icon(Icons.delete_outline, size: 16, color: Colors.red),
+                          ),
+                        ),
+                        const SizedBox(width: 8),
+                        const Icon(Icons.favorite, color: Colors.red, size: 20),
+                      ]),
+                    ]),
+                  ),
+                ),
+              );
+            }
+          }
+
+          return const SizedBox.shrink();
         },
       ),
     );
