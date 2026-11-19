@@ -706,12 +706,12 @@ class _CategoryScreenState extends State<CategoryScreen> {
                                     illness:     _selIllness,
                                     symptom:     _selSymptom,
                                   )
-                                : SupabaseService.getFilteredProductCount(
+                                : SupabaseService.getSkusForTaxonomy(
                                     category:    _selCategory,
                                     subcategory: _selSubcategory,
                                     illness:     _selIllness,
                                     symptom:     _selSymptom,
-                                  ),
+                                  ).then((skus) => skus.length),
                             builder: (context, snap) {
                               final count = snap.data ?? 0;
                               final noun = _mode == _FindMode.herbal ? 'recipe' : 'product';
