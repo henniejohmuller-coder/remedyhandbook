@@ -123,22 +123,13 @@ class _ShopScreenState extends State<ShopScreen> {
           || (_filter == 'Components' && type == 'Component')
           || (_filter == 'Herbal Remedies'   && type == 'Remedy');
 
-      // Search all data fields — product matches if ANY term found in ANY field
+      // Search name only — description matches cause false positives
       final bool matchSearch;
       if (terms.isEmpty) {
         matchSearch = true;
       } else {
-        final fields = [
-          p['name']        ?? '',
-          p['description'] ?? '',
-          p['product_type'] ?? '',
-          p['type']        ?? '',
-        ].map((f) => f.toString().toLowerCase()).toList();
-
-        // Either/or — match if ANY term appears in ANY field
-        matchSearch = terms.any(
-          (term) => fields.any((field) => field.contains(term)),
-        );
+        final name = (p['name'] ?? '').toString().toLowerCase();
+        matchSearch = terms.any((term) => name.contains(term));
       }
 
       // Type dropdown filter
