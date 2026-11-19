@@ -156,6 +156,8 @@ class _ProductDetailScreenDBState extends State<ProductDetailScreenDB> {
   Map<String, dynamic> _product = {};
   bool _loading = true;
   List<Map<String, dynamic>> _siblingProducts = [];
+  bool _isSaved = false;
+  bool _savingToggle = false;
 
   @override
   void initState() {
@@ -165,6 +167,26 @@ class _ProductDetailScreenDBState extends State<ProductDetailScreenDB> {
     PaintingBinding.instance.imageCache.clearLiveImages();
     _loadFresh();
     _loadSiblings();
+    _checkSaved();
+  }
+
+  Future<void> _checkSaved() async {
+    final id = widget.product['id']?.toString() ?? '';
+    if (id.isEmpty) return;
+    final saved = await SupabaseService.isProductSaved(id);
+    if (mounted) setState(() => _isSaved = saved);
+  }
+
+  Future<void> _toggleSaved() async {
+    if (_savingToggle) return;
+    setState(() => _savingToggle = true);
+    final id = _product['id']?.toString() ?? '';
+    if (_isSaved) {
+      await SupabaseService.unsaveProduct(id);
+    } else {
+      await SupabaseService.saveProduct(id);
+    }
+    if (mounted) setState(() { _isSaved = !_isSaved; _savingToggle = false; });
   }
 
   Future<void> _loadSiblings() async {
@@ -225,7 +247,26 @@ class _ProductDetailScreenDBState extends State<ProductDetailScreenDB> {
       body: SafeArea(
         child: Column(
           children: [
-            YellowAppBar(title: name, subtitle: type, showBack: true),
+            YellowAppBar(
+              title: name,
+              subtitle: type,
+              showBack: true,
+              actions: [
+                _savingToggle
+                    ? const Padding(
+                        padding: EdgeInsets.only(right: 8),
+                        child: SizedBox(width: 20, height: 20,
+                            child: CircularProgressIndicator(strokeWidth: 2, color: AppColors.dark)))
+                    : IconButton(
+                        icon: Icon(
+                          _isSaved ? Icons.favorite : Icons.favorite_border,
+                          color: _isSaved ? Colors.red : AppColors.dark,
+                        ),
+                        onPressed: _toggleSaved,
+                        tooltip: _isSaved ? 'Remove from favourites' : 'Save to favourites',
+                      ),
+              ],
+            ),
             Expanded(
               child: SingleChildScrollView(
                 padding: const EdgeInsets.all(16),
