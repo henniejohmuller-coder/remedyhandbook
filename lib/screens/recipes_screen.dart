@@ -395,13 +395,11 @@ class _RecipesScreenState extends State<RecipesScreen>
   }
 
   void _goToProduct(BuildContext context, Map<String, dynamic> remedy, bool isHerb) {
-    final primaryHerb = remedy['primary_herb']?.toString().isNotEmpty == true ? remedy['primary_herb']!.toString() : remedy['component']?.toString() ?? '';
-    final mainConstituent = remedy['main_constituent']?.toString().isNotEmpty == true ? remedy['main_constituent']!.toString() : remedy['constituent']?.toString() ?? '';
+    final componentStr = (remedy['component'] ?? '').toString();
     final type = isHerb ? 'Components' : 'Herbal Remedies';
     Navigator.push(context, MaterialPageRoute(
       builder: (_) => ShopScreen(
-        initialPrimaryHerb: primaryHerb,
-        initialMainConstituent: mainConstituent,
+        initialSearch: componentStr,
         initialType: type,
       )));
   }

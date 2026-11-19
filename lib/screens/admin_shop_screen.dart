@@ -285,7 +285,7 @@ class _ShopItemFormState extends State<_ShopItemForm> {
     _stockController    = TextEditingController(text: p?['stock']?.toString() ?? '');
     _deliveryController = TextEditingController(text: p?['delivery_cost']?.toString() ?? '');
     _costController     = TextEditingController(text: p?['cost_price']?.toString() ?? '');
-    _categoryController = TextEditingController(text: p?['category'] ?? '');
+    _categoryController = TextEditingController(text: p?['product_type'] ?? '');
     _brandController    = TextEditingController(text: p?['brand'] ?? '');
     _primaryHerbController    = TextEditingController(text: p?['primary_herb'] ?? '');
     _mainConstituentController = TextEditingController(text: p?['main_constituent'] ?? '');
@@ -578,7 +578,7 @@ class _ShopItemFormState extends State<_ShopItemForm> {
         'image_url':     _imageController.text.trim(),
         'stock':         int.tryParse(_stockController.text) ?? 0,
         'delivery_cost': double.tryParse(_deliveryController.text) ?? 0,
-        'category':      _categoryController.text.trim(),
+        'product_type':  _categoryController.text.trim(),
         'brand':         _brandController.text.trim(),
         'primary_herb':  _primaryHerbController.text.trim(),
         'main_constituent': _mainConstituentController.text.trim(),

@@ -95,7 +95,7 @@ class _AdminSubmissionDetailScreenState extends State<AdminSubmissionDetailScree
         'recipe_name':       _nameController.text.trim(),
         'primary_component': _componentController.text.trim(),
         'illness':           _illnessController.text.trim(),
-        'category':          _categoryController.text.trim(),
+        'product_type':      _categoryController.text.trim(),
         'sub_category':      _subCategoryController.text.trim(),
         'symptoms':          _symptomsController.text.trim(),
         'organ':             _organController.text.trim(),

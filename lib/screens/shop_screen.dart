@@ -5,8 +5,7 @@ import '../services/supabase_service.dart';
 import 'product_detail_screen.dart';
 
 class ShopScreen extends StatefulWidget {
-  final String? initialPrimaryHerb;
-  final String? initialMainConstituent;
+  final String? initialSearch;
   final String? initialType;
   // Taxonomy filters from Find screen (Shop Products mode)
   final String? initialCategoryName;
@@ -16,8 +15,7 @@ class ShopScreen extends StatefulWidget {
 
   const ShopScreen({
     super.key,
-    this.initialPrimaryHerb,
-    this.initialMainConstituent,
+    this.initialSearch,
     this.initialType,
     this.initialCategoryName,
     this.initialSubCategoryName,
@@ -33,11 +31,9 @@ class ShopScreen extends StatefulWidget {
 }
 
 class _ShopScreenState extends State<ShopScreen> {
-  String _filter            = 'All';
-  String _search            = '';
-  String _herbSearch        = '';
-  String _constituentSearch = '';
-  String _catFilter         = 'All';
+  String _filter    = 'All';
+  String _search    = '';
+  String _catFilter = 'All';
   String _brandFilter       = 'All';
   // Taxonomy filters (from Find → Shop Products)
   String? _taxCategory;
@@ -48,9 +44,7 @@ class _ShopScreenState extends State<ShopScreen> {
   List<String> _catOptions   = ['All'];
   List<String> _brandOptions = ['All'];
   bool _loading = true;
-  final _searchController      = TextEditingController();
-  final _herbController        = TextEditingController();
-  final _constituentController = TextEditingController();
+  final _searchController = TextEditingController();
 
   @override
   void initState() {
@@ -61,15 +55,10 @@ class _ShopScreenState extends State<ShopScreen> {
     _taxSubCategory = widget.initialSubCategoryName;
     _taxIllness     = widget.initialIllnessName;
     _taxSymptom     = widget.initialSymptomName;
-    // Pre-populate Primary Herb box
-    if (widget.initialPrimaryHerb != null && widget.initialPrimaryHerb!.isNotEmpty) {
-      _herbSearch = widget.initialPrimaryHerb!;
-      _herbController.text = widget.initialPrimaryHerb!;
-    }
-    // Pre-populate Constituent box
-    if (widget.initialMainConstituent != null && widget.initialMainConstituent!.isNotEmpty) {
-      _constituentSearch = widget.initialMainConstituent!;
-      _constituentController.text = widget.initialMainConstituent!;
+    // Pre-populate search bar (e.g. from remedy components)
+    if (widget.initialSearch != null && widget.initialSearch!.isNotEmpty) {
+      _search = widget.initialSearch!;
+      _searchController.text = widget.initialSearch!;
     }
     // Pre-select tab
     if (widget.initialType == 'Component') _filter = 'Components';
@@ -81,8 +70,6 @@ class _ShopScreenState extends State<ShopScreen> {
   void dispose() {
     ShopScreen._reloadCallback = null;
     _searchController.dispose();
-    _herbController.dispose();
-    _constituentController.dispose();
     super.dispose();
   }
 
@@ -92,7 +79,7 @@ class _ShopScreenState extends State<ShopScreen> {
     try {
       final data = await SupabaseService.getProducts();
       if (!mounted) return;
-      final _catList = data.map((p) => (p['category'] ?? '').toString().trim()).where((c) => c.isNotEmpty).toSet().toList()..sort();
+      final _catList = data.map((p) => (p['product_type'] ?? '').toString().trim()).where((c) => c.isNotEmpty).toSet().toList()..sort();
       final cats = ['All', ..._catList];
       final _brandList = data.map((p) => (p['brand'] ?? '').toString().trim()).where((b) => b.isNotEmpty).toSet().toList()..sort();
       final brands = ['All', ..._brandList];
@@ -133,7 +120,7 @@ class _ShopScreenState extends State<ShopScreen> {
         final fields = [
           p['name']        ?? '',
           p['description'] ?? '',
-          p['category']    ?? '',
+          p['product_type'] ?? '',
           p['type']        ?? '',
         ].map((f) => f.toString().toLowerCase()).toList();
 
@@ -143,27 +130,9 @@ class _ShopScreenState extends State<ShopScreen> {
         );
       }
 
-      // Primary Herb box � comma/semicolon terms searched against name field
-      final herbTerms = _herbSearch
-          .split(RegExp(r'[,;]'))
-          .map((t) => t.trim().toLowerCase())
-          .where((t) => t.isNotEmpty)
-          .toList();
-      final matchHerb = herbTerms.isEmpty
-          || herbTerms.any((t) => (p['name'] ?? '').toString().toLowerCase().contains(t));
-
-      // Constituent box � comma/semicolon terms searched against description field
-      final constTerms = _constituentSearch
-          .split(RegExp(r'[,;]'))
-          .map((t) => t.trim().toLowerCase())
-          .where((t) => t.isNotEmpty)
-          .toList();
-      final matchConstituent = constTerms.isEmpty
-          || constTerms.any((t) => (p['description'] ?? '').toString().toLowerCase().contains(t));
-
-      // Category dropdown filter
+      // Type dropdown filter
       final matchCat = _catFilter == 'All'
-          || (p['category'] ?? '').toString().trim().toLowerCase()
+          || (p['product_type'] ?? '').toString().trim().toLowerCase()
               == _catFilter.toLowerCase();
 
       // Brand dropdown filter
@@ -171,15 +140,13 @@ class _ShopScreenState extends State<ShopScreen> {
           || (p['brand'] ?? '').toString().trim().toLowerCase()
               == _brandFilter.toLowerCase();
 
-      final matchHerbOrConst = (herbTerms.isEmpty && constTerms.isEmpty) || herbTerms.any((t) => (p['name'] ?? '').toString().toLowerCase().contains(t)) || constTerms.any((t) => (p['description'] ?? '').toString().toLowerCase().contains(t));
-
       // Taxonomy filters (Find → Shop Products mode)
       final matchTaxCategory    = _taxCategory    == null || (p['category_name']    ?? '') == _taxCategory;
       final matchTaxSubCategory = _taxSubCategory == null || (p['sub_category_name'] ?? '') == _taxSubCategory;
       final matchTaxIllness     = _taxIllness     == null || (p['illness_name']     ?? '') == _taxIllness;
       final matchTaxSymptom     = _taxSymptom     == null || (p['symptom_name']     ?? '') == _taxSymptom;
 
-      return matchFilter && matchSearch && matchHerbOrConst && matchCat && matchBrand
+      return matchFilter && matchSearch && matchCat && matchBrand
           && matchTaxCategory && matchTaxSubCategory && matchTaxIllness && matchTaxSymptom;
     }).toList();
   }
@@ -312,94 +279,7 @@ class _ShopScreenState extends State<ShopScreen> {
             ),
             const SizedBox(height: 10),
 
-            // -- Primary Herb + Constituent filter boxes ------------------
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 16),
-              child: Row(
-                children: [
-                  // Primary Herb
-                  Expanded(
-                    child: Container(
-                      decoration: BoxDecoration(
-                        color: Colors.white,
-                        borderRadius: BorderRadius.circular(10),
-                        border: Border.all(
-                          color: _herbSearch.isNotEmpty
-                              ? AppColors.primary : Colors.grey.shade200),
-                        boxShadow: [BoxShadow(
-                            color: Colors.black.withOpacity(0.03), blurRadius: 4)],
-                      ),
-                      child: TextField(
-                        controller: _herbController,
-                        onChanged: (v) => setState(() => _herbSearch = v),
-                        style: const TextStyle(fontSize: 12, color: AppColors.dark),
-                        decoration: InputDecoration(
-                          hintText: 'Primary Herb',
-                          hintStyle: const TextStyle(
-                              fontSize: 12, color: AppColors.textSecondary),
-                          prefixIcon: const Icon(Icons.eco_outlined,
-                              size: 16, color: AppColors.textSecondary),
-                          suffixIcon: _herbSearch.isNotEmpty
-                              ? GestureDetector(
-                                  onTap: () {
-                                    _herbController.clear();
-                                    setState(() => _herbSearch = '');
-                                  },
-                                  child: const Icon(Icons.close,
-                                      size: 14, color: AppColors.textSecondary))
-                              : null,
-                          border: InputBorder.none,
-                          contentPadding: const EdgeInsets.symmetric(
-                              horizontal: 8, vertical: 10),
-                        ),
-                      ),
-                    ),
-                  ),
-                  const SizedBox(width: 8),
-                  // Constituent
-                  Expanded(
-                    child: Container(
-                      decoration: BoxDecoration(
-                        color: Colors.white,
-                        borderRadius: BorderRadius.circular(10),
-                        border: Border.all(
-                          color: _constituentSearch.isNotEmpty
-                              ? AppColors.primary : Colors.grey.shade200),
-                        boxShadow: [BoxShadow(
-                            color: Colors.black.withOpacity(0.03), blurRadius: 4)],
-                      ),
-                      child: TextField(
-                        controller: _constituentController,
-                        onChanged: (v) => setState(() => _constituentSearch = v),
-                        style: const TextStyle(fontSize: 12, color: AppColors.dark),
-                        decoration: InputDecoration(
-                          hintText: 'Constituent',
-                          hintStyle: const TextStyle(
-                              fontSize: 12, color: AppColors.textSecondary),
-                          prefixIcon: const Icon(Icons.science_outlined,
-                              size: 16, color: AppColors.textSecondary),
-                          suffixIcon: _constituentSearch.isNotEmpty
-                              ? GestureDetector(
-                                  onTap: () {
-                                    _constituentController.clear();
-                                    setState(() => _constituentSearch = '');
-                                  },
-                                  child: const Icon(Icons.close,
-                                      size: 14, color: AppColors.textSecondary))
-                              : null,
-                          border: InputBorder.none,
-                          contentPadding: const EdgeInsets.symmetric(
-                              horizontal: 8, vertical: 10),
-                        ),
-                      ),
-                    ),
-                  ),
-                ],
-              ),
-            ),
-            const SizedBox(height: 8),
-
-            // Category + Brand dropdowns
+            // Type + Brand dropdowns
             Padding(
               padding: const EdgeInsets.symmetric(horizontal: 16),
               child: Row(
@@ -455,7 +335,7 @@ class _ShopScreenState extends State<ShopScreen> {
                     ),
                   ),
                   const SizedBox(width: 8),
-                  // Category (right)
+                  // Type (right)
                   Expanded(
                     child: Container(
                       height: 44,
@@ -470,7 +350,7 @@ class _ShopScreenState extends State<ShopScreen> {
                       ),
                       child: GestureDetector(
                         onTap: () => _showSearchDropdown(
-                          context, 'Category', _catOptions, _catFilter,
+                          context, 'Type', _catOptions, _catFilter,
                           (v) => setState(() => _catFilter = v)),
                         child: Padding(
                           padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 11),
@@ -481,7 +361,7 @@ class _ShopScreenState extends State<ShopScreen> {
                                 style: const TextStyle(fontSize: 12),
                                 children: [
                                   TextSpan(
-                                    text: 'Category: ',
+                                    text: 'Type: ',
                                     style: TextStyle(
                                         color: AppColors.textSecondary,
                                         fontWeight: FontWeight.normal),
@@ -584,7 +464,7 @@ class _ProductCard extends StatelessWidget {
   Widget build(BuildContext context) {
     final name     = product['name']        ?? '';
     final type     = product['type']        ?? '';
-    final category = product['category']    ?? '';
+    final category = product['product_type'] ?? '';
     final brand    = product['brand']       ?? '';
     final desc     = product['description'] ?? '';
     final price    = num.tryParse(product['price']?.toString() ?? '0')?.toDouble() ?? 0.0;

@@ -738,13 +738,11 @@ class _RecipeDetailScreenDBState extends State<RecipeDetailScreenDB> {
 
   Future<void> _goToProduct(BuildContext context, bool isHerb) async {
     if (!_requireAuth(context)) return;
-    final primaryHerb = _remedy['primary_herb']?.toString().isNotEmpty == true ? _remedy['primary_herb']!.toString() : _remedy['component']?.toString() ?? '';
-    final mainConstituent = _remedy['main_constituent']?.toString().isNotEmpty == true ? _remedy['main_constituent']!.toString() : _remedy['constituent']?.toString() ?? '';
+    final componentStr = _remedy['component']?.toString() ?? '';
     final type = isHerb ? 'Components' : 'Herbal Remedies';
     Navigator.push(context, MaterialPageRoute(
       builder: (_) => ShopScreen(
-        initialPrimaryHerb: primaryHerb,
-        initialMainConstituent: mainConstituent,
+        initialSearch: componentStr,
         initialType: type,
       )));
   }
