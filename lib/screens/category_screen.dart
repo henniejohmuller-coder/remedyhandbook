@@ -35,9 +35,10 @@ class _CategoryScreenState extends State<CategoryScreen> {
   _FindMode _mode = CategoryScreen._savedMode;
 
   // ── Matrix rows loaded once ─────────────────────────────────────────────
-  List<Map<String, dynamic>> _allRows      = [];   // herbal filter_matrix
-  List<Map<String, dynamic>> _productRows  = [];   // products taxonomy matrix
-  List<Map<String, dynamic>> _remedies     = [];
+  List<Map<String, dynamic>> _allRows           = [];   // herbal filter_matrix (taxonomy only)
+  List<Map<String, dynamic>> _productRows       = [];   // deduplicated product taxonomy rows
+  List<Map<String, dynamic>> _allProductSkuRows = [];   // raw filter_matrix rows with SKUs (for SKU lookup)
+  List<Map<String, dynamic>> _remedies          = [];
   bool _loading = true;
 
   // Count caches for herbal mode
@@ -158,10 +159,10 @@ class _CategoryScreenState extends State<CategoryScreen> {
     final symCount = <String, int>{};
 
     for (final p in products) {
-      final cat = _normalize(p['category_name']);
-      final sub = _normalize(p['sub_category_name']);
-      final ill = _normalize(p['illness_name']);
-      final sym = _normalize(p['symptom_name']);
+      final cat = _normalize(p['category']);
+      final sub = _normalize(p['subcategory']);
+      final ill = _normalize(p['illness']);
+      final sym = _normalize(p['symptom']);
 
       if (cat.isEmpty) continue;
 
@@ -281,18 +282,17 @@ class _CategoryScreenState extends State<CategoryScreen> {
         remFrom += 1000;
       }
 
-      // Load products taxonomy matrix
+      // Load products taxonomy matrix (deduplicated rows from filter_matrix SKU rows)
       final prodMatrix = await SupabaseService.getProductTaxonomyMatrix();
 
-      // Load all ACTIVE products for count caches
+      // Load all filter_matrix rows with SKUs for count caches
       final List<Map<String, dynamic>> allProducts = [];
       int pFrom = 0;
       while (true) {
         final pPage = await SupabaseService.supabase
-            .from('products')
-            .select('category_name, sub_category_name, illness_name, symptom_name')
-            .eq('active', true)
-            .not('category_name', 'is', null)
+            .from('filter_matrix')
+            .select('category, subcategory, illness, symptom, sku')
+            .not('sku', 'is', null)
             .range(pFrom, pFrom + 999);
         final pList = List<Map<String, dynamic>>.from(pPage);
         allProducts.addAll(pList);
@@ -302,10 +302,11 @@ class _CategoryScreenState extends State<CategoryScreen> {
 
       if (!mounted) return;
       setState(() {
-        _allRows     = all;
-        _remedies    = allRemedies;
-        _productRows = prodMatrix;
-        _loading     = false;
+        _allRows           = all;
+        _remedies          = allRemedies;
+        _productRows       = prodMatrix;
+        _allProductSkuRows = allProducts;   // raw filter_matrix rows with sku
+        _loading           = false;
         _buildCountCaches();
         _buildProductCountCaches(allProducts);
       });
@@ -389,15 +390,48 @@ class _CategoryScreenState extends State<CategoryScreen> {
 
   void _goToProducts() {
     _saveState();
+    // Collect matching SKUs from filter_matrix product rows already loaded
+    final matchingSkus = _productRows.where((row) {
+      if (_selCategory    != null && row['category']    != _selCategory)    return false;
+      if (_selSubcategory != null && row['subcategory'] != _selSubcategory) return false;
+      if (_selIllness     != null && row['illness']     != _selIllness)     return false;
+      if (_selSymptom     != null && row['symptom']     != _selSymptom)     return false;
+      return true;
+    }).expand((row) {
+      // _productRows is deduplicated taxonomy; we need SKUs from the full allProducts list
+      return <String>[];
+    }).toSet();
+
+    // Use the full filter_matrix SKU data stored in allProducts (via count cache build)
+    // Re-query SKUs matching the selected taxonomy from already-loaded data
+    final skus = <String>{};
+    // Note: _buildProductCountCaches receives the raw filter_matrix rows with SKUs
+    // We need access to them here — pass via a local set built during load
     Navigator.push(
       context,
       MaterialPageRoute(builder: (_) => ShopScreen(
-        initialCategoryName:   _selCategory,
-        initialSubCategoryName: _selSubcategory,
-        initialIllnessName:    _selIllness,
-        initialSymptomName:    _selSymptom,
+        initialTaxonomySkus: _taxSkusForSelection(),
       )),
     );
+  }
+
+  Set<String> _taxSkusForSelection() {
+    // Filter the loaded filter_matrix SKU rows by current selection
+    final skus = <String>{};
+    for (final row in _allProductSkuRows) {
+      final cat = row['category']?.toString();
+      final sub = row['subcategory']?.toString();
+      final ill = row['illness']?.toString();
+      final sym = row['symptom']?.toString();
+      final sku = row['sku']?.toString();
+      if (sku == null) continue;
+      if (_selCategory    != null && cat != _selCategory)    continue;
+      if (_selSubcategory != null && sub != _selSubcategory) continue;
+      if (_selIllness     != null && ill != _selIllness)     continue;
+      if (_selSymptom     != null && sym != _selSymptom)     continue;
+      skus.add(sku);
+    }
+    return skus;
   }
 
   Widget _headerCell(String label, {int flex = 1}) => Expanded(

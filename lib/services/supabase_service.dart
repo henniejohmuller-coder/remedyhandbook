@@ -504,38 +504,31 @@ class SupabaseService {
     return List<Map<String, dynamic>>.from(response);
   }
 
-  /// Build a virtual filter matrix from products taxonomy columns
+  /// Build product taxonomy matrix from filter_matrix rows that have a SKU
   static Future<List<Map<String, dynamic>>> getProductTaxonomyMatrix() async {
     try {
-      final data = await supabase
-          .from('products')
-          .select('category_name, sub_category_name, illness_name, symptom_name')
-          .eq('active', true)
-          .not('category_name', 'is', null)
-          .not('sub_category_name', 'is', null)
-          .not('illness_name', 'is', null)
-          .not('symptom_name', 'is', null);
-      // Deduplicate into unique rows
+      final List<Map<String, dynamic>> all = [];
+      int from = 0;
+      const pageSize = 1000;
+      while (true) {
+        final page = await supabase
+            .from('filter_matrix')
+            .select('category, subcategory, illness, symptom')
+            .not('sku', 'is', null)
+            .order('category').order('subcategory').order('illness').order('symptom')
+            .range(from, from + pageSize - 1);
+        final pageList = List<Map<String, dynamic>>.from(page);
+        all.addAll(pageList);
+        if (pageList.length < pageSize) break;
+        from += pageSize;
+      }
+      // Deduplicate into unique taxonomy rows (many SKUs can share same combo)
       final seen = <String>{};
       final rows = <Map<String, dynamic>>[];
-      for (final p in List<Map<String, dynamic>>.from(data)) {
-        final key = '${p['category_name']}|${p['sub_category_name']}|${p['illness_name']}|${p['symptom_name']}';
-        if (seen.add(key)) {
-          rows.add({
-            'category':    p['category_name'],
-            'subcategory': p['sub_category_name'],
-            'illness':     p['illness_name'],
-            'symptom':     p['symptom_name'],
-          });
-        }
+      for (final p in all) {
+        final key = '${p['category']}|${p['subcategory']}|${p['illness']}|${p['symptom']}';
+        if (seen.add(key)) rows.add(Map<String, dynamic>.from(p));
       }
-      rows.sort((a, b) {
-        final c = a['category'].compareTo(b['category']);
-        if (c != 0) return c;
-        final s = a['subcategory'].compareTo(b['subcategory']);
-        if (s != 0) return s;
-        return a['illness'].compareTo(b['illness']);
-      });
       return rows;
     } catch (e) {
       debugPrint('getProductTaxonomyMatrix error: $e');
@@ -543,23 +536,28 @@ class SupabaseService {
     }
   }
 
-  /// Count products matching selected taxonomy filters
-  static Future<int> getFilteredProductCount({
+  /// Get SKUs of products matching the selected taxonomy filters (from filter_matrix)
+  static Future<Set<String>> getSkusForTaxonomy({
     String? category,
     String? subcategory,
     String? illness,
     String? symptom,
   }) async {
     try {
-      var query = supabase.from('products').select('id').eq('active', true);
-      if (category    != null) query = query.eq('category_name',    category);
-      if (subcategory != null) query = query.eq('sub_category_name', subcategory);
-      if (illness     != null) query = query.eq('illness_name',     illness);
-      if (symptom     != null) query = query.eq('symptom_name',     symptom);
+      var query = supabase
+          .from('filter_matrix')
+          .select('sku')
+          .not('sku', 'is', null);
+      if (category    != null) query = query.eq('category',    category);
+      if (subcategory != null) query = query.eq('subcategory', subcategory);
+      if (illness     != null) query = query.eq('illness',     illness);
+      if (symptom     != null) query = query.eq('symptom',     symptom);
       final result = await query;
-      return List.from(result).length;
+      return List<Map<String, dynamic>>.from(result)
+          .map((r) => r['sku'].toString())
+          .toSet();
     } catch (_) {
-      return 0;
+      return {};
     }
   }
 

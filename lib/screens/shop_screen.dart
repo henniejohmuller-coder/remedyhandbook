@@ -7,20 +7,14 @@ import 'product_detail_screen.dart';
 class ShopScreen extends StatefulWidget {
   final String? initialSearch;
   final String? initialType;
-  // Taxonomy filters from Find screen (Shop Products mode)
-  final String? initialCategoryName;
-  final String? initialSubCategoryName;
-  final String? initialIllnessName;
-  final String? initialSymptomName;
+  // SKU-based filter from Find screen (Shop Products mode via filter_matrix)
+  final Set<String>? initialTaxonomySkus;
 
   const ShopScreen({
     super.key,
     this.initialSearch,
     this.initialType,
-    this.initialCategoryName,
-    this.initialSubCategoryName,
-    this.initialIllnessName,
-    this.initialSymptomName,
+    this.initialTaxonomySkus,
   });
 
   static VoidCallback? _reloadCallback;
@@ -41,11 +35,8 @@ class _ShopScreenState extends State<ShopScreen> {
   String _search      = ShopScreen._savedSearch;
   String _catFilter   = ShopScreen._savedCatFilter;
   String _brandFilter = ShopScreen._savedBrandFilter;
-  // Taxonomy filters (from Find → Shop Products)
-  String? _taxCategory;
-  String? _taxSubCategory;
-  String? _taxIllness;
-  String? _taxSymptom;
+  // SKU filter from Find → Shop Products (via filter_matrix)
+  Set<String>? _taxSkus;
   List<Map<String, dynamic>> _products = [];
   List<String> _catOptions   = ['All'];
   List<String> _brandOptions = ['All'];
@@ -58,11 +49,10 @@ class _ShopScreenState extends State<ShopScreen> {
     ShopScreen._reloadCallback = _loadProducts;
     // Restore search controller text from saved state
     _searchController.text = _search;
-    // If navigated from a remedy/find screen, override with incoming params
-    _taxCategory    = widget.initialCategoryName;
-    _taxSubCategory = widget.initialSubCategoryName;
-    _taxIllness     = widget.initialIllnessName;
-    _taxSymptom     = widget.initialSymptomName;
+    // If navigated from Find → Shop Products, receive matching SKUs
+    if (widget.initialTaxonomySkus != null && widget.initialTaxonomySkus!.isNotEmpty) {
+      _taxSkus = widget.initialTaxonomySkus;
+    }
     if (widget.initialSearch != null && widget.initialSearch!.isNotEmpty) {
       _search = widget.initialSearch!;
       _searchController.text = widget.initialSearch!;
@@ -142,14 +132,10 @@ class _ShopScreenState extends State<ShopScreen> {
           || (p['brand'] ?? '').toString().trim().toLowerCase()
               == _brandFilter.toLowerCase();
 
-      // Taxonomy filters (Find → Shop Products mode)
-      final matchTaxCategory    = _taxCategory    == null || (p['category_name']    ?? '') == _taxCategory;
-      final matchTaxSubCategory = _taxSubCategory == null || (p['sub_category_name'] ?? '') == _taxSubCategory;
-      final matchTaxIllness     = _taxIllness     == null || (p['illness_name']     ?? '') == _taxIllness;
-      final matchTaxSymptom     = _taxSymptom     == null || (p['symptom_name']     ?? '') == _taxSymptom;
+      // SKU filter from Find → Shop Products (via filter_matrix)
+      final matchTaxSku = _taxSkus == null || _taxSkus!.contains((p['sku'] ?? '').toString());
 
-      return matchFilter && matchSearch && matchCat && matchBrand
-          && matchTaxCategory && matchTaxSubCategory && matchTaxIllness && matchTaxSymptom;
+      return matchFilter && matchSearch && matchCat && matchBrand && matchTaxSku;
     }).toList();
   }
 
@@ -221,7 +207,7 @@ class _ShopScreenState extends State<ShopScreen> {
             const YellowAppBar(title: 'Shop', subtitle: 'Free delivery over R650'),
 
             // ── Taxonomy filter banner (shown when arriving from Find → Shop Products) ──
-            if (_taxCategory != null || _taxIllness != null)
+            if (_taxSkus != null && _taxSkus!.isNotEmpty)
               Container(
                 color: AppColors.primary.withOpacity(0.12),
                 padding: const EdgeInsets.fromLTRB(14, 7, 14, 7),
@@ -230,21 +216,13 @@ class _ShopScreenState extends State<ShopScreen> {
                   const SizedBox(width: 6),
                   Expanded(
                     child: Text(
-                      [
-                        if (_taxCategory    != null) _taxCategory!,
-                        if (_taxSubCategory != null) _taxSubCategory!,
-                        if (_taxIllness     != null) _taxIllness!,
-                        if (_taxSymptom     != null) _taxSymptom!,
-                      ].join(' › '),
+                      'Filtered by health condition (${_taxSkus!.length} products)',
                       style: const TextStyle(fontSize: 11, color: AppColors.dark, fontWeight: FontWeight.w500),
                       overflow: TextOverflow.ellipsis,
                     ),
                   ),
                   GestureDetector(
-                    onTap: () => setState(() {
-                      _taxCategory = null; _taxSubCategory = null;
-                      _taxIllness  = null; _taxSymptom     = null;
-                    }),
+                    onTap: () => setState(() { _taxSkus = null; }),
                     child: const Icon(Icons.close, size: 16, color: AppColors.dark),
                   ),
                 ]),
