@@ -26,15 +26,21 @@ class ShopScreen extends StatefulWidget {
   static VoidCallback? _reloadCallback;
   static void reload() => _reloadCallback?.call();
 
+  // Persisted filter state — survives tab switches
+  static String _savedFilter      = 'All';
+  static String _savedSearch      = '';
+  static String _savedCatFilter   = 'All';
+  static String _savedBrandFilter = 'All';
+
   @override
   State<ShopScreen> createState() => _ShopScreenState();
 }
 
 class _ShopScreenState extends State<ShopScreen> {
-  String _filter    = 'All';
-  String _search    = '';
-  String _catFilter = 'All';
-  String _brandFilter       = 'All';
+  String _filter      = ShopScreen._savedFilter;
+  String _search      = ShopScreen._savedSearch;
+  String _catFilter   = ShopScreen._savedCatFilter;
+  String _brandFilter = ShopScreen._savedBrandFilter;
   // Taxonomy filters (from Find → Shop Products)
   String? _taxCategory;
   String? _taxSubCategory;
@@ -50,21 +56,26 @@ class _ShopScreenState extends State<ShopScreen> {
   void initState() {
     super.initState();
     ShopScreen._reloadCallback = _loadProducts;
-    // Pre-populate taxonomy filters from Find screen
+    // Restore search controller text from saved state
+    _searchController.text = _search;
+    // If navigated from a remedy/find screen, override with incoming params
     _taxCategory    = widget.initialCategoryName;
     _taxSubCategory = widget.initialSubCategoryName;
     _taxIllness     = widget.initialIllnessName;
     _taxSymptom     = widget.initialSymptomName;
-    // Pre-populate search bar (e.g. from remedy components)
     if (widget.initialSearch != null && widget.initialSearch!.isNotEmpty) {
       _search = widget.initialSearch!;
       _searchController.text = widget.initialSearch!;
     }
-    // Pre-select tab
     if (widget.initialType == 'Component') _filter = 'Components';
     if (widget.initialType == 'Remedy')    _filter = 'Herbal Remedies';
     _loadProducts();
   }
+
+  void _setFilter(String v)      => setState(() { _filter      = ShopScreen._savedFilter      = v; });
+  void _setSearch(String v)      => setState(() { _search      = ShopScreen._savedSearch      = v; });
+  void _setCatFilter(String v)   => setState(() { _catFilter   = ShopScreen._savedCatFilter   = v; });
+  void _setBrandFilter(String v) => setState(() { _brandFilter = ShopScreen._savedBrandFilter = v; });
 
   @override
   void dispose() {
@@ -260,7 +271,7 @@ class _ShopScreenState extends State<ShopScreen> {
                     boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.04), blurRadius: 4)]),
                 child: TextField(
                   controller: _searchController,
-                  onChanged: (v) => setState(() => _search = v),
+                  onChanged: _setSearch,
                   style: const TextStyle(fontSize: 12),
                   decoration: InputDecoration(
                     hintText: 'Search by name, ingredient, category... (use , or ;)',
@@ -268,7 +279,7 @@ class _ShopScreenState extends State<ShopScreen> {
                     prefixIcon: const Icon(Icons.search, size: 18, color: AppColors.textSecondary),
                     suffixIcon: _search.isNotEmpty
                         ? GestureDetector(
-                            onTap: () { _searchController.clear(); setState(() => _search = ''); },
+                            onTap: () { _searchController.clear(); _setSearch(''); },
                             child: const Icon(Icons.close, size: 18, color: AppColors.textSecondary))
                         : null,
                     border: InputBorder.none,
@@ -300,7 +311,7 @@ class _ShopScreenState extends State<ShopScreen> {
                       child: GestureDetector(
                         onTap: () => _showSearchDropdown(
                           context, 'Brand', _brandOptions, _brandFilter,
-                          (v) => setState(() => _brandFilter = v)),
+                          _setBrandFilter),
                         child: Padding(
                           padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 11),
                           child: Row(children: [
@@ -326,7 +337,7 @@ class _ShopScreenState extends State<ShopScreen> {
                             )),
                             _brandFilter != 'All'
                                 ? GestureDetector(
-                                    onTap: () => setState(() => _brandFilter = 'All'),
+                                    onTap: () => _setBrandFilter('All'),
                                     child: const Icon(Icons.close, size: 16, color: AppColors.textSecondary))
                                 : const Icon(Icons.keyboard_arrow_down, size: 16, color: AppColors.textSecondary),
                           ]),
@@ -351,7 +362,7 @@ class _ShopScreenState extends State<ShopScreen> {
                       child: GestureDetector(
                         onTap: () => _showSearchDropdown(
                           context, 'Type', _catOptions, _catFilter,
-                          (v) => setState(() => _catFilter = v)),
+                          _setCatFilter),
                         child: Padding(
                           padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 11),
                           child: Row(children: [
@@ -377,7 +388,7 @@ class _ShopScreenState extends State<ShopScreen> {
                             )),
                             _catFilter != 'All'
                                 ? GestureDetector(
-                                    onTap: () => setState(() => _catFilter = 'All'),
+                                    onTap: () => _setCatFilter('All'),
                                     child: const Icon(Icons.close, size: 16, color: AppColors.textSecondary))
                                 : const Icon(Icons.keyboard_arrow_down, size: 16, color: AppColors.textSecondary),
                           ]),
@@ -397,7 +408,7 @@ class _ShopScreenState extends State<ShopScreen> {
                 children: ['All', 'Components', 'Herbal Remedies'].map((tab) => Padding(
                   padding: const EdgeInsets.only(right: 8),
                   child: GestureDetector(
-                    onTap: () => setState(() => _filter = tab),
+                    onTap: () => _setFilter(tab),
                     child: Container(
                       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
                       decoration: BoxDecoration(
