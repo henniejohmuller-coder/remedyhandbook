@@ -9,12 +9,21 @@ class ShopScreen extends StatefulWidget {
   final String? initialType;
   // SKU-based filter from Find screen (Shop Products mode via filter_matrix)
   final Set<String>? initialTaxonomySkus;
+  // Taxonomy context so we can load featured products for this combination
+  final String? taxCategory;
+  final String? taxSubcategory;
+  final String? taxIllness;
+  final String? taxSymptom;
 
   const ShopScreen({
     super.key,
     this.initialSearch,
     this.initialType,
     this.initialTaxonomySkus,
+    this.taxCategory,
+    this.taxSubcategory,
+    this.taxIllness,
+    this.taxSymptom,
   });
 
   static VoidCallback? _reloadCallback;
@@ -37,7 +46,8 @@ class _ShopScreenState extends State<ShopScreen> {
   String _brandFilter = ShopScreen._savedBrandFilter;
   // SKU filter from Find → Shop Products (via filter_matrix)
   Set<String>? _taxSkus;
-  // When arriving from Find with taxonomy SKUs, show only featured (ranked) products first
+  // Featured product IDs (ordered) for this taxonomy combination
+  List<String> _featuredProductIds = [];
   bool _showFeaturedOnly = false;
   List<Map<String, dynamic>> _products = [];
   List<String> _catOptions   = ['All'];
@@ -54,7 +64,7 @@ class _ShopScreenState extends State<ShopScreen> {
     // If navigated from Find → Shop Products, receive matching SKUs
     if (widget.initialTaxonomySkus != null && widget.initialTaxonomySkus!.isNotEmpty) {
       _taxSkus = widget.initialTaxonomySkus;
-      _showFeaturedOnly = true; // default to top picks when coming from Find
+      _showFeaturedOnly = true;
     }
     if (widget.initialSearch != null && widget.initialSearch!.isNotEmpty) {
       _search = widget.initialSearch!;
@@ -83,16 +93,32 @@ class _ShopScreenState extends State<ShopScreen> {
     setState(() => _loading = true);
     try {
       final data = await SupabaseService.getProducts();
+
+      // Load featured product IDs for this taxonomy (if coming from Find)
+      List<String> featuredIds = [];
+      if (widget.taxCategory != null) {
+        try {
+          final rows = await SupabaseService.supabase
+              .from('filter_matrix_featured_products')
+              .select('rank, product_id')
+              .eq('category',    widget.taxCategory!)
+              .eq('subcategory', widget.taxSubcategory ?? '')
+              .eq('illness',     widget.taxIllness ?? '')
+              .eq('symptom',     widget.taxSymptom ?? '')
+              .order('rank');
+          featuredIds = (rows as List).map((r) => r['product_id'].toString()).toList();
+        } catch (_) {}
+      }
+
       if (!mounted) return;
-      final _catList = data.map((p) => (p['product_type'] ?? '').toString().trim()).where((c) => c.isNotEmpty).toSet().toList()..sort();
-      final cats = ['All', ..._catList];
-      final _brandList = data.map((p) => (p['brand'] ?? '').toString().trim()).where((b) => b.isNotEmpty).toSet().toList()..sort();
-      final brands = ['All', ..._brandList];
+      final catList = data.map((p) => (p['product_type'] ?? '').toString().trim()).where((c) => c.isNotEmpty).toSet().toList()..sort();
+      final brandList = data.map((p) => (p['brand'] ?? '').toString().trim()).where((b) => b.isNotEmpty).toSet().toList()..sort();
       setState(() {
-        _products     = data;
-        _catOptions   = cats;
-        _brandOptions = brands;
-        _loading      = false;
+        _products          = data;
+        _featuredProductIds = featuredIds;
+        _catOptions        = ['All', ...catList];
+        _brandOptions      = ['All', ...brandList];
+        _loading           = false;
       });
     } catch (e) {
       if (!mounted) return;
@@ -140,33 +166,28 @@ class _ShopScreenState extends State<ShopScreen> {
       // SKU filter from Find → Shop Products (via filter_matrix)
       final matchTaxSku = _taxSkus == null || _taxSkus!.contains((p['sku'] ?? '').toString());
 
-      // Featured-only filter — when coming from Find, default to ranked products
-      final matchFeatured = !_showFeaturedOnly || (p['featured_rank'] != null);
+      // Featured-only view: show only the ranked products for this taxonomy
+      final matchFeatured = !_showFeaturedOnly ||
+          _featuredProductIds.contains((p['id'] ?? '').toString());
 
       return matchFilter && matchSearch && matchCat && matchBrand && matchTaxSku && matchFeatured;
     }).toList()
       ..sort((a, b) {
-        // Sort featured products by rank first, then everything else
-        final ra = a['featured_rank'] as int?;
-        final rb = b['featured_rank'] as int?;
-        if (ra != null && rb != null) return ra.compareTo(rb);
-        if (ra != null) return -1;
-        if (rb != null) return 1;
+        // Sort featured (ranked) products to the top in rank order
+        final idA = (a['id'] ?? '').toString();
+        final idB = (b['id'] ?? '').toString();
+        final ri = _featuredProductIds.indexOf(idA);
+        final rj = _featuredProductIds.indexOf(idB);
+        if (ri != -1 && rj != -1) return ri.compareTo(rj);
+        if (ri != -1) return -1;
+        if (rj != -1) return 1;
         return 0;
       });
   }
 
-  // Count of all taxonomy-matching products (regardless of featured filter)
-  int get _totalTaxSkuCount => _taxSkus == null
+  int get _totalTaxCount => _taxSkus == null
       ? _products.length
       : _products.where((p) => _taxSkus!.contains((p['sku'] ?? '').toString())).length;
-
-  // Count of featured products in the current taxonomy
-  int get _featuredTaxCount => _taxSkus == null
-      ? _products.where((p) => p['featured_rank'] != null).length
-      : _products.where((p) =>
-            _taxSkus!.contains((p['sku'] ?? '').toString()) &&
-            p['featured_rank'] != null).length;
 
   void _showSearchDropdown(BuildContext context, String label, List<String> options,
       String current, ValueChanged<String> onChanged) {
@@ -399,8 +420,8 @@ class _ShopScreenState extends State<ShopScreen> {
             ),
             const SizedBox(height: 16),
 
-            // Top-picks / Show-all toggle — only shown when coming from Find
-            if (_taxSkus != null && _taxSkus!.isNotEmpty && !_loading) ...[
+            // Top-picks banner — only when arriving from Find with taxonomy
+            if (_taxSkus != null && _taxSkus!.isNotEmpty && !_loading)
               Padding(
                 padding: const EdgeInsets.only(bottom: 10),
                 child: Container(
@@ -413,15 +434,16 @@ class _ShopScreenState extends State<ShopScreen> {
                   child: Row(children: [
                     Icon(
                       _showFeaturedOnly ? Icons.star : Icons.list,
-                      size: 16,
-                      color: AppColors.dark,
+                      size: 16, color: AppColors.dark,
                     ),
                     const SizedBox(width: 8),
                     Expanded(
                       child: Text(
                         _showFeaturedOnly
-                            ? 'Showing ${_featuredTaxCount} top pick${_featuredTaxCount == 1 ? '' : 's'} of $_totalTaxSkuCount matching products'
-                            : 'Showing all $_totalTaxSkuCount matching products',
+                            ? _featuredProductIds.isEmpty
+                                ? 'No top picks set yet — tap "Show all"'
+                                : 'Showing ${_featuredProductIds.length} top pick${_featuredProductIds.length == 1 ? '' : 's'} of $_totalTaxCount products'
+                            : 'Showing all $_totalTaxCount matching products',
                         style: const TextStyle(fontSize: 12, color: AppColors.dark),
                       ),
                     ),
@@ -436,14 +458,15 @@ class _ShopScreenState extends State<ShopScreen> {
                         ),
                         child: Text(
                           _showFeaturedOnly ? 'Show all' : 'Top picks',
-                          style: const TextStyle(fontSize: 11, fontWeight: FontWeight.w700, color: AppColors.primary),
+                          style: const TextStyle(
+                              fontSize: 11, fontWeight: FontWeight.w700,
+                              color: AppColors.primary),
                         ),
                       ),
                     ),
                   ]),
                 ),
               ),
-            ],
 
             // Grid
             Expanded(

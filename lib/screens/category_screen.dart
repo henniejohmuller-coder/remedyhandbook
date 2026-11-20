@@ -421,6 +421,10 @@ class _CategoryScreenState extends State<CategoryScreen> {
       context,
       MaterialPageRoute(builder: (_) => ShopScreen(
         initialTaxonomySkus: _taxSkusForSelection(),
+        taxCategory:    _selCategory,
+        taxSubcategory: _selSubcategory,
+        taxIllness:     _selIllness,
+        taxSymptom:     _selSymptom,
       )),
     );
   }

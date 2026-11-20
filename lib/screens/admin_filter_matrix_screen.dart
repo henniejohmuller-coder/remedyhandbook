@@ -3,6 +3,7 @@ import '../services/supabase_service.dart';
 import '../widgets/filter_matrix_picker.dart';
 import '../theme/app_theme.dart';
 import '../widgets/shared_widgets.dart';
+import 'dart:async';
 
 class AdminFilterMatrixScreen extends StatefulWidget {
   const AdminFilterMatrixScreen({super.key});
@@ -141,6 +142,20 @@ class _AdminFilterMatrixScreenState extends State<AdminFilterMatrixScreen> {
         await SupabaseService.supabase.from(table).insert({col: value, 'active': true});
       }
     } catch (_) {}
+  }
+
+  Future<void> _openTopProductsPicker(Map<String, dynamic> row) async {
+    await showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (_) => _TopProductsPicker(
+        category:    row['category'].toString(),
+        subcategory: row['subcategory'].toString(),
+        illness:     row['illness'].toString(),
+        symptom:     row['symptom'].toString(),
+      ),
+    );
   }
 
   Future<void> _deleteRow(int id) async {
@@ -336,6 +351,16 @@ class _AdminFilterMatrixScreenState extends State<AdminFilterMatrixScreen> {
                                     ],
                                   ),
                                 ),
+                                // Top products button
+                                IconButton(
+                                  icon: const Icon(Icons.star_outline,
+                                      size: 16, color: AppColors.primary),
+                                  tooltip: 'Set top 5 shop products',
+                                  onPressed: () => _openTopProductsPicker(row),
+                                  padding: EdgeInsets.zero,
+                                  constraints: const BoxConstraints(),
+                                ),
+                                const SizedBox(width: 4),
                                 IconButton(
                                   icon: const Icon(Icons.delete_outline,
                                       size: 16, color: Colors.red),
@@ -387,7 +412,313 @@ class _AdminFilterMatrixScreenState extends State<AdminFilterMatrixScreen> {
   }
 }
 
-// ”” Independent dropdown with + button to add new value ””””””””””””””””””””””
+// ── Top Products Picker ────────────────────────────────────────────────────────
+/// Bottom-sheet that lets the admin set up to 5 ranked shop products for a
+/// specific filter_matrix taxonomy combination.
+class _TopProductsPicker extends StatefulWidget {
+  final String category, subcategory, illness, symptom;
+  const _TopProductsPicker({
+    required this.category, required this.subcategory,
+    required this.illness,  required this.symptom,
+  });
+  @override
+  State<_TopProductsPicker> createState() => _TopProductsPickerState();
+}
+
+class _TopProductsPickerState extends State<_TopProductsPicker> {
+  // slots[0] = rank 1, slots[4] = rank 5; null = empty
+  final List<Map<String, dynamic>?> _slots = List.filled(5, null);
+  List<Map<String, dynamic>> _allProducts = [];
+  bool _loading = true;
+  bool _saving  = false;
+  final _searchCtrl = TextEditingController();
+  String _search = '';
+
+  @override
+  void initState() {
+    super.initState();
+    _load();
+  }
+
+  @override
+  void dispose() {
+    _searchCtrl.dispose();
+    super.dispose();
+  }
+
+  Future<void> _load() async {
+    setState(() => _loading = true);
+    try {
+      // Existing featured products for this combination
+      final existing = await SupabaseService.supabase
+          .from('filter_matrix_featured_products')
+          .select('rank, product_id, products(id, name, sku, brand)')
+          .eq('category',    widget.category)
+          .eq('subcategory', widget.subcategory)
+          .eq('illness',     widget.illness)
+          .eq('symptom',     widget.symptom)
+          .order('rank');
+
+      // All active products for the picker
+      final prods = await SupabaseService.getProducts();
+
+      if (!mounted) return;
+      final newSlots = List<Map<String, dynamic>?>.filled(5, null);
+      for (final e in (existing as List)) {
+        final rank = (e['rank'] as int) - 1; // 0-indexed
+        if (rank >= 0 && rank < 5) newSlots[rank] = e['products'] as Map<String, dynamic>?;
+      }
+      setState(() {
+        _allProducts = prods;
+        for (int i = 0; i < 5; i++) _slots[i] = newSlots[i];
+        _loading = false;
+      });
+    } catch (e) {
+      if (mounted) setState(() => _loading = false);
+    }
+  }
+
+  List<Map<String, dynamic>> get _filteredProducts {
+    final q = _search.toLowerCase();
+    // Exclude already-slotted products
+    final slottedIds = _slots.whereType<Map<String, dynamic>>().map((p) => p['id']).toSet();
+    return _allProducts.where((p) {
+      if (slottedIds.contains(p['id'])) return false;
+      if (q.isEmpty) return true;
+      return (p['name'] ?? '').toString().toLowerCase().contains(q) ||
+             (p['sku']  ?? '').toString().toLowerCase().contains(q) ||
+             (p['brand'] ?? '').toString().toLowerCase().contains(q);
+    }).toList();
+  }
+
+  void _assignToSlot(int slotIndex, Map<String, dynamic> product) {
+    setState(() => _slots[slotIndex] = product);
+  }
+
+  void _clearSlot(int slotIndex) {
+    setState(() => _slots[slotIndex] = null);
+  }
+
+  Future<void> _save() async {
+    setState(() => _saving = true);
+    try {
+      // Delete all existing entries for this combination
+      await SupabaseService.supabase
+          .from('filter_matrix_featured_products')
+          .delete()
+          .eq('category',    widget.category)
+          .eq('subcategory', widget.subcategory)
+          .eq('illness',     widget.illness)
+          .eq('symptom',     widget.symptom);
+
+      // Insert non-null slots
+      final inserts = <Map<String, dynamic>>[];
+      for (int i = 0; i < 5; i++) {
+        final p = _slots[i];
+        if (p == null) continue;
+        inserts.add({
+          'category':    widget.category,
+          'subcategory': widget.subcategory,
+          'illness':     widget.illness,
+          'symptom':     widget.symptom,
+          'rank':        i + 1,
+          'product_id':  p['id'],
+        });
+      }
+      if (inserts.isNotEmpty) {
+        await SupabaseService.supabase
+            .from('filter_matrix_featured_products')
+            .insert(inserts);
+      }
+
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Top products saved!'), backgroundColor: Colors.green));
+        Navigator.pop(context);
+      }
+    } catch (e) {
+      if (mounted) {
+        setState(() => _saving = false);
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Error: $e'), backgroundColor: Colors.red));
+      }
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final filled = _slots.where((s) => s != null).length;
+    return DraggableScrollableSheet(
+      initialChildSize: 0.9,
+      minChildSize: 0.5,
+      maxChildSize: 0.95,
+      builder: (_, scrollCtrl) => Container(
+        decoration: const BoxDecoration(
+          color: AppColors.background,
+          borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+        ),
+        child: Column(children: [
+          // Handle
+          Container(
+            margin: const EdgeInsets.only(top: 10, bottom: 4),
+            width: 36, height: 4,
+            decoration: BoxDecoration(color: Colors.grey.shade300, borderRadius: BorderRadius.circular(2)),
+          ),
+          // Header
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+            child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+              Row(children: [
+                const Icon(Icons.star, size: 16, color: AppColors.primary),
+                const SizedBox(width: 6),
+                const Expanded(
+                  child: Text('Top Shop Products',
+                    style: TextStyle(fontSize: 15, fontWeight: FontWeight.w700, color: AppColors.dark)),
+                ),
+                TextButton(
+                  onPressed: _saving ? null : _save,
+                  child: _saving
+                      ? const SizedBox(width: 16, height: 16,
+                          child: CircularProgressIndicator(strokeWidth: 2, color: AppColors.primary))
+                      : const Text('Save', style: TextStyle(fontWeight: FontWeight.w700, color: AppColors.primary)),
+                ),
+              ]),
+              Text(
+                '${widget.illness} › ${widget.symptom}',
+                style: const TextStyle(fontSize: 11, color: AppColors.textSecondary),
+                maxLines: 1, overflow: TextOverflow.ellipsis,
+              ),
+            ]),
+          ),
+          const Divider(height: 1),
+
+          if (_loading)
+            const Expanded(child: Center(child: CircularProgressIndicator(color: AppColors.primary)))
+          else
+            Expanded(child: ListView(controller: scrollCtrl, padding: const EdgeInsets.all(16), children: [
+              // ── 5 ranked slots ───────────────────────────────────────────
+              const Text('Rank order (tap × to clear a slot)',
+                  style: TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: AppColors.dark)),
+              const SizedBox(height: 8),
+              ...List.generate(5, (i) {
+                final p = _slots[i];
+                return Container(
+                  margin: const EdgeInsets.only(bottom: 6),
+                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                  decoration: BoxDecoration(
+                    color: p != null ? AppColors.lightYellow : Colors.white,
+                    borderRadius: BorderRadius.circular(8),
+                    border: Border.all(
+                      color: p != null ? AppColors.primary : Colors.grey.shade200,
+                    ),
+                  ),
+                  child: Row(children: [
+                    Container(
+                      width: 22, height: 22,
+                      decoration: BoxDecoration(
+                        color: p != null ? AppColors.primary : Colors.grey.shade200,
+                        shape: BoxShape.circle,
+                      ),
+                      alignment: Alignment.center,
+                      child: Text('${i + 1}',
+                          style: TextStyle(
+                              fontSize: 11, fontWeight: FontWeight.w700,
+                              color: p != null ? AppColors.dark : AppColors.textSecondary)),
+                    ),
+                    const SizedBox(width: 10),
+                    Expanded(
+                      child: p != null
+                          ? Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                              Text(p['name'] ?? '', style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: AppColors.dark), maxLines: 1, overflow: TextOverflow.ellipsis),
+                              Text('${p['sku'] ?? ''}${(p['brand'] ?? '').isNotEmpty ? ' · ${p['brand']}' : ''}',
+                                  style: const TextStyle(fontSize: 10, color: AppColors.textSecondary)),
+                            ])
+                          : Text('Empty — tap a product below to assign',
+                              style: TextStyle(fontSize: 11, color: Colors.grey.shade400)),
+                    ),
+                    if (p != null)
+                      GestureDetector(
+                        onTap: () => _clearSlot(i),
+                        child: const Icon(Icons.close, size: 16, color: Colors.red),
+                      ),
+                  ]),
+                );
+              }),
+
+              const SizedBox(height: 16),
+              const Divider(),
+              const SizedBox(height: 8),
+
+              // ── Product picker ───────────────────────────────────────────
+              Row(children: [
+                const Expanded(
+                  child: Text('All products',
+                      style: TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: AppColors.dark)),
+                ),
+                Text('$filled / 5 filled',
+                    style: const TextStyle(fontSize: 11, color: AppColors.textSecondary)),
+              ]),
+              const SizedBox(height: 8),
+              TextField(
+                controller: _searchCtrl,
+                onChanged: (v) => setState(() => _search = v),
+                decoration: InputDecoration(
+                  hintText: 'Search by name, SKU or brand…',
+                  prefixIcon: const Icon(Icons.search, size: 16),
+                  isDense: true,
+                  filled: true, fillColor: Colors.white,
+                  border: OutlineInputBorder(borderRadius: BorderRadius.circular(8),
+                      borderSide: BorderSide(color: Colors.grey.shade200)),
+                  contentPadding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+                ),
+                style: const TextStyle(fontSize: 12),
+              ),
+              const SizedBox(height: 8),
+
+              // Find first empty slot index
+              ..._filteredProducts.take(50).map((p) {
+                final firstEmpty = _slots.indexWhere((s) => s == null);
+                return GestureDetector(
+                  onTap: firstEmpty == -1 ? null : () => _assignToSlot(firstEmpty, p),
+                  child: Opacity(
+                    opacity: firstEmpty == -1 ? 0.4 : 1.0,
+                    child: Container(
+                      margin: const EdgeInsets.only(bottom: 4),
+                      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                      decoration: BoxDecoration(
+                        color: Colors.white,
+                        borderRadius: BorderRadius.circular(6),
+                        border: Border.all(color: Colors.grey.shade200),
+                      ),
+                      child: Row(children: [
+                        const Icon(Icons.add_circle_outline, size: 14, color: AppColors.primary),
+                        const SizedBox(width: 8),
+                        Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                          Text(p['name'] ?? '', style: const TextStyle(fontSize: 12, color: AppColors.dark), maxLines: 1, overflow: TextOverflow.ellipsis),
+                          Text('${p['sku'] ?? ''}${(p['brand'] ?? '').isNotEmpty ? ' · ${p['brand']}' : ''}',
+                              style: const TextStyle(fontSize: 10, color: AppColors.textSecondary)),
+                        ])),
+                        Text('R${p['price'] ?? ''}',
+                            style: const TextStyle(fontSize: 11, color: AppColors.textSecondary)),
+                      ]),
+                    ),
+                  ),
+                );
+              }),
+              if (_filteredProducts.length > 50)
+                Padding(
+                  padding: const EdgeInsets.only(top: 8),
+                  child: Text('Showing first 50 — use search to narrow down.',
+                      style: TextStyle(fontSize: 11, color: Colors.grey.shade400)),
+                ),
+            ])),
+        ]),
+      ),
+    );
+  }
+}
+
+// ── Independent dropdown with + button to add new value ───────────────────────
 class _IndependentDropdown extends StatefulWidget {
   final String label;
   final String? value;
