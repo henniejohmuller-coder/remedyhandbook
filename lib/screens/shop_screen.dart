@@ -261,8 +261,8 @@ class _ShopScreenState extends State<ShopScreen> {
             ),
             const SizedBox(height: 10),
 
-            // Type + Brand dropdowns (hidden)
-            if (false) Padding(
+            // Type + Brand dropdowns
+            Padding(
               padding: const EdgeInsets.symmetric(horizontal: 16),
               child: Row(
                 children: [
@@ -370,6 +370,7 @@ class _ShopScreenState extends State<ShopScreen> {
                 ],
               ),
             ),
+            const SizedBox(height: 10),
 
             // Filter tabs
             Padding(
