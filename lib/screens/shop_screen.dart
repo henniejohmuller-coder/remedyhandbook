@@ -59,7 +59,7 @@ class _ShopScreenState extends State<ShopScreen> {
     }
     if (widget.initialType == 'Component')        _filter = 'Components';
     if (widget.initialType == 'Remedy')           _filter = 'Herbal Remedies';
-    if (widget.initialType == 'Exercise support') _filter = 'Exercise Support';
+    if (widget.initialType == 'Exercise Support') _filter = 'Exercise Support';
     _loadProducts();
   }
 
@@ -113,7 +113,7 @@ class _ShopScreenState extends State<ShopScreen> {
       final matchFilter = _filter == 'All'
           || (_filter == 'Components'       && type == 'Component')
           || (_filter == 'Herbal Remedies'  && type == 'Remedy')
-          || (_filter == 'Exercise Support' && type == 'Exercise support');
+          || (_filter == 'Exercise Support' && type == 'Exercise Support');
 
       // Search name only — description matches cause false positives
       final bool matchSearch;
@@ -427,7 +427,7 @@ class _ProductCard extends StatelessWidget {
     final price    = num.tryParse(product['price']?.toString() ?? '0')?.toDouble() ?? 0.0;
     final imageUrl = product['image_url']   ?? '';
     final isComp   = type == 'Component';
-    final isExercise = type == 'Exercise support';
+    final isExercise = type == 'Exercise Support';
     final stock    = product['stock'] as int?;
     final inStock  = stock == null || stock > 0;
 
