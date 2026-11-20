@@ -274,21 +274,22 @@ class _ProductDetailScreenDBState extends State<ProductDetailScreenDB> {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     imageUrl.isNotEmpty
-                        ? ClipRRect(borderRadius: BorderRadius.circular(12),
+                        ? ClipRRect(
+                            borderRadius: BorderRadius.circular(12),
                             child: Container(
-                              height: 140,
+                              width: double.infinity,
+                              height: 280,
                               color: Colors.grey.shade50,
-                              child: Transform.scale(
-                                scale: 0.50,
-                                child: Image.network(
-                                  '$imageUrl?${DateTime.now().millisecondsSinceEpoch}',
-                                  width: double.infinity, fit: BoxFit.contain,
-                                  headers: const {'Cache-Control': 'no-cache'},
-                                  errorBuilder: (_, __, ___) => const HerbIconPlaceholder(size: 120),
-                                ),
+                              child: Image.network(
+                                '$imageUrl?${DateTime.now().millisecondsSinceEpoch}',
+                                width: double.infinity,
+                                height: 280,
+                                fit: BoxFit.contain,
+                                headers: const {'Cache-Control': 'no-cache'},
+                                errorBuilder: (_, __, ___) => const HerbIconPlaceholder(size: 160),
                               ),
                             ))
-                        : const HerbIconPlaceholder(size: 120, icon: Icons.science),
+                        : const HerbIconPlaceholder(size: 160, icon: Icons.science),
                     const SizedBox(height: 16),
                     Row(children: [
                       Text('R${price.toInt()}', style: const TextStyle(fontSize: 24, fontWeight: FontWeight.bold, color: AppColors.dark)),
