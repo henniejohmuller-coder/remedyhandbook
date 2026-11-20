@@ -313,20 +313,25 @@ class _ProductDetailScreenDBState extends State<ProductDetailScreenDB> {
                         InfoRow(label: 'Name', value: name),
                         InfoRow(label: 'Type', value: type),
                         InfoRow(label: 'Clinical Studies',
-                            valueWidget: (_product['clinical_studies'] != null &&
-                                _product['clinical_studies'].toString().isNotEmpty)
-                              ? GestureDetector(
-                                  onTap: () async {
-                                    final url = Uri.tryParse(_product['clinical_studies'].toString());
-                                    if (url != null) await launchUrl(url, mode: LaunchMode.externalApplication);
-                                  },
-                                  child: const Text('View Studies',
-                                      style: TextStyle(
-                                          fontSize: 13,
-                                          color: Colors.blue,
-                                          decoration: TextDecoration.underline)))
-                              : const Text('None',
-                                  style: TextStyle(fontSize: 13, color: AppColors.textSecondary))),
+                            valueWidget: () {
+                              final raw = _product['clinical_studies']?.toString() ?? '';
+                              final urlMatch = RegExp(r'https?://\S+').firstMatch(raw);
+                              final urlStr = urlMatch?.group(0);
+                              if (urlStr == null) {
+                                return const Text('None',
+                                    style: TextStyle(fontSize: 13, color: AppColors.textSecondary));
+                              }
+                              return GestureDetector(
+                                onTap: () async {
+                                  final url = Uri.tryParse(urlStr);
+                                  if (url != null) await launchUrl(url, mode: LaunchMode.externalApplication);
+                                },
+                                child: const Text('View Studies',
+                                    style: TextStyle(
+                                        fontSize: 13,
+                                        color: Colors.blue,
+                                        decoration: TextDecoration.underline)));
+                            }()),
                         if (_product['description'] != null &&
                             _product['description'].toString().isNotEmpty)
                           InfoRow(label: 'Description',
