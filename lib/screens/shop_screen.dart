@@ -370,34 +370,6 @@ class _ShopScreenState extends State<ShopScreen> {
                 ],
               ),
             ),
-            const SizedBox(height: 10),
-
-            // Filter tabs
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 16),
-              child: SingleChildScrollView(
-                scrollDirection: Axis.horizontal,
-                child: Row(
-                children: ['All', 'Components', 'Herbal Remedies', 'Exercise Support'].map((tab) => Padding(
-                  padding: const EdgeInsets.only(right: 8),
-                  child: GestureDetector(
-                    onTap: () => _setFilter(tab),
-                    child: Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-                      decoration: BoxDecoration(
-                        color: _filter == tab ? AppColors.primary : Colors.white,
-                        borderRadius: BorderRadius.circular(20),
-                        border: Border.all(color: _filter == tab ? AppColors.primary : Colors.grey.shade200),
-                      ),
-                      child: Text(tab, style: TextStyle(
-                          fontSize: 12, fontWeight: FontWeight.w600,
-                          color: _filter == tab ? AppColors.dark : AppColors.textSecondary)),
-                    ),
-                  ),
-                )).toList(),
-              ),
-              ),
-            ),
             const SizedBox(height: 16),
 
             // Grid
