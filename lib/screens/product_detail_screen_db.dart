@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:url_launcher/url_launcher.dart';
 import '../theme/app_theme.dart';
 import '../widgets/shared_widgets.dart';
 import '../services/supabase_service.dart';
@@ -23,6 +24,11 @@ class _ProductDetailScreenDBState extends State<ProductDetailScreenDB> {
   void initState() {
     super.initState();
     _checkSaved();
+  }
+
+  static List<String> _extractUrls(String text) {
+    final urlRegex = RegExp(r'https?://[^\s\])"]+', caseSensitive: false);
+    return urlRegex.allMatches(text).map((m) => m.group(0)!).toList();
   }
 
   Future<void> _checkSaved() async {
@@ -119,6 +125,8 @@ class _ProductDetailScreenDBState extends State<ProductDetailScreenDB> {
                         InfoRow(label: 'Name', value: name),
                         InfoRow(label: 'Type', value: type),
                         if (description.isNotEmpty) InfoRow(label: 'Description', value: description),
+                        if (_extractUrls(description).isNotEmpty)
+                          _ClinicalReferencesRow(urls: _extractUrls(description)),
                         InfoRow(label: 'Category', value: category),
                         InfoRow(label: 'Brand', value: brand),
                         if (primaryHerb.isNotEmpty) InfoRow(label: 'Primary Herb', value: primaryHerb),
@@ -168,6 +176,65 @@ class _ProductDetailScreenDBState extends State<ProductDetailScreenDB> {
             ),
           ],
         ),
+      ),
+    );
+  }
+}
+
+class _ClinicalReferencesRow extends StatelessWidget {
+  final List<String> urls;
+  const _ClinicalReferencesRow({required this.urls});
+
+  String _labelFor(String url) {
+    if (url.contains('pubmed.ncbi.nlm.nih.gov')) {
+      final match = RegExp(r'/(\d+)/?$').firstMatch(url);
+      return match != null ? 'PubMed PMID ${match.group(1)}' : 'PubMed Study';
+    }
+    if (url.contains('mdpi.com') || url.contains('doi.org')) {
+      return 'Full Article (MDPI)';
+    }
+    return 'Clinical Reference';
+  }
+
+  Future<void> _open(String url) async {
+    final uri = Uri.parse(url);
+    if (await canLaunchUrl(uri)) {
+      await launchUrl(uri, mode: LaunchMode.externalApplication);
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.only(top: 6),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          const Padding(
+            padding: EdgeInsets.only(bottom: 4),
+            child: Text('Clinical Studies',
+                style: TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: AppColors.textSecondary)),
+          ),
+          ...urls.map((url) => InkWell(
+            onTap: () => _open(url),
+            child: Padding(
+              padding: const EdgeInsets.symmetric(vertical: 3),
+              child: Row(
+                children: [
+                  const Icon(Icons.open_in_new, size: 14, color: Colors.blue),
+                  const SizedBox(width: 6),
+                  Expanded(
+                    child: Text(
+                      _labelFor(url),
+                      style: const TextStyle(fontSize: 13, color: Colors.blue,
+                          decoration: TextDecoration.underline),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          )),
+        ],
       ),
     );
   }
