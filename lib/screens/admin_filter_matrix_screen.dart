@@ -69,10 +69,19 @@ class _AdminFilterMatrixScreenState extends State<AdminFilterMatrixScreen> {
       final ills  = await SupabaseService.supabase.from('illnesses').select('name').eq('active', true).order('name', ascending: true);
       final syms  = await SupabaseService.supabase.from('symptoms').select('name').eq('active', true).order('name', ascending: true);
 
+      // Deduplicate — filter_matrix has one row per SKU so the same
+      // (category, subcategory, illness, symptom) can appear many times.
+      final seen = <String>{};
+      final deduped = <Map<String, dynamic>>[];
+      for (final r in allRows) {
+        final key = '${r['category']}|${r['subcategory']}|${r['illness']}|${r['symptom']}';
+        if (seen.add(key)) deduped.add(r);
+      }
+
       if (!mounted) return;
       setState(() {
-        _allRows       = allRows;
-        _filtered      = allRows;
+        _allRows       = deduped;
+        _filtered      = deduped;
         _categoryList    = (cats  as List).map((r) => r['name'].toString()).toList();
         _subcategoryList = (subs  as List).map((r) => r['name'].toString()).toList();
         _illnessList     = (ills  as List).map((r) => r['name'].toString()).toList();
