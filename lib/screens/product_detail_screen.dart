@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:url_launcher/url_launcher.dart';
 import '../theme/app_theme.dart';
 import '../widgets/shared_widgets.dart';
 import '../models/models.dart';
@@ -65,14 +66,12 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
                         children: [
                           InfoRow(label: 'Name', value: widget.product.name),
                           InfoRow(label: 'Type', value: widget.product.type),
+                          InfoRow(label: 'Clinical Studies',
+                            valueWidget: const Text('None', style: TextStyle(fontSize: 13, color: AppColors.textSecondary))),
                           if (widget.product.description.isNotEmpty) InfoRow(label: 'Description', value: widget.product.description),
                           InfoRow(label: 'Category', value: widget.product.category),
                           InfoRow(label: 'Brand', value: widget.product.brand),
                           InfoRow(label: 'Linked recipe', value: widget.product.linkedRemedy),
-                          InfoRow(
-                            label: 'Prep guide',
-                            valueWidget: const Text('Included', style: TextStyle(fontSize: 13, color: Colors.green, fontWeight: FontWeight.w500)),
-                          ),
                         ],
                       ),
                     ),
@@ -313,15 +312,25 @@ class _ProductDetailScreenDBState extends State<ProductDetailScreenDB> {
                       child: Column(children: [
                         InfoRow(label: 'Name', value: name),
                         InfoRow(label: 'Type', value: type),
+                        InfoRow(label: 'Clinical Studies',
+                            valueWidget: (_product['clinical_studies'] != null &&
+                                _product['clinical_studies'].toString().isNotEmpty)
+                              ? GestureDetector(
+                                  onTap: () async {
+                                    final url = Uri.tryParse(_product['clinical_studies'].toString());
+                                    if (url != null) await launchUrl(url, mode: LaunchMode.externalApplication);
+                                  },
+                                  child: const Text('View Studies',
+                                      style: TextStyle(
+                                          fontSize: 13,
+                                          color: Colors.blue,
+                                          decoration: TextDecoration.underline)))
+                              : const Text('None',
+                                  style: TextStyle(fontSize: 13, color: AppColors.textSecondary))),
                         if (_product['description'] != null &&
                             _product['description'].toString().isNotEmpty)
                           InfoRow(label: 'Description',
                               value: _product['description'].toString()),
-                        if (_product['prep_guide_included'] == true)
-                          const InfoRow(label: 'Prep guide',
-                              valueWidget: Text('Included', style: TextStyle(
-                                  fontSize: 13, color: Colors.green,
-                                  fontWeight: FontWeight.w500))),
                       ]),
                     ),
                     const SectionLabel('QUANTITY'),
