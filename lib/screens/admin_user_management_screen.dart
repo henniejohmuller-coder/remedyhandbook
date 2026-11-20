@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:file_picker/file_picker.dart';
+import 'package:url_launcher/url_launcher.dart';
 import '../theme/app_theme.dart';
 import '../widgets/shared_widgets.dart';
 import '../services/supabase_service.dart';
@@ -236,6 +237,82 @@ class _AdminUserManagementScreenState extends State<AdminUserManagementScreen> {
     }
   }
 
+  // Open WhatsApp for a single user (with optional pre-filled message)
+  Future<void> _whatsapp(String phone, {String message = ''}) async {
+    final clean = phone.replaceAll(RegExp(r'[^\d+]'), '');
+    if (clean.isEmpty) {
+      if (mounted) ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('No phone number on record'), backgroundColor: Colors.orange));
+      return;
+    }
+    final encoded = Uri.encodeComponent(message);
+    final url = Uri.parse('https://wa.me/$clean${message.isNotEmpty ? "?text=$encoded" : ""}');
+    await launchUrl(url, mode: LaunchMode.externalApplication);
+  }
+
+  // Broadcast: compose a message then open WhatsApp for each user one by one
+  Future<void> _broadcast() async {
+    final msgCtrl = TextEditingController();
+    final send = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+        title: const Text('Send WhatsApp to all', style: AppTextStyles.heading3),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text('Opens WhatsApp for each of the ${_filtered.length} visible users.',
+                style: AppTextStyles.caption),
+            const SizedBox(height: 12),
+            TextField(
+              controller: msgCtrl,
+              maxLines: 4,
+              decoration: InputDecoration(
+                hintText: 'Type your message...',
+                border: OutlineInputBorder(borderRadius: BorderRadius.circular(10)),
+                isDense: true,
+              ),
+            ),
+          ],
+        ),
+        actions: [
+          TextButton(onPressed: () => Navigator.pop(ctx, false),
+              child: const Text('Cancel', style: TextStyle(color: AppColors.textSecondary))),
+          ElevatedButton(
+            onPressed: () => Navigator.pop(ctx, true),
+            style: ElevatedButton.styleFrom(
+                backgroundColor: const Color(0xFF25D366),
+                foregroundColor: Colors.white, elevation: 0,
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8))),
+            child: const Text('Send'),
+          ),
+        ],
+      ),
+    );
+    if (send != true) return;
+    final msg = msgCtrl.text.trim();
+    int sent = 0;
+    for (final u in _filtered) {
+      final phone = (u['phone'] ?? '').toString().trim();
+      if (phone.isEmpty) continue;
+      await _whatsapp(phone, message: msg);
+      sent++;
+      await Future.delayed(const Duration(milliseconds: 800));
+    }
+    if (mounted) ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(content: Text('Opened WhatsApp for $sent users'), backgroundColor: const Color(0xFF25D366)));
+  }
+
+  Future<void> _openWhatsApp(String phone) async {
+    // Strip all non-digits, then open wa.me link
+    final digits = phone.replaceAll(RegExp(r'\D'), '');
+    final url = Uri.parse('https://wa.me/$digits');
+    if (await canLaunchUrl(url)) {
+      await launchUrl(url, mode: LaunchMode.externalApplication);
+    }
+  }
+
   // Prefix phone with = so Excel treats it as text, not a number in scientific notation
   String _phoneForCsv(dynamic raw) {
     final phone = (raw ?? '').toString().trim();
@@ -414,6 +491,19 @@ class _AdminUserManagementScreenState extends State<AdminUserManagementScreen> {
                       child: const Icon(Icons.upload_outlined, size: 20, color: AppColors.primary),
                     ),
                   ),
+                  const SizedBox(width: 8),
+                  // WhatsApp broadcast
+                  GestureDetector(
+                    onTap: _broadcast,
+                    child: Container(
+                      padding: const EdgeInsets.all(10),
+                      decoration: BoxDecoration(
+                        color: const Color(0xFF25D366),
+                        borderRadius: BorderRadius.circular(10),
+                      ),
+                      child: const Icon(Icons.chat_outlined, size: 20, color: Colors.white),
+                    ),
+                  ),
                 ],
               ),
             ),
@@ -551,12 +641,24 @@ class _AdminUserManagementScreenState extends State<AdminUserManagementScreen> {
                                           ),
                                         ),
                                       ),
-                                      // Edit + Delete buttons
+                                      // WhatsApp + Edit + Delete buttons
                                       SizedBox(
-                                        width: 56,
+                                        width: 82,
                                         child: Row(
                                           mainAxisAlignment: MainAxisAlignment.end,
                                           children: [
+                                            if (phone != '—')
+                                              GestureDetector(
+                                                onTap: () => _openWhatsApp(phone),
+                                                child: Container(
+                                                  padding: const EdgeInsets.all(4),
+                                                  decoration: BoxDecoration(
+                                                      color: const Color(0xFFE7F8EE),
+                                                      borderRadius: BorderRadius.circular(6)),
+                                                  child: const Icon(Icons.chat_outlined, size: 14, color: Color(0xFF25D366)),
+                                                ),
+                                              ),
+                                            if (phone != '—') const SizedBox(width: 4),
                                             GestureDetector(
                                               onTap: () => _editUser(u),
                                               child: Container(
