@@ -1,5 +1,6 @@
 import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import '../theme/app_theme.dart';
 import '../widgets/shared_widgets.dart';
@@ -111,9 +112,13 @@ class _ChangePasswordScreenState extends State<ChangePasswordScreen> {
         UserAttributes(password: _newController.text));
       if (context.mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('✅ Password changed successfully!'),
-              backgroundColor: Colors.green));
-        Navigator.pop(context);
+          const SnackBar(
+            content: Text('✅ Password changed successfully! Please sign in.'),
+            backgroundColor: Colors.green,
+            duration: Duration(seconds: 4),
+          ));
+        await Supabase.instance.client.auth.signOut();
+        if (context.mounted) context.go('/');
       }
     } catch (e) {
       setState(() => _saving = false);
