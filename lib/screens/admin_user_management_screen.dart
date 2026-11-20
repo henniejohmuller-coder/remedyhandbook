@@ -236,13 +236,20 @@ class _AdminUserManagementScreenState extends State<AdminUserManagementScreen> {
     }
   }
 
+  // Prefix phone with = so Excel treats it as text, not a number in scientific notation
+  String _phoneForCsv(dynamic raw) {
+    final phone = (raw ?? '').toString().trim();
+    if (phone.isEmpty) return '';
+    return '="$phone"';
+  }
+
   void _exportCsv() {
     final rows = <List<String>>[
       ['#ID', 'Name', 'Phone', 'Email', 'City', 'Country', 'Role', 'Discount%', 'Total Orders', 'Pending Orders', 'Last Order', 'Joined'],
       ..._filtered.map((u) => [
         (u['enrollment_id'] ?? '').toString(),
         u['full_name']      ?? '',
-        u['phone']          ?? '',
+        _phoneForCsv(u['phone']),
         u['email']          ?? '',
         u['city']           ?? '',
         u['country']        ?? '',
