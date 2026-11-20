@@ -13,9 +13,28 @@ class ChangePasswordScreen extends StatefulWidget {
 class _ChangePasswordScreenState extends State<ChangePasswordScreen> {
   final _newController     = TextEditingController();
   final _confirmController = TextEditingController();
-  bool _saving       = false;
-  bool _showNew      = false;
-  bool _showConfirm  = false;
+  bool _saving        = false;
+  bool _showNew       = false;
+  bool _showConfirm   = false;
+  bool _sessionReady  = false;
+
+  @override
+  void initState() {
+    super.initState();
+    // Check if session already exists (e.g. user changing password from profile)
+    if (Supabase.instance.client.auth.currentSession != null) {
+      _sessionReady = true;
+    } else {
+      // Wait for passwordRecovery event to establish session
+      Supabase.instance.client.auth.onAuthStateChange.listen((data) {
+        if (!mounted) return;
+        if (data.event == AuthChangeEvent.passwordRecovery ||
+            data.session != null) {
+          setState(() => _sessionReady = true);
+        }
+      });
+    }
+  }
 
   String? _validate() {
     if (_newController.text.length < 8)
@@ -69,7 +88,9 @@ class _ChangePasswordScreenState extends State<ChangePasswordScreen> {
       body: SafeArea(
         child: Column(children: [
           const YellowAppBar(title: 'Change password', subtitle: 'Choose a strong password', showBack: true),
-          Expanded(
+          if (!_sessionReady)
+            const Expanded(child: Center(child: CircularProgressIndicator())),
+          if (_sessionReady) Expanded(
             child: SingleChildScrollView(
               padding: const EdgeInsets.all(24),
               child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
