@@ -225,13 +225,14 @@ class _AdminUserManagementScreenState extends State<AdminUserManagementScreen> {
     );
     if (confirm != true) return;
     try {
-      await SupabaseService.supabase.from('profiles').delete().eq('id', user['id']);
+      // admin_delete_user is SECURITY DEFINER — removes auth.users row (cascades to profiles)
+      await SupabaseService.supabase.rpc('admin_delete_user', params: {'target_user_id': user['id']});
       setState(() { _users.removeWhere((u) => u['id'] == user['id']); _applyFilter(); });
       if (mounted) ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text('$name deleted'), backgroundColor: Colors.red.shade700));
     } catch (e) {
       if (mounted) ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Delete failed'), backgroundColor: Colors.red));
+        SnackBar(content: Text('Delete failed: $e'), backgroundColor: Colors.red));
     }
   }
 
