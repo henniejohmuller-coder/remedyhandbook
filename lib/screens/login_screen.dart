@@ -99,7 +99,7 @@ class _LoginScreenState extends State<LoginScreen> {
                       await supabase.auth.resetPasswordForEmail(
                         resetEmailController.text.trim(),
                         redirectTo: kIsWeb
-                            ? 'https://remedy-handbook.web.app/'
+                            ? 'https://remedy-handbook.web.app/reset-password'
                             : 'com.myherb.remedy_handbook://login-callback',
                       );
                       setDialogState(() { sending = false; sent = true; });

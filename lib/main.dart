@@ -63,6 +63,7 @@ final _router = GoRouter(
       path: '/download',
       builder: (_, __) => const _DownloadScreen(),
     ),
+    GoRoute(path: '/reset-password', builder: (_, __) => const ChangePasswordScreen()),
     GoRoute(path: '/payment-success', builder: (_, __) => const _PaymentSuccessPage()),
     GoRoute(path: '/payment-cancel', builder: (_, __) => const _PaymentCancelPage()),
     GoRoute(
@@ -131,16 +132,6 @@ class _AuthGateState extends State<_AuthGate> {
       final session = data.session;
       final event   = data.event;
 
-      // Password recovery — navigate to change-password screen immediately
-      if (event == AuthChangeEvent.passwordRecovery) {
-        setState(() { _loggedIn = true; _checked = true; });
-        WidgetsBinding.instance.addPostFrameCallback((_) {
-          if (mounted) Navigator.of(context).push(
-            MaterialPageRoute(builder: (_) => const ChangePasswordScreen()));
-        });
-        return;
-      }
-
       // If user opted out of stay-logged-in, ignore other events
       if (!stayIn) return;
 
@@ -155,16 +146,9 @@ class _AuthGateState extends State<_AuthGate> {
     });
 
     if (!stayIn) {
-      // On web, check if the URL fragment contains a recovery token —
-      // if so, don't sign out; let the onAuthStateChange listener handle it.
-      final fragment = kIsWeb ? Uri.base.fragment : '';
-      final isRecovery = fragment.contains('type=recovery');
-      if (!isRecovery) {
-        await SupabaseService.signOut();
-        if (mounted) setState(() { _loggedIn = false; _checked = true; });
-        return;
-      }
-      // Recovery flow — listener above will navigate to ChangePasswordScreen
+      await SupabaseService.signOut();
+      if (mounted) setState(() { _loggedIn = false; _checked = true; });
+      return;
     }
 
     // Safety fallback: if no auth event arrives within 4 s, stop the spinner
