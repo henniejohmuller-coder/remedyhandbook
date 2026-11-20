@@ -304,6 +304,138 @@ class _AdminUserManagementScreenState extends State<AdminUserManagementScreen> {
       SnackBar(content: Text('Opened WhatsApp for $sent users'), backgroundColor: const Color(0xFF25D366)));
   }
 
+  Future<void> _broadcastWhatsApp() async {
+    final recipients = _filtered
+        .where((u) => (u['phone'] ?? '').toString().trim().isNotEmpty)
+        .toList();
+
+    if (recipients.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('No users with phone numbers in current filter'),
+            backgroundColor: Colors.orange));
+      return;
+    }
+
+    final msgCtrl = TextEditingController();
+    int _sent = 0;
+
+    await showDialog(
+      context: context,
+      builder: (ctx) => StatefulBuilder(
+        builder: (ctx, setDlg) => AlertDialog(
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+          title: Row(children: [
+            const Icon(Icons.campaign_outlined, color: Color(0xFF25D366)),
+            const SizedBox(width: 8),
+            const Text('Broadcast WhatsApp', style: AppTextStyles.heading3),
+          ]),
+          content: SizedBox(
+            width: 340,
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text('${recipients.length} recipient${recipients.length == 1 ? '' : 's'} '
+                    '(${_roleFilter == 'All' ? 'all' : _roleFilter} with phone numbers)',
+                    style: AppTextStyles.caption),
+                const SizedBox(height: 12),
+                TextField(
+                  controller: msgCtrl,
+                  maxLines: 4,
+                  decoration: InputDecoration(
+                    hintText: 'Type your message...',
+                    border: OutlineInputBorder(borderRadius: BorderRadius.circular(10)),
+                    contentPadding: const EdgeInsets.all(12),
+                  ),
+                ),
+                if (_sent > 0) ...[
+                  const SizedBox(height: 10),
+                  Text('Opened $_sent of ${recipients.length}',
+                      style: const TextStyle(fontSize: 12, color: Color(0xFF25D366),
+                          fontWeight: FontWeight.w600)),
+                ],
+                const SizedBox(height: 12),
+                // Scrollable list of recipients with individual send buttons
+                ConstrainedBox(
+                  constraints: const BoxConstraints(maxHeight: 220),
+                  child: ListView.builder(
+                    shrinkWrap: true,
+                    itemCount: recipients.length,
+                    itemBuilder: (_, i) {
+                      final u = recipients[i];
+                      final phone = (u['phone'] ?? '').toString().trim();
+                      final name  = u['full_name'] ?? '—';
+                      return Padding(
+                        padding: const EdgeInsets.symmetric(vertical: 3),
+                        child: Row(children: [
+                          Expanded(child: Text(name,
+                              style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w600))),
+                          Text(phone,
+                              style: const TextStyle(fontSize: 11, color: AppColors.textSecondary)),
+                          const SizedBox(width: 8),
+                          GestureDetector(
+                            onTap: () async {
+                              final msg = msgCtrl.text.trim();
+                              final digits = phone.replaceAll(RegExp(r'\D'), '');
+                              final encoded = Uri.encodeComponent(msg);
+                              final url = Uri.parse(
+                                  msg.isEmpty ? 'https://wa.me/$digits'
+                                              : 'https://wa.me/$digits?text=$encoded');
+                              if (await canLaunchUrl(url)) {
+                                await launchUrl(url, mode: LaunchMode.externalApplication);
+                                setDlg(() => _sent++);
+                              }
+                            },
+                            child: Container(
+                              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                              decoration: BoxDecoration(
+                                  color: const Color(0xFF25D366),
+                                  borderRadius: BorderRadius.circular(6)),
+                              child: const Icon(Icons.send, size: 13, color: Colors.white),
+                            ),
+                          ),
+                        ]),
+                      );
+                    },
+                  ),
+                ),
+              ],
+            ),
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(ctx),
+              child: const Text('Close', style: TextStyle(color: AppColors.textSecondary)),
+            ),
+            ElevatedButton.icon(
+              icon: const Icon(Icons.send_outlined, size: 16),
+              label: Text('Send All (${recipients.length})'),
+              style: ElevatedButton.styleFrom(
+                  backgroundColor: const Color(0xFF25D366), foregroundColor: Colors.white,
+                  elevation: 0, shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8))),
+              onPressed: () async {
+                final msg = msgCtrl.text.trim();
+                for (final u in recipients) {
+                  final phone  = (u['phone'] ?? '').toString().trim();
+                  final digits = phone.replaceAll(RegExp(r'\D'), '');
+                  final encoded = Uri.encodeComponent(msg);
+                  final url = Uri.parse(
+                      msg.isEmpty ? 'https://wa.me/$digits'
+                                  : 'https://wa.me/$digits?text=$encoded');
+                  if (await canLaunchUrl(url)) {
+                    await launchUrl(url, mode: LaunchMode.externalApplication);
+                    setDlg(() => _sent++);
+                    await Future.delayed(const Duration(milliseconds: 600));
+                  }
+                }
+              },
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
   Future<void> _openWhatsApp(String phone) async {
     // Strip all non-digits, then open wa.me link
     final digits = phone.replaceAll(RegExp(r'\D'), '');
@@ -463,6 +595,19 @@ class _AdminUserManagementScreenState extends State<AdminUserManagementScreen> {
                             .toList(),
                         onChanged: (v) => setState(() { _roleFilter = v ?? 'All'; _applyFilter(); }),
                       ),
+                    ),
+                  ),
+                  const SizedBox(width: 8),
+                  // Bulk WhatsApp broadcast
+                  GestureDetector(
+                    onTap: _broadcastWhatsApp,
+                    child: Container(
+                      padding: const EdgeInsets.all(10),
+                      decoration: BoxDecoration(
+                        color: const Color(0xFF25D366),
+                        borderRadius: BorderRadius.circular(10),
+                      ),
+                      child: const Icon(Icons.campaign_outlined, size: 20, color: Colors.white),
                     ),
                   ),
                   const SizedBox(width: 8),
