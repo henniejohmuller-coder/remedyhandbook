@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter/material.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import '../theme/app_theme.dart';
@@ -25,17 +26,30 @@ class _ChangePasswordScreenState extends State<ChangePasswordScreen> {
   }
 
   Future<void> _waitForSession() async {
-    // The passwordRecovery event may fire before this widget mounts,
-    // so poll currentSession rather than relying on the event stream.
+    // On web, force supabase to exchange the token in the current URL.
+    if (kIsWeb) {
+      try {
+        await Supabase.instance.client.auth.getSessionFromUrl(Uri.base);
+      } catch (_) {}
+    }
+
+    // Session should now be set — check immediately.
+    if (Supabase.instance.client.auth.currentSession != null) {
+      if (mounted) setState(() => _sessionReady = true);
+      return;
+    }
+
+    // Fallback: poll for up to 6 seconds in case exchange is still in progress.
     for (int i = 0; i < 20; i++) {
+      await Future.delayed(const Duration(milliseconds: 300));
       if (!mounted) return;
       if (Supabase.instance.client.auth.currentSession != null) {
         setState(() => _sessionReady = true);
         return;
       }
-      await Future.delayed(const Duration(milliseconds: 300));
     }
-    // Fallback: also listen in case session arrives late
+
+    // Last resort: listen on the stream.
     Supabase.instance.client.auth.onAuthStateChange.listen((data) {
       if (!mounted) return;
       if (data.session != null) setState(() => _sessionReady = true);
