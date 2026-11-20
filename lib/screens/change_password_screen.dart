@@ -21,19 +21,25 @@ class _ChangePasswordScreenState extends State<ChangePasswordScreen> {
   @override
   void initState() {
     super.initState();
-    // Check if session already exists (e.g. user changing password from profile)
-    if (Supabase.instance.client.auth.currentSession != null) {
-      _sessionReady = true;
-    } else {
-      // Wait for passwordRecovery event to establish session
-      Supabase.instance.client.auth.onAuthStateChange.listen((data) {
-        if (!mounted) return;
-        if (data.event == AuthChangeEvent.passwordRecovery ||
-            data.session != null) {
-          setState(() => _sessionReady = true);
-        }
-      });
+    _waitForSession();
+  }
+
+  Future<void> _waitForSession() async {
+    // The passwordRecovery event may fire before this widget mounts,
+    // so poll currentSession rather than relying on the event stream.
+    for (int i = 0; i < 20; i++) {
+      if (!mounted) return;
+      if (Supabase.instance.client.auth.currentSession != null) {
+        setState(() => _sessionReady = true);
+        return;
+      }
+      await Future.delayed(const Duration(milliseconds: 300));
     }
+    // Fallback: also listen in case session arrives late
+    Supabase.instance.client.auth.onAuthStateChange.listen((data) {
+      if (!mounted) return;
+      if (data.session != null) setState(() => _sessionReady = true);
+    });
   }
 
   String? _validate() {
