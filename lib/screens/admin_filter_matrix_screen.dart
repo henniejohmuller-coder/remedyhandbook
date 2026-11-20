@@ -459,8 +459,21 @@ class _TopProductsPickerState extends State<_TopProductsPicker> {
           .eq('symptom',     widget.symptom)
           .order('rank');
 
-      // All active products for the picker
-      final prods = await SupabaseService.getProducts();
+      // Only products linked to this taxonomy via filter_matrix SKUs
+      final skuRows = await SupabaseService.supabase
+          .from('filter_matrix')
+          .select('sku')
+          .eq('category',    widget.category)
+          .eq('subcategory', widget.subcategory)
+          .eq('illness',     widget.illness)
+          .eq('symptom',     widget.symptom)
+          .not('sku', 'is', null);
+      final linkedSkus = (skuRows as List).map((r) => r['sku'].toString()).toSet();
+
+      // Load products and keep only those with a linked SKU
+      final allProds = await SupabaseService.getProducts();
+      final prods = allProds.where((p) =>
+          linkedSkus.contains((p['sku'] ?? '').toString())).toList();
 
       if (!mounted) return;
       final newSlots = List<Map<String, dynamic>?>.filled(5, null);
@@ -651,9 +664,9 @@ class _TopProductsPickerState extends State<_TopProductsPicker> {
 
               // ── Product picker ───────────────────────────────────────────
               Row(children: [
-                const Expanded(
-                  child: Text('All products',
-                      style: TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: AppColors.dark)),
+                Expanded(
+                  child: Text('Linked products (${_allProducts.length})',
+                      style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: AppColors.dark)),
                 ),
                 Text('$filled / 5 filled',
                     style: const TextStyle(fontSize: 11, color: AppColors.textSecondary)),
