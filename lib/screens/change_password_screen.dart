@@ -26,31 +26,47 @@ class _ChangePasswordScreenState extends State<ChangePasswordScreen> {
   }
 
   Future<void> _waitForSession() async {
+    debugPrint('[PWReset] _waitForSession started');
+    debugPrint('[PWReset] Uri.base = ${Uri.base}');
+    debugPrint('[PWReset] fragment = ${Uri.base.fragment}');
+    debugPrint('[PWReset] query = ${Uri.base.query}');
+
     // On web, force supabase to exchange the token in the current URL.
     if (kIsWeb) {
       try {
-        await Supabase.instance.client.auth.getSessionFromUrl(Uri.base);
-      } catch (_) {}
+        debugPrint('[PWReset] calling getSessionFromUrl...');
+        final res = await Supabase.instance.client.auth.getSessionFromUrl(Uri.base);
+        debugPrint('[PWReset] getSessionFromUrl result: ${res.session?.user.id}');
+      } catch (e) {
+        debugPrint('[PWReset] getSessionFromUrl error: $e');
+      }
     }
 
     // Session should now be set — check immediately.
-    if (Supabase.instance.client.auth.currentSession != null) {
+    final s1 = Supabase.instance.client.auth.currentSession;
+    debugPrint('[PWReset] currentSession after getSessionFromUrl: ${s1?.user.id}');
+    if (s1 != null) {
       if (mounted) setState(() => _sessionReady = true);
       return;
     }
 
-    // Fallback: poll for up to 6 seconds in case exchange is still in progress.
+    // Fallback: poll for up to 6 seconds.
     for (int i = 0; i < 20; i++) {
       await Future.delayed(const Duration(milliseconds: 300));
       if (!mounted) return;
-      if (Supabase.instance.client.auth.currentSession != null) {
+      final s = Supabase.instance.client.auth.currentSession;
+      debugPrint('[PWReset] poll $i: session=${s?.user.id}');
+      if (s != null) {
         setState(() => _sessionReady = true);
         return;
       }
     }
 
+    debugPrint('[PWReset] gave up polling — session never arrived');
+
     // Last resort: listen on the stream.
     Supabase.instance.client.auth.onAuthStateChange.listen((data) {
+      debugPrint('[PWReset] onAuthStateChange: event=${data.event} session=${data.session?.user.id}');
       if (!mounted) return;
       if (data.session != null) setState(() => _sessionReady = true);
     });
