@@ -57,8 +57,9 @@ class _ShopScreenState extends State<ShopScreen> {
       _search = widget.initialSearch!;
       _searchController.text = widget.initialSearch!;
     }
-    if (widget.initialType == 'Component') _filter = 'Components';
-    if (widget.initialType == 'Remedy')    _filter = 'Herbal Remedies';
+    if (widget.initialType == 'Component')        _filter = 'Components';
+    if (widget.initialType == 'Remedy')           _filter = 'Herbal Remedies';
+    if (widget.initialType == 'Exercise support') _filter = 'Exercise Support';
     _loadProducts();
   }
 
@@ -110,8 +111,9 @@ class _ShopScreenState extends State<ShopScreen> {
 
       // Tab filter
       final matchFilter = _filter == 'All'
-          || (_filter == 'Components' && type == 'Component')
-          || (_filter == 'Herbal Remedies'   && type == 'Remedy');
+          || (_filter == 'Components'       && type == 'Component')
+          || (_filter == 'Herbal Remedies'  && type == 'Remedy')
+          || (_filter == 'Exercise Support' && type == 'Exercise support');
 
       // Search name only — description matches cause false positives
       final bool matchSearch;
@@ -373,8 +375,10 @@ class _ShopScreenState extends State<ShopScreen> {
             // Filter tabs
             Padding(
               padding: const EdgeInsets.symmetric(horizontal: 16),
-              child: Row(
-                children: ['All', 'Components', 'Herbal Remedies'].map((tab) => Padding(
+              child: SingleChildScrollView(
+                scrollDirection: Axis.horizontal,
+                child: Row(
+                children: ['All', 'Components', 'Herbal Remedies', 'Exercise Support'].map((tab) => Padding(
                   padding: const EdgeInsets.only(right: 8),
                   child: GestureDetector(
                     onTap: () => _setFilter(tab),
@@ -391,6 +395,7 @@ class _ShopScreenState extends State<ShopScreen> {
                     ),
                   ),
                 )).toList(),
+              ),
               ),
             ),
             const SizedBox(height: 16),
@@ -450,6 +455,7 @@ class _ProductCard extends StatelessWidget {
     final price    = num.tryParse(product['price']?.toString() ?? '0')?.toDouble() ?? 0.0;
     final imageUrl = product['image_url']   ?? '';
     final isComp   = type == 'Component';
+    final isExercise = type == 'Exercise support';
     final stock    = product['stock'] as int?;
     final inStock  = stock == null || stock > 0;
 
