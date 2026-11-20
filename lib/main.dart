@@ -117,24 +117,38 @@ class _AuthGateState extends State<_AuthGate> {
   @override
   void initState() {
     super.initState();
-    _checkAuth();
-    Supabase.instance.client.auth.onAuthStateChange.listen((data) {
-      if (mounted) setState(() => _loggedIn = data.session != null);
-    });
+    _init();
   }
 
-  Future<void> _checkAuth() async {
-    final session    = Supabase.instance.client.auth.currentSession;
-    final stayIn     = await SupabaseService.shouldStayLoggedIn();
-    if (!stayIn) await SupabaseService.signOut();
-    if (stayIn && session != null) {
-      try {
-        final profile = await SupabaseService.getProfile(session.user.id);
-        final scale = (profile?['font_scale'] as num?)?.toDouble() ?? 1.0;
-        appFontScale.value = scale.clamp(0.8, 1.4);
-      } catch (_) {}
+  Future<void> _init() async {
+    final stayIn = await SupabaseService.shouldStayLoggedIn();
+
+    if (!stayIn) {
+      // User opted out — sign out immediately and show login
+      await SupabaseService.signOut();
+      if (mounted) setState(() { _loggedIn = false; _checked = true; });
+      return;
     }
-    if (mounted) setState(() { _loggedIn = stayIn && session != null; _checked = true; });
+
+    // supabase_flutter 2.x fires INITIAL_SESSION on startup on both web and
+    // mobile. On mobile the session is available synchronously; on web it is
+    // restored asynchronously from localStorage. Listening here catches both.
+    Supabase.instance.client.auth.onAuthStateChange.listen((data) async {
+      if (!mounted) return;
+      final session = data.session;
+      if (session != null && !_checked) {
+        try {
+          final profile = await SupabaseService.getProfile(session.user.id);
+          final scale = (profile?['font_scale'] as num?)?.toDouble() ?? 1.0;
+          appFontScale.value = scale.clamp(0.8, 1.4);
+        } catch (_) {}
+      }
+      if (mounted) setState(() { _loggedIn = session != null; _checked = true; });
+    });
+
+    // Safety fallback: if no auth event arrives within 4 s, stop the spinner
+    await Future.delayed(const Duration(seconds: 4));
+    if (mounted && !_checked) setState(() { _loggedIn = false; _checked = true; });
   }
 
   @override
