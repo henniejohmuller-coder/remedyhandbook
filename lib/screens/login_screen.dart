@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter/material.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import '../theme/app_theme.dart';
@@ -97,7 +98,9 @@ class _LoginScreenState extends State<LoginScreen> {
                       setDialogState(() => sending = true);
                       await supabase.auth.resetPasswordForEmail(
                         resetEmailController.text.trim(),
-                        redirectTo: 'com.myherb.remedy_handbook://login-callback',
+                        redirectTo: kIsWeb
+                            ? 'https://remedy-handbook.web.app/'
+                            : 'com.myherb.remedy_handbook://login-callback',
                       );
                       setDialogState(() { sending = false; sent = true; });
                     },
