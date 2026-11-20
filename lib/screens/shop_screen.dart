@@ -37,6 +37,8 @@ class _ShopScreenState extends State<ShopScreen> {
   String _brandFilter = ShopScreen._savedBrandFilter;
   // SKU filter from Find → Shop Products (via filter_matrix)
   Set<String>? _taxSkus;
+  // When arriving from Find with taxonomy SKUs, show only featured (ranked) products first
+  bool _showFeaturedOnly = false;
   List<Map<String, dynamic>> _products = [];
   List<String> _catOptions   = ['All'];
   List<String> _brandOptions = ['All'];
@@ -52,6 +54,7 @@ class _ShopScreenState extends State<ShopScreen> {
     // If navigated from Find → Shop Products, receive matching SKUs
     if (widget.initialTaxonomySkus != null && widget.initialTaxonomySkus!.isNotEmpty) {
       _taxSkus = widget.initialTaxonomySkus;
+      _showFeaturedOnly = true; // default to top picks when coming from Find
     }
     if (widget.initialSearch != null && widget.initialSearch!.isNotEmpty) {
       _search = widget.initialSearch!;
@@ -137,9 +140,33 @@ class _ShopScreenState extends State<ShopScreen> {
       // SKU filter from Find → Shop Products (via filter_matrix)
       final matchTaxSku = _taxSkus == null || _taxSkus!.contains((p['sku'] ?? '').toString());
 
-      return matchFilter && matchSearch && matchCat && matchBrand && matchTaxSku;
-    }).toList();
+      // Featured-only filter — when coming from Find, default to ranked products
+      final matchFeatured = !_showFeaturedOnly || (p['featured_rank'] != null);
+
+      return matchFilter && matchSearch && matchCat && matchBrand && matchTaxSku && matchFeatured;
+    }).toList()
+      ..sort((a, b) {
+        // Sort featured products by rank first, then everything else
+        final ra = a['featured_rank'] as int?;
+        final rb = b['featured_rank'] as int?;
+        if (ra != null && rb != null) return ra.compareTo(rb);
+        if (ra != null) return -1;
+        if (rb != null) return 1;
+        return 0;
+      });
   }
+
+  // Count of all taxonomy-matching products (regardless of featured filter)
+  int get _totalTaxSkuCount => _taxSkus == null
+      ? _products.length
+      : _products.where((p) => _taxSkus!.contains((p['sku'] ?? '').toString())).length;
+
+  // Count of featured products in the current taxonomy
+  int get _featuredTaxCount => _taxSkus == null
+      ? _products.where((p) => p['featured_rank'] != null).length
+      : _products.where((p) =>
+            _taxSkus!.contains((p['sku'] ?? '').toString()) &&
+            p['featured_rank'] != null).length;
 
   void _showSearchDropdown(BuildContext context, String label, List<String> options,
       String current, ValueChanged<String> onChanged) {
@@ -371,6 +398,52 @@ class _ShopScreenState extends State<ShopScreen> {
               ),
             ),
             const SizedBox(height: 16),
+
+            // Top-picks / Show-all toggle — only shown when coming from Find
+            if (_taxSkus != null && _taxSkus!.isNotEmpty && !_loading) ...[
+              Padding(
+                padding: const EdgeInsets.only(bottom: 10),
+                child: Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+                  decoration: BoxDecoration(
+                    color: AppColors.lightYellow,
+                    borderRadius: BorderRadius.circular(10),
+                    border: Border.all(color: AppColors.primary.withOpacity(0.4)),
+                  ),
+                  child: Row(children: [
+                    Icon(
+                      _showFeaturedOnly ? Icons.star : Icons.list,
+                      size: 16,
+                      color: AppColors.dark,
+                    ),
+                    const SizedBox(width: 8),
+                    Expanded(
+                      child: Text(
+                        _showFeaturedOnly
+                            ? 'Showing ${_featuredTaxCount} top pick${_featuredTaxCount == 1 ? '' : 's'} of $_totalTaxSkuCount matching products'
+                            : 'Showing all $_totalTaxSkuCount matching products',
+                        style: const TextStyle(fontSize: 12, color: AppColors.dark),
+                      ),
+                    ),
+                    const SizedBox(width: 8),
+                    GestureDetector(
+                      onTap: () => setState(() => _showFeaturedOnly = !_showFeaturedOnly),
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+                        decoration: BoxDecoration(
+                          color: AppColors.dark,
+                          borderRadius: BorderRadius.circular(20),
+                        ),
+                        child: Text(
+                          _showFeaturedOnly ? 'Show all' : 'Top picks',
+                          style: const TextStyle(fontSize: 11, fontWeight: FontWeight.w700, color: AppColors.primary),
+                        ),
+                      ),
+                    ),
+                  ]),
+                ),
+              ),
+            ],
 
             // Grid
             Expanded(

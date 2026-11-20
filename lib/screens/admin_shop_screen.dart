@@ -272,6 +272,7 @@ class _ShopItemFormState extends State<_ShopItemForm> {
   late TextEditingController _brandController;
   late TextEditingController _primaryHerbController;
   late TextEditingController _mainConstituentController;
+  int? _featuredRank; // null = not featured, 1–5 = ranked
 
   @override
   void initState() {
@@ -289,6 +290,7 @@ class _ShopItemFormState extends State<_ShopItemForm> {
     _brandController    = TextEditingController(text: p?['brand'] ?? '');
     _primaryHerbController    = TextEditingController(text: p?['primary_herb'] ?? '');
     _mainConstituentController = TextEditingController(text: p?['main_constituent'] ?? '');
+    _featuredRank = p?['featured_rank'] as int?;
   }
 
   @override
@@ -582,6 +584,7 @@ class _ShopItemFormState extends State<_ShopItemForm> {
         'brand':         _brandController.text.trim(),
         'primary_herb':  _primaryHerbController.text.trim(),
         'main_constituent': _mainConstituentController.text.trim(),
+        'featured_rank': _featuredRank,
       };
       if (widget.product == null) {
         await SupabaseService.supabase.from('products').insert(data);
@@ -597,6 +600,26 @@ class _ShopItemFormState extends State<_ShopItemForm> {
       if (mounted) ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text('Error saving: $e'), backgroundColor: Colors.red));
     }
+  }
+
+  Widget _rankChip(int? rank, String label) {
+    final selected = _featuredRank == rank;
+    return GestureDetector(
+      onTap: () => setState(() => _featuredRank = rank),
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+        decoration: BoxDecoration(
+          color: selected ? AppColors.primary : Colors.white,
+          borderRadius: BorderRadius.circular(20),
+          border: Border.all(color: selected ? AppColors.primary : Colors.grey.shade300),
+        ),
+        child: Text(label,
+            style: TextStyle(
+                fontSize: 12,
+                fontWeight: FontWeight.w600,
+                color: selected ? AppColors.dark : AppColors.textSecondary)),
+      ),
+    );
   }
 
   Widget _field(String label, String hint, TextEditingController controller,
@@ -690,6 +713,33 @@ class _ShopItemFormState extends State<_ShopItemForm> {
             Expanded(child: _field('Stock qty', 'e.g. 100', _stockController, isNumber: true)),
             const SizedBox(width: 10),
             Expanded(child: _field('Delivery cost (R)', 'e.g. 60', _deliveryController, isNumber: true)),
+          ]),
+          const SizedBox(height: 10),
+
+          // Featured rank
+          Text('Featured rank on Find page', style: AppTextStyles.caption),
+          const SizedBox(height: 4),
+          Row(children: [
+            _rankChip(null, 'None'),
+            const SizedBox(width: 6),
+            _rankChip(1, '1'),
+            const SizedBox(width: 6),
+            _rankChip(2, '2'),
+            const SizedBox(width: 6),
+            _rankChip(3, '3'),
+            const SizedBox(width: 6),
+            _rankChip(4, '4'),
+            const SizedBox(width: 6),
+            _rankChip(5, '5'),
+            const SizedBox(width: 10),
+            Expanded(
+              child: Text(
+                _featuredRank == null
+                    ? 'Not shown as a top pick'
+                    : 'Shown as top pick #$_featuredRank on Find page',
+                style: const TextStyle(fontSize: 11, color: AppColors.textSecondary),
+              ),
+            ),
           ]),
           const SizedBox(height: 10),
 
