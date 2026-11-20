@@ -300,9 +300,19 @@ class _CategoryScreenState extends State<CategoryScreen> {
         pFrom += 1000;
       }
 
+      // Deduplicate taxonomy rows — filter_matrix has one row per SKU so the
+      // same (category, subcategory, illness, symptom) tuple can appear many
+      // times.  The Find table only needs unique taxonomy combinations.
+      final seen = <String>{};
+      final dedupedAll = <Map<String, dynamic>>[];
+      for (final r in all) {
+        final key = '${r['category']}|${r['subcategory']}|${r['illness']}|${r['symptom']}';
+        if (seen.add(key)) dedupedAll.add(r);
+      }
+
       if (!mounted) return;
       setState(() {
-        _allRows           = all;
+        _allRows           = dedupedAll;
         _remedies          = allRemedies;
         _productRows       = prodMatrix;
         _allProductSkuRows = allProducts;   // raw filter_matrix rows with sku
