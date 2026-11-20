@@ -131,7 +131,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
       setState(() { _editing = false; _saving = false; });
       if (context.mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('ÃƒÂ¢Ã…â€œ... Profile updated!'), backgroundColor: Colors.green));
+          const SnackBar(content: Text('Profile updated!'), backgroundColor: Colors.green));
       }
     } catch (e) {
       if (!mounted) return;
@@ -713,7 +713,7 @@ class _ProfileField extends StatelessWidget {
                     focusedBorder: UnderlineInputBorder(borderSide: BorderSide(color: AppColors.primary)),
                   ),
                 )
-              : Text(value.isNotEmpty ? value : 'ÃƒÂ¢', style: AppTextStyles.body),
+              : Text(value.isNotEmpty ? value : '—', style: AppTextStyles.body),
         ]),
       ),
       if (isLocked) const Icon(Icons.lock_outline, size: 14, color: AppColors.textSecondary),
