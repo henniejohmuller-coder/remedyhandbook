@@ -26,50 +26,64 @@ class _ChangePasswordScreenState extends State<ChangePasswordScreen> {
   }
 
   Future<void> _waitForSession() async {
-    debugPrint('[PWReset] _waitForSession started');
-    debugPrint('[PWReset] Uri.base = ${Uri.base}');
-    debugPrint('[PWReset] fragment = ${Uri.base.fragment}');
-    debugPrint('[PWReset] query = ${Uri.base.query}');
-
-    // On web, force supabase to exchange the token in the current URL.
+    // On web, supabase_flutter handles the implicit-flow fragment automatically
+    // via onAuthStateChange. We just need to wait for the passwordRecovery event.
     if (kIsWeb) {
-      try {
-        debugPrint('[PWReset] calling getSessionFromUrl...');
-        final res = await Supabase.instance.client.auth.getSessionFromUrl(Uri.base);
-        debugPrint('[PWReset] getSessionFromUrl result: ${res.session?.user.id}');
-      } catch (e) {
-        debugPrint('[PWReset] getSessionFromUrl error: $e');
-      }
-    }
-
-    // Session should now be set — check immediately.
-    final s1 = Supabase.instance.client.auth.currentSession;
-    debugPrint('[PWReset] currentSession after getSessionFromUrl: ${s1?.user.id}');
-    if (s1 != null) {
-      if (mounted) setState(() => _sessionReady = true);
-      return;
-    }
-
-    // Fallback: poll for up to 6 seconds.
-    for (int i = 0; i < 20; i++) {
-      await Future.delayed(const Duration(milliseconds: 300));
-      if (!mounted) return;
-      final s = Supabase.instance.client.auth.currentSession;
-      debugPrint('[PWReset] poll $i: session=${s?.user.id}');
-      if (s != null) {
-        setState(() => _sessionReady = true);
+      // Check if session is already established (supabase may have processed it).
+      final existing = Supabase.instance.client.auth.currentSession;
+      if (existing != null) {
+        if (mounted) setState(() => _sessionReady = true);
         return;
       }
+
+      // Listen for the passwordRecovery event from the implicit flow token.
+      final sub = Supabase.instance.client.auth.onAuthStateChange.listen((data) {
+        if (!mounted) return;
+        if (data.session != null) {
+          setState(() => _sessionReady = true);
+        }
+      });
+
+      // Poll briefly in case the event already fired before we subscribed.
+      for (int i = 0; i < 30; i++) {
+        await Future.delayed(const Duration(milliseconds: 200));
+        if (!mounted) { sub.cancel(); return; }
+        final s = Supabase.instance.client.auth.currentSession;
+        if (s != null) {
+          setState(() => _sessionReady = true);
+          sub.cancel();
+          return;
+        }
+        if (_sessionReady) { sub.cancel(); return; }
+      }
+
+      sub.cancel();
+
+      // If still no session, show an error message instead of spinning forever.
+      if (mounted && !_sessionReady) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Reset link expired or already used. Please request a new one.'),
+            backgroundColor: Colors.red,
+            duration: Duration(seconds: 6),
+          ),
+        );
+        // Show the form anyway so they see the message; updateUser will fail gracefully.
+        setState(() => _sessionReady = true);
+      }
+    } else {
+      // Native: session arrives via deep link handled by supabase_flutter.
+      for (int i = 0; i < 30; i++) {
+        await Future.delayed(const Duration(milliseconds: 200));
+        if (!mounted) return;
+        final s = Supabase.instance.client.auth.currentSession;
+        if (s != null) {
+          setState(() => _sessionReady = true);
+          return;
+        }
+      }
+      if (mounted) setState(() => _sessionReady = true);
     }
-
-    debugPrint('[PWReset] gave up polling — session never arrived');
-
-    // Last resort: listen on the stream.
-    Supabase.instance.client.auth.onAuthStateChange.listen((data) {
-      debugPrint('[PWReset] onAuthStateChange: event=${data.event} session=${data.session?.user.id}');
-      if (!mounted) return;
-      if (data.session != null) setState(() => _sessionReady = true);
-    });
   }
 
   String? _validate() {
