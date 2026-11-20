@@ -10,6 +10,8 @@ import 'theme/app_theme.dart';
 import 'services/supabase_service.dart';
 import 'widgets/shared_widgets.dart';
 import 'widgets/install_banner.dart';
+import 'widgets/install_prompt_dialog.dart';
+import 'utils/pwa_install.dart';;
 import 'widgets/navigation_guard.dart';
 import 'screens/login_screen.dart';
 import 'screens/change_password_screen.dart';
@@ -28,6 +30,7 @@ import 'screens/recipe_detail_screen.dart';
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   if (kIsWeb) usePathUrlStrategy();
+  if (kIsWeb) PwaInstall.init();
   await Supabase.initialize(
     url: AppConfig.supabaseUrl,
     anonKey: AppConfig.supabaseAnonKey,
@@ -145,7 +148,14 @@ class _AuthGateState extends State<_AuthGate> {
           appFontScale.value = scale.clamp(0.8, 1.4);
         } catch (_) {}
       }
+      final wasLoggedIn = _loggedIn;
       if (mounted) setState(() { _loggedIn = session != null; _checked = true; });
+      // Show install prompt once after a fresh login
+      if (!wasLoggedIn && session != null && mounted) {
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          if (mounted) maybeShowInstallPrompt(context);
+        });
+      }
     });
 
     if (!stayIn) {
