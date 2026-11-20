@@ -11,7 +11,7 @@ import 'services/supabase_service.dart';
 import 'widgets/shared_widgets.dart';
 import 'widgets/install_banner.dart';
 import 'widgets/install_prompt_dialog.dart';
-import 'utils/pwa_install.dart';;
+import 'utils/pwa_install.dart';
 import 'widgets/navigation_guard.dart';
 import 'screens/login_screen.dart';
 import 'screens/change_password_screen.dart';
