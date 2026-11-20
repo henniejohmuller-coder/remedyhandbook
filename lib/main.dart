@@ -12,6 +12,7 @@ import 'widgets/shared_widgets.dart';
 import 'widgets/install_banner.dart';
 import 'widgets/navigation_guard.dart';
 import 'screens/login_screen.dart';
+import 'screens/change_password_screen.dart';
 import 'screens/home_screen.dart';
 import 'screens/recipes_screen.dart';
 import 'screens/category_screen.dart';
@@ -123,19 +124,26 @@ class _AuthGateState extends State<_AuthGate> {
   Future<void> _init() async {
     final stayIn = await SupabaseService.shouldStayLoggedIn();
 
-    if (!stayIn) {
-      // User opted out — sign out immediately and show login
-      await SupabaseService.signOut();
-      if (mounted) setState(() { _loggedIn = false; _checked = true; });
-      return;
-    }
-
-    // supabase_flutter 2.x fires INITIAL_SESSION on startup on both web and
-    // mobile. On mobile the session is available synchronously; on web it is
-    // restored asynchronously from localStorage. Listening here catches both.
+    // Always listen for auth events — passwordRecovery must be caught
+    // even when stayIn is false (user arriving from a reset-password email).
     Supabase.instance.client.auth.onAuthStateChange.listen((data) async {
       if (!mounted) return;
       final session = data.session;
+      final event   = data.event;
+
+      // Password recovery — navigate to change-password screen immediately
+      if (event == AuthChangeEvent.passwordRecovery) {
+        setState(() { _loggedIn = true; _checked = true; });
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          if (mounted) Navigator.of(context).push(
+            MaterialPageRoute(builder: (_) => const ChangePasswordScreen()));
+        });
+        return;
+      }
+
+      // If user opted out of stay-logged-in, ignore other events
+      if (!stayIn) return;
+
       if (session != null && !_checked) {
         try {
           final profile = await SupabaseService.getProfile(session.user.id);
@@ -145,6 +153,13 @@ class _AuthGateState extends State<_AuthGate> {
       }
       if (mounted) setState(() { _loggedIn = session != null; _checked = true; });
     });
+
+    if (!stayIn) {
+      // User opted out — sign out and show login
+      await SupabaseService.signOut();
+      if (mounted) setState(() { _loggedIn = false; _checked = true; });
+      return;
+    }
 
     // Safety fallback: if no auth event arrives within 4 s, stop the spinner
     await Future.delayed(const Duration(seconds: 4));
