@@ -144,13 +144,19 @@ class _ShopScreenState extends State<ShopScreen> {
           || (_filter == 'Herbal Remedies'  && type == 'Remedy')
           || (_filter == 'Exercise Support' && type == 'Exercise Support');
 
-      // Search name only — description matches cause false positives
+      // Search across name, description, primary herb, main constituent, and brand
       final bool matchSearch;
       if (terms.isEmpty) {
         matchSearch = true;
       } else {
-        final name = (p['name'] ?? '').toString().toLowerCase();
-        matchSearch = terms.any((term) => name.contains(term));
+        final haystack = [
+          p['name']            ?? '',
+          p['description']     ?? '',
+          p['primary_herb']    ?? '',
+          p['main_constituent'] ?? '',
+          p['brand']           ?? '',
+        ].join(' ').toLowerCase();
+        matchSearch = terms.any((term) => haystack.contains(term));
       }
 
       // Type dropdown filter
