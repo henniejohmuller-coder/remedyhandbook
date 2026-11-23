@@ -172,8 +172,10 @@ class _ShopScreenState extends State<ShopScreen> {
       // SKU filter from Find → Shop Products (via filter_matrix)
       final matchTaxSku = _taxSkus == null || _taxSkus!.contains((p['sku'] ?? '').toString());
 
-      // Featured-only view: show only the ranked products for this taxonomy
+      // Featured-only view: show only the ranked products for this taxonomy.
+      // If no featured products are defined yet, fall back to showing all SKU-matched products.
       final matchFeatured = !_showFeaturedOnly ||
+          _featuredProductIds.isEmpty ||
           _featuredProductIds.contains((p['id'] ?? '').toString());
 
       return matchFilter && matchSearch && matchCat && matchBrand && matchTaxSku && matchFeatured;
