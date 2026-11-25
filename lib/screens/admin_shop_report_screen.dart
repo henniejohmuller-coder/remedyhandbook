@@ -83,7 +83,8 @@ class _AdminShopReportScreenState extends State<AdminShopReportScreen> {
     return s + items.fold<double>(0, (si,i) =>
         si + ((i['cost_price']??0) as num).toDouble() * ((i['quantity']??1) as num).toDouble());
   });
-  double get _totalProfit => _totalRevenue - _totalCost;
+  double get _totalPayfast => _totalRevenue * 0.05;
+  double get _totalProfit => _totalRevenue - _totalCost - _totalPayfast;
 
   Future<void> _updateStatus(String orderId, String status) async {
     await SupabaseService.supabase.from('orders').update({'status': status}).eq('id', orderId);
@@ -162,6 +163,8 @@ class _AdminShopReportScreenState extends State<AdminShopReportScreen> {
             _SummaryCard('Revenue', 'R${_totalRevenue.toStringAsFixed(2)}', Colors.green),
             const SizedBox(width: 8),
             _SummaryCard('Cost', 'R${_totalCost.toStringAsFixed(2)}', Colors.orange),
+            const SizedBox(width: 8),
+            _SummaryCard('PayFast', 'R${_totalPayfast.toStringAsFixed(2)}', Colors.purple),
             const SizedBox(width: 8),
             _SummaryCard('Profit', 'R${_totalProfit.toStringAsFixed(2)}',
                 _totalProfit >= 0 ? AppColors.dark : Colors.red),
@@ -299,7 +302,8 @@ class _OrderCard extends StatelessWidget {
     final shipping = ((order['shipping'] ?? 0) as num).toDouble();
     final costTotal = items.fold<double>(0, (s,i) =>
         s + ((i['cost_price']??0) as num).toDouble() * ((i['quantity']??1) as num).toDouble());
-    final profit = total - shipping - costTotal;
+    final payfastFee = total * 0.05;
+    final profit = total - shipping - costTotal - payfastFee;
 
     return Container(
       margin: const EdgeInsets.only(bottom: 12),
@@ -444,6 +448,7 @@ class _OrderCard extends StatelessWidget {
             Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [
               Text('Shipping: R${shipping.toStringAsFixed(2)}', style: AppTextStyles.caption),
               Text('Cost: R${costTotal.toStringAsFixed(2)}', style: AppTextStyles.caption),
+              Text('PayFast (5%): R${payfastFee.toStringAsFixed(2)}', style: AppTextStyles.caption),
               Text('Profit: R${profit.toStringAsFixed(2)}',
                   style: TextStyle(fontSize: 12, fontWeight: FontWeight.w700,
                       color: profit >= 0 ? Colors.green : Colors.red)),
