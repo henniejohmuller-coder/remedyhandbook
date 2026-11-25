@@ -245,14 +245,14 @@ class ContentEditorState extends State<ContentEditor> {
             onPressed: _saving ? null : _save,
             style: ElevatedButton.styleFrom(
               backgroundColor: AppColors.primary, foregroundColor: AppColors.dark,
-              padding: const EdgeInsets.symmetric(vertical: 14),
+              minimumSize: const Size(double.infinity, 44),
               shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
               elevation: 0,
             ),
             child: _saving
                 ? const SizedBox(width: 20, height: 20,
                     child: CircularProgressIndicator(strokeWidth: 2, color: AppColors.dark))
-                : const Text('Save', style: TextStyle(fontWeight: FontWeight.w700, fontSize: 15)),
+                : const Text('Save', style: TextStyle(fontWeight: FontWeight.w600, fontSize: 13)),
           ),
         ),
       ]),
@@ -399,13 +399,13 @@ class _TermsEditorState extends State<TermsEditor> {
               onPressed: _deleting ? null : _delete,
               style: OutlinedButton.styleFrom(foregroundColor: Colors.red,
                   side: const BorderSide(color: Colors.red),
-                  padding: const EdgeInsets.symmetric(vertical: 14),
+                  minimumSize: const Size(0, 44),
                   shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10))),
               icon: _deleting
                   ? const SizedBox(width: 16, height: 16,
                       child: CircularProgressIndicator(strokeWidth: 2, color: Colors.red))
                   : const Icon(Icons.delete_outline, size: 18),
-              label: const Text('Delete', style: TextStyle(fontWeight: FontWeight.w700)),
+              label: const Text('Delete', style: TextStyle(fontWeight: FontWeight.w600, fontSize: 13)),
             ),
           ),
           const SizedBox(width: 12),
@@ -415,13 +415,13 @@ class _TermsEditorState extends State<TermsEditor> {
               onPressed: _saving ? null : _submit,
               style: ElevatedButton.styleFrom(
                   backgroundColor: AppColors.primary, foregroundColor: AppColors.dark,
-                  padding: const EdgeInsets.symmetric(vertical: 14), elevation: 0,
+                  minimumSize: const Size(0, 44), elevation: 0,
                   shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10))),
               icon: _saving
                   ? const SizedBox(width: 16, height: 16,
                       child: CircularProgressIndicator(strokeWidth: 2, color: AppColors.dark))
                   : const Icon(Icons.cloud_upload_outlined, size: 18),
-              label: const Text('Submit', style: TextStyle(fontWeight: FontWeight.w700, fontSize: 15)),
+              label: const Text('Submit', style: TextStyle(fontWeight: FontWeight.w600, fontSize: 13)),
             ),
           ),
         ]),

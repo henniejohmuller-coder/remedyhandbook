@@ -18,13 +18,12 @@ class _MyRecipesScreenState extends State<MyRecipesScreen>
   List<Map<String, dynamic>> _saved         = [];
   List<Map<String, dynamic>> _savedProducts = [];
   List<Map<String, dynamic>> _orders        = [];
-  List<Map<String, dynamic>> _submissions   = [];
   bool _loading = true;
 
   @override
   void initState() {
     super.initState();
-    _tabController = TabController(length: 3, vsync: this);
+    _tabController = TabController(length: 2, vsync: this);
     _loadData();
   }
 
@@ -40,27 +39,16 @@ class _MyRecipesScreenState extends State<MyRecipesScreen>
     try {
       final userId = SupabaseService.currentUser?.id;
       print('Loading data for user: $userId');
-      final userId = SupabaseService.supabase.auth.currentUser?.id;
       final results = await Future.wait([
         SupabaseService.getSavedRemedies(),
         SupabaseService.getSavedProducts(),
         SupabaseService.getOrders(),
-        if (userId != null)
-          SupabaseService.supabase
-              .from('remedy_submissions')
-              .select()
-              .eq('user_id', userId)
-              .order('submitted_at', ascending: false)
-              .then((d) => List<Map<String, dynamic>>.from(d))
-        else
-          Future.value(<Map<String, dynamic>>[]),
       ]);
       if (!mounted) return;
       setState(() {
         _saved          = results[0];
         _savedProducts  = results[1];
         _orders         = results[2];
-        _submissions    = results[3];
         _loading        = false;
       });
     } catch (e) {
@@ -97,7 +85,6 @@ class _MyRecipesScreenState extends State<MyRecipesScreen>
                   tabs: [
                     Tab(text: 'Favourites (${_saved.length + _savedProducts.length})'),
                     Tab(text: 'Orders (${_orders.length})'),
-                    Tab(text: 'Submissions (${_submissions.length})'),
                   ],
                 ),
               ),
@@ -111,7 +98,6 @@ class _MyRecipesScreenState extends State<MyRecipesScreen>
                       children: [
                         _SavedTab(saved: _saved, savedProducts: _savedProducts, onRefresh: _loadData),
                         _OrdersTab(orders: _orders, onRefresh: _loadData),
-                        _SubmissionsTab(submissions: _submissions, onRefresh: _loadData),
                       ],
                     ),
             ),
