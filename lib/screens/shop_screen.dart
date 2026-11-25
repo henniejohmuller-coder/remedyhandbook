@@ -262,7 +262,7 @@ class _ShopScreenState extends State<ShopScreen> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            const YellowAppBar(title: 'Shop', subtitle: 'Free delivery over R650'),
+            const YellowAppBar(title: 'Shop', subtitle: 'Free delivery over R500'),
 
             // ── Taxonomy filter banner (shown when arriving from Find → Shop Products) ──
             if (_taxSkus != null && _taxSkus!.isNotEmpty)

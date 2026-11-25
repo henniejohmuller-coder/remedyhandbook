@@ -100,9 +100,9 @@ class _CartScreenState extends State<CartScreen> {
                   const Icon(Icons.local_shipping_outlined, size: 16, color: Colors.green),
                   const SizedBox(width: 8),
                   Text(
-                    total >= 650
+                    total >= 500
                         ? '🎉 Free delivery unlocked!'
-                        : 'Add R${(650 - subtotal).toInt()} more for free delivery!',
+                        : 'Add R${(500 - subtotal).toInt()} more for free delivery!',
                     style: const TextStyle(fontSize: 12, color: Colors.green, fontWeight: FontWeight.w500),
                   ),
                 ]),
