@@ -182,7 +182,7 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
   });
   double get discountAmount => _discountPct > 0 ? subtotal * _discountPct / 100 : 0;
   double get discountedSubtotal => subtotal - discountAmount;
-  double get shipping => discountedSubtotal >= 500 ? 0 : 90;
+  double get shipping => subtotal >= 500 ? 0 : 90;
   double get total    => discountedSubtotal + shipping;
 
   Future<void> _payWithToken() async {
