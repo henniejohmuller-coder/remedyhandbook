@@ -97,13 +97,13 @@ class _CartScreenState extends State<CartScreen> {
                 padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
                 decoration: BoxDecoration(color: AppColors.lightGreen, borderRadius: BorderRadius.circular(8)),
                 child: Row(children: [
-                  const Icon(Icons.local_shipping_outlined, size: 16, color: Colors.green),
+                  const Icon(Icons.local_shipping_outlined, size: 21, color: Colors.green),
                   const SizedBox(width: 8),
                   Text(
                     total >= 500
                         ? '🎉 Free delivery unlocked!'
                         : 'Add R${(500 - subtotal).toInt()} more for free delivery!',
-                    style: const TextStyle(fontSize: 12, color: Colors.green, fontWeight: FontWeight.w500),
+                    style: const TextStyle(fontSize: 12, color: Colors.green, fontWeight: FontWeight.bold),
                   ),
                 ]),
               ),
