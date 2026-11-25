@@ -906,10 +906,21 @@ class _LoginScreenState extends State<LoginScreen> {
               // Toggle sign in / sign up
               TextButton(
                 onPressed: () => setState(() { _isSignUp = !_isSignUp; _error = null; }),
-                child: Text(
-                  _isSignUp ? 'Already have an account? Sign in' : "Don't have an account? Sign up",
-                  style: const TextStyle(color: AppColors.dark, fontWeight: FontWeight.w600),
-                ),
+                child: _isSignUp
+                    ? const Text('Already have an account? Sign in',
+                        style: TextStyle(color: AppColors.dark, fontWeight: FontWeight.w600))
+                    : RichText(
+                        text: const TextSpan(
+                          style: TextStyle(color: AppColors.dark, fontWeight: FontWeight.w600, fontSize: 14),
+                          children: [
+                            TextSpan(text: "Don't have an account? "),
+                            TextSpan(
+                              text: 'Sign up',
+                              style: TextStyle(color: Colors.red, fontWeight: FontWeight.bold),
+                            ),
+                          ],
+                        ),
+                      ),
               ),
               if (!_isSignUp) ...[
                 TextButton(
