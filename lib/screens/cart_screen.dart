@@ -57,14 +57,8 @@ class _CartScreenState extends State<CartScreen> {
   });
 
   double get shipping {
-    if (subtotal >= 650) return 0;
-    // Use highest delivery_cost among items, fallback to R85
-    double maxDelivery = 0;
-    for (final i in _items) {
-      final dc = ((i['products']?['delivery_cost'] ?? 0) as num).toDouble();
-      if (dc > maxDelivery) maxDelivery = dc;
-    }
-    return maxDelivery > 0 ? maxDelivery : 85;
+    if (subtotal >= 500) return 0;
+    return 90;
   }
   double get total    => subtotal + shipping;
 
