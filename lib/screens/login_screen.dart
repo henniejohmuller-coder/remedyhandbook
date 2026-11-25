@@ -926,7 +926,7 @@ class _LoginScreenState extends State<LoginScreen> {
                 TextButton(
                   onPressed: () => _showForgotPasswordDialog(),
                   child: const Text('Forgot password?',
-                      style: TextStyle(color: AppColors.primary, fontWeight: FontWeight.w600)),
+                      style: TextStyle(color: Colors.red, fontWeight: FontWeight.bold, fontSize: 14)),
                 ),
               ],
               const SizedBox(height: 16),
