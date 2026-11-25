@@ -17,12 +17,33 @@ class CartScreen extends StatefulWidget {
 class _CartScreenState extends State<CartScreen> {
   List<Map<String, dynamic>> _items = [];
   bool _loading = true;
+  double _discountPct = 0;
+  int?   _enrollmentId;
 
   @override
   void initState() {
     super.initState();
     CartScreen._reloadCallback = _loadCart;
     _loadCart();
+    _loadDiscount();
+  }
+
+  Future<void> _loadDiscount() async {
+    final userId = SupabaseService.supabase.auth.currentUser?.id;
+    if (userId == null) return;
+    try {
+      final data = await SupabaseService.supabase
+          .from('profiles')
+          .select('enrollment_id, discount_pct')
+          .eq('id', userId)
+          .single();
+      if (mounted) {
+        setState(() {
+          _enrollmentId = data['enrollment_id'] as int?;
+          _discountPct  = ((data['discount_pct'] ?? 0) as num).toDouble();
+        });
+      }
+    } catch (_) {}
   }
 
   @override
@@ -56,8 +77,10 @@ class _CartScreenState extends State<CartScreen> {
     return s + price * qty;
   });
 
-  double get shipping => 130;
-  double get total    => subtotal + shipping;
+  double get discountAmount    => _discountPct > 0 ? subtotal * _discountPct / 100 : 0;
+  double get discountedSubtotal => subtotal - discountAmount;
+  double get shipping          => 130;
+  double get total             => discountedSubtotal + shipping;
 
   Future<void> _updateQty(String productId, int qty) async {
     await SupabaseService.updateCartQuantity(productId, qty);
@@ -173,11 +196,23 @@ class _CartScreenState extends State<CartScreen> {
                     const Text('Subtotal', style: AppTextStyles.body),
                     Text('R${subtotal.toInt()}', style: AppTextStyles.body),
                   ]),
+                  if (_discountPct > 0) ...[
+                    const SizedBox(height: 4),
+                    Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [
+                      Text(
+                        'Discount (${_discountPct % 1 == 0 ? _discountPct.toInt() : _discountPct}%'
+                        '${_enrollmentId != null ? ' · #$_enrollmentId' : ''})',
+                        style: const TextStyle(fontSize: 13, color: Colors.green),
+                      ),
+                      Text('- R${discountAmount.toStringAsFixed(2)}',
+                          style: const TextStyle(fontSize: 13, color: Colors.green, fontWeight: FontWeight.w600)),
+                    ]),
+                  ],
                   const SizedBox(height: 4),
                   Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [
                     const Text('Delivery', style: AppTextStyles.caption),
-                    Text(shipping == 0 ? 'FREE' : 'R${shipping.toInt()}',
-                        style: TextStyle(fontSize: 13, color: shipping == 0 ? Colors.green : AppColors.textSecondary)),
+                    Text('R${shipping.toInt()}',
+                        style: const TextStyle(fontSize: 13, color: AppColors.textSecondary)),
                   ]),
                   const Divider(height: 16),
                   Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [
