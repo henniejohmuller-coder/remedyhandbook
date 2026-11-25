@@ -148,12 +148,13 @@ class _HomeScreenState extends State<HomeScreen> {
           actions: [Icon(Icons.more_horiz, color: AppColors.dark)],
         ),
         if (_discountPct > 0)
-          Positioned(
-            top: 14,
-            left: 155,
-            child: Transform.rotate(
-              angle: -0.52, // −30°
-              child: _DiscountStamp(pct: _discountPct),
+          Positioned.fill(
+            child: Align(
+              alignment: Alignment.center,
+              child: Transform.rotate(
+                angle: -0.52, // −30°
+                child: _DiscountStamp(pct: _discountPct),
+              ),
             ),
           ),
       ],
