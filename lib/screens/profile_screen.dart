@@ -317,7 +317,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                     ),
                     const SizedBox(height: 16),
 
-                    // Early supporter discount card
+                    // 12 month discount card
                     Builder(builder: (_) {
                       final enrollId    = _profile?['enrollment_id'];
                       final discountPct = (((_profile?['discount_pct']) ?? 0) as num).toDouble();
@@ -337,7 +337,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                             child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
                               Text(
                                 discountPct > 0
-                                    ? 'Early Supporter — ${discountPct % 1 == 0 ? discountPct.toInt() : discountPct}% lifelong discount'
+                                    ? '12 Month Discount — ${discountPct % 1 == 0 ? discountPct.toInt() : discountPct}%'
                                     : 'Member',
                                 style: const TextStyle(
                                     fontSize: 13, fontWeight: FontWeight.w700, color: Color(0xFF1B5E20)),

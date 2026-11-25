@@ -409,7 +409,7 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
                                     const Icon(Icons.local_offer, size: 14, color: Colors.green),
                                     const SizedBox(width: 6),
                                     Text(
-                                      'Early supporter discount'
+                                      '12 month discount'
                                       ' (#${_enrollmentId ?? ''}  ·  ${_discountPct % 1 == 0 ? _discountPct.toInt() : _discountPct}%)',
                                       style: const TextStyle(fontSize: 13, color: Colors.green, fontWeight: FontWeight.w600),
                                     ),
@@ -663,7 +663,7 @@ class _DiscountStamp extends StatelessWidget {
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            const Text('EARLY SUPPORTER', style: TextStyle(fontSize: 7, fontWeight: FontWeight.w900, color: Color(0xFFB71C1C), letterSpacing: 1.0, height: 1.2)),
+            const Text('12 MONTH', style: TextStyle(fontSize: 7, fontWeight: FontWeight.w900, color: Color(0xFFB71C1C), letterSpacing: 1.0, height: 1.2)),
             Text('$label DISCOUNT', style: const TextStyle(fontSize: 9, fontWeight: FontWeight.w900, color: Color(0xFFB71C1C), letterSpacing: 0.8, height: 1.2)),
           ],
         ),

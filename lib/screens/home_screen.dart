@@ -343,7 +343,7 @@ class _DiscountStamp extends StatelessWidget {
           mainAxisSize: MainAxisSize.min,
           children: [
             const Text(
-              'EARLY SUPPORTER',
+              '12 MONTH',
               style: TextStyle(
                 fontSize: 7,
                 fontWeight: FontWeight.w900,

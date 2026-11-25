@@ -280,7 +280,7 @@ class _ShopScreenState extends State<ShopScreen> {
                 YellowAppBar(
                   title: 'Shop',
                   subtitle: _discountPct > 0
-                      ? '${_discountPct % 1 == 0 ? _discountPct.toInt() : _discountPct}% early supporter discount'
+                      ? '${_discountPct % 1 == 0 ? _discountPct.toInt() : _discountPct}% 12 month discount'
                       : 'Natural health products',
                 ),
                 if (_discountPct > 0)
@@ -698,7 +698,7 @@ class _DiscountStamp extends StatelessWidget {
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            const Text('EARLY SUPPORTER',
+            const Text('12 MONTH',
               style: TextStyle(fontSize: 7, fontWeight: FontWeight.w900,
                 color: Color(0xFFB71C1C), letterSpacing: 1.0, height: 1.2)),
             Text('$label DISCOUNT',
