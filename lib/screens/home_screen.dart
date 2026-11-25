@@ -150,7 +150,7 @@ class _HomeScreenState extends State<HomeScreen> {
         if (_discountPct > 0)
           Positioned.fill(
             child: Align(
-              alignment: const Alignment(0.4, 0.0),
+              alignment: const Alignment(0.3, 0.0),
               child: Transform.rotate(
                 angle: -0.52, // −30°
                 child: _DiscountStamp(pct: _discountPct),
