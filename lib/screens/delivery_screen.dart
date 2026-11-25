@@ -285,10 +285,14 @@ class _DeliveryScreenState extends State<DeliveryScreen> {
 
                   Row(children: [
                     Expanded(
-                      child: TextField(
-                        controller: _searchCtrl,
-                        decoration: _inputDecoration('Search by area, suburb or city', prefixIcon: Icons.search),
-                        onSubmitted: (_) => _searchPoints(),
+                      child: SizedBox(
+                        height: 44,
+                        child: TextField(
+                          controller: _searchCtrl,
+                          style: const TextStyle(fontSize: 13),
+                          decoration: _inputDecoration('Search by area, suburb or city', prefixIcon: Icons.search),
+                          onSubmitted: (_) => _searchPoints(),
+                        ),
                       ),
                     ),
                     const SizedBox(width: 10),
@@ -391,12 +395,16 @@ class _DeliveryScreenState extends State<DeliveryScreen> {
 
   Widget _field(String label, TextEditingController ctrl, {String? hint, TextInputType keyboard = TextInputType.text}) {
     return Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-      Text(label, style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: AppColors.dark)),
-      const SizedBox(height: 4),
-      TextField(
-        controller: ctrl,
-        keyboardType: keyboard,
-        decoration: _inputDecoration(hint ?? label),
+      Text(label, style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: AppColors.dark)),
+      const SizedBox(height: 6),
+      SizedBox(
+        height: 44,
+        child: TextField(
+          controller: ctrl,
+          keyboardType: keyboard,
+          style: const TextStyle(fontSize: 13),
+          decoration: _inputDecoration(hint ?? label),
+        ),
       ),
     ]);
   }
@@ -407,7 +415,7 @@ class _DeliveryScreenState extends State<DeliveryScreen> {
     prefixIcon: prefixIcon != null ? Icon(prefixIcon, size: 20, color: AppColors.textSecondary) : null,
     filled: true,
     fillColor: Colors.white,
-    contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+    contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 11),
     border: OutlineInputBorder(borderRadius: BorderRadius.circular(10), borderSide: BorderSide(color: Colors.grey.shade300)),
     enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(10), borderSide: BorderSide(color: Colors.grey.shade300)),
     focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(10), borderSide: const BorderSide(color: AppColors.primary, width: 1.5)),
@@ -576,19 +584,20 @@ class _ProvinceDropdown extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-      const Text('Province', style: TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: AppColors.dark)),
-      const SizedBox(height: 4),
+      const Text('Province', style: TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: AppColors.dark)),
+      const SizedBox(height: 6),
       DropdownButtonFormField<String>(
         value: value,
         onChanged: onChanged,
         decoration: InputDecoration(
           filled: true, fillColor: Colors.white,
-          contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+          contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 11),
           border: OutlineInputBorder(borderRadius: BorderRadius.circular(10), borderSide: BorderSide(color: Colors.grey.shade300)),
           enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(10), borderSide: BorderSide(color: Colors.grey.shade300)),
           focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(10), borderSide: const BorderSide(color: AppColors.primary, width: 1.5)),
         ),
-        items: _provinces.map((p) => DropdownMenuItem(value: p, child: Text(p, style: const TextStyle(fontSize: 13)))).toList(),
+        style: const TextStyle(fontSize: 13, color: AppColors.dark),
+        items: _provinces.map((p) => DropdownMenuItem(value: p, child: Text(p))).toList(),
       ),
     ]);
   }
