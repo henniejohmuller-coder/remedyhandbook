@@ -865,7 +865,7 @@ class _LoginScreenState extends State<LoginScreen> {
                         ),
                         const SizedBox(width: 8),
                         const Text('Stay logged in', style: TextStyle(
-                            fontSize: 13, color: AppColors.dark, fontWeight: FontWeight.w500)),
+                            fontSize: 13, color: AppColors.dark, fontWeight: FontWeight.w600)),
                       ]),
                     ),
                     GestureDetector(
