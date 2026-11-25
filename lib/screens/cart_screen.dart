@@ -77,10 +77,8 @@ class _CartScreenState extends State<CartScreen> {
     return s + price * qty;
   });
 
-  double get discountAmount    => _discountPct > 0 ? subtotal * _discountPct / 100 : 0;
+  double get discountAmount     => _discountPct > 0 ? subtotal * _discountPct / 100 : 0;
   double get discountedSubtotal => subtotal - discountAmount;
-  double get shipping          => 130;
-  double get total             => discountedSubtotal + shipping;
 
   Future<void> _updateQty(String productId, int qty) async {
     await SupabaseService.updateCartQuantity(productId, qty);
@@ -211,13 +209,12 @@ class _CartScreenState extends State<CartScreen> {
                   const SizedBox(height: 4),
                   Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [
                     const Text('Delivery', style: AppTextStyles.caption),
-                    Text('R${shipping.toInt()}',
-                        style: const TextStyle(fontSize: 13, color: AppColors.textSecondary)),
+                    const Text('Pending', style: TextStyle(fontSize: 13, color: AppColors.textSecondary, fontStyle: FontStyle.italic)),
                   ]),
                   const Divider(height: 16),
                   Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [
-                    const Text('Total', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16, color: AppColors.dark)),
-                    Text('R${total.toInt()}', style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 18, color: AppColors.dark)),
+                    const Text('Subtotal', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16, color: AppColors.dark)),
+                    Text('R${discountedSubtotal.toInt()}', style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 18, color: AppColors.dark)),
                   ]),
                   const SizedBox(height: 12),
                   SizedBox(
@@ -231,8 +228,8 @@ class _CartScreenState extends State<CartScreen> {
                         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
                         elevation: 0,
                       ),
-                      child: Text('Checkout · R${total.toInt()}',
-                          style: const TextStyle(fontWeight: FontWeight.w700, fontSize: 15)),
+                      child: const Text('Choose Delivery & Checkout',
+                          style: TextStyle(fontWeight: FontWeight.w700, fontSize: 15)),
                     ),
                   ),
                 ]),
