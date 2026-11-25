@@ -207,29 +207,27 @@ class _DeliveryScreenState extends State<DeliveryScreen> {
               child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
 
                 // ── Method selector ──────────────────────────────────────
-                Row(children: [
-                  _MethodCard(
-                    icon: Icons.home_outlined,
-                    label: 'To my door',
-                    sub: 'Standard delivery',
-                    selected: _method == DeliveryType.door2door,
-                    onTap: () => setState(() {
-                      _method = DeliveryType.door2door;
-                      _quotes = []; _selectedQuote = null; _quoteError = null;
-                    }),
-                  ),
-                  const SizedBox(width: 12),
-                  _MethodCard(
-                    icon: Icons.inventory_2_outlined,
-                    label: 'PUDO Point',
-                    sub: 'Locker or kiosk',
-                    selected: _method == DeliveryType.pudo,
-                    onTap: () => setState(() {
-                      _method = DeliveryType.pudo;
-                      _quotes = []; _selectedQuote = null; _quoteError = null;
-                    }),
-                  ),
-                ]),
+                _MethodCard(
+                  icon: Icons.home_outlined,
+                  label: 'To my door',
+                  sub: 'Standard delivery',
+                  selected: _method == DeliveryType.door2door,
+                  onTap: () => setState(() {
+                    _method = DeliveryType.door2door;
+                    _quotes = []; _selectedQuote = null; _quoteError = null;
+                  }),
+                ),
+                const SizedBox(height: 10),
+                _MethodCard(
+                  icon: Icons.inventory_2_outlined,
+                  label: 'PUDO Point',
+                  sub: 'Locker or kiosk',
+                  selected: _method == DeliveryType.pudo,
+                  onTap: () => setState(() {
+                    _method = DeliveryType.pudo;
+                    _quotes = []; _selectedQuote = null; _quoteError = null;
+                  }),
+                ),
 
                 const SizedBox(height: 20),
 
@@ -298,7 +296,7 @@ class _DeliveryScreenState extends State<DeliveryScreen> {
                       onPressed: _searchingPoints ? null : _searchPoints,
                       style: ElevatedButton.styleFrom(
                         backgroundColor: AppColors.primary, foregroundColor: AppColors.dark,
-                        minimumSize: const Size(60, 52),
+                        minimumSize: const Size(60, 44),
                         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
                         elevation: 0,
                       ),
@@ -373,7 +371,7 @@ class _DeliveryScreenState extends State<DeliveryScreen> {
                     onPressed: _confirm,
                     style: ElevatedButton.styleFrom(
                       backgroundColor: AppColors.primary, foregroundColor: AppColors.dark,
-                      padding: const EdgeInsets.symmetric(vertical: 14),
+                      minimumSize: const Size(double.infinity, 44),
                       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
                       elevation: 0,
                     ),
@@ -428,25 +426,27 @@ class _MethodCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Expanded(
-      child: GestureDetector(
-        onTap: onTap,
-        child: AnimatedContainer(
-          duration: const Duration(milliseconds: 150),
-          padding: const EdgeInsets.all(14),
-          decoration: BoxDecoration(
-            color: selected ? AppColors.primary.withOpacity(0.15) : Colors.white,
-            borderRadius: BorderRadius.circular(12),
-            border: Border.all(color: selected ? AppColors.primary : Colors.grey.shade300, width: selected ? 2 : 1),
-            boxShadow: selected ? [] : [BoxShadow(color: Colors.black.withOpacity(0.04), blurRadius: 4)],
-          ),
-          child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-            Icon(icon, size: 28, color: selected ? AppColors.dark : AppColors.textSecondary),
-            const SizedBox(height: 8),
-            Text(label, style: TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: selected ? AppColors.dark : AppColors.textSecondary)),
-            Text(sub, style: AppTextStyles.label),
-          ]),
+    return GestureDetector(
+      onTap: onTap,
+      child: AnimatedContainer(
+        duration: const Duration(milliseconds: 150),
+        height: 44,
+        padding: const EdgeInsets.symmetric(horizontal: 14),
+        decoration: BoxDecoration(
+          color: selected ? AppColors.primary : Colors.white,
+          borderRadius: BorderRadius.circular(10),
+          border: Border.all(color: selected ? AppColors.primary : Colors.grey.shade300, width: selected ? 1.5 : 1),
+          boxShadow: selected ? [] : [BoxShadow(color: Colors.black.withOpacity(0.04), blurRadius: 4)],
         ),
+        child: Row(children: [
+          Icon(icon, size: 20, color: AppColors.dark),
+          const SizedBox(width: 10),
+          Expanded(
+            child: Text('$label  ·  $sub',
+                style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: AppColors.dark)),
+          ),
+          if (selected) const Icon(Icons.check_circle_outline, size: 18, color: AppColors.dark),
+        ]),
       ),
     );
   }
