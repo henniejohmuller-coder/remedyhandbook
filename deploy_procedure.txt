@@ -76,6 +76,9 @@ flutter build apk --release --split-per-abi
 # V1.0.7 - PayFast regular payments working
 # V1.0.8 - PayFast tokenization + one-click payment
 # V1.0.9 - Download page improvements, version display fix
+# V1.0.25 - Latest stable
+# V1.0.26 - Flutter 3.50.1 upgrade
+# V1.0.27 - Flutter upgrade + deploy script fix
 
 ## Key Credentials
 # Android Keystore: android\app\remedy_release.jks | Alias: remedy | Password: MissionLife@1
