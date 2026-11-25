@@ -112,6 +112,7 @@ class _RecipesScreenState extends State<RecipesScreen>
   FilterState _activeFilters = const FilterState();
   bool _loading = true;
   String _encouragement = '';
+  double _discountPct = 0;
   final TextEditingController _searchController = TextEditingController();
 
   // ── Data ──────────────────────────────────────────────────────────────────
@@ -131,9 +132,20 @@ class _RecipesScreenState extends State<RecipesScreen>
     RecipesScreen._reloadCallback = _loadData;
     _runPulse();
     _loadData();
+    _loadDiscount();
     SupabaseService.getAppContent('home_encouragement').then((text) {
       if (mounted) setState(() => _encouragement = text);
     });
+  }
+
+  Future<void> _loadDiscount() async {
+    final userId = SupabaseService.supabase.auth.currentUser?.id;
+    if (userId == null) return;
+    try {
+      final data = await SupabaseService.supabase
+          .from('profiles').select('discount_pct').eq('id', userId).single();
+      if (mounted) setState(() => _discountPct = ((data['discount_pct'] ?? 0) as num).toDouble());
+    } catch (_) {}
   }
 
   @override
@@ -412,9 +424,24 @@ class _RecipesScreenState extends State<RecipesScreen>
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            YellowAppBar(
-              title: 'Herbal Remedies',
-              subtitle: '${_filtered.length} herbal remedies - evidence-rated',
+            Stack(
+              clipBehavior: Clip.none,
+              children: [
+                YellowAppBar(
+                  title: 'Herbal Remedies',
+                  subtitle: '${_filtered.length} herbal remedies - evidence-rated',
+                ),
+                if (_discountPct > 0)
+                  Positioned.fill(
+                    child: Align(
+                      alignment: const Alignment(0.3, 0.0),
+                      child: Transform.rotate(
+                        angle: -0.52,
+                        child: _DiscountStamp(pct: _discountPct),
+                      ),
+                    ),
+                  ),
+              ],
             ),
             if (_encouragement.isNotEmpty)
               EncouragementBanner(text: _encouragement),
@@ -1062,4 +1089,37 @@ class _ActiveFilterBar extends StatelessWidget {
       ),
     ]),
   );
+}
+
+// ── Discount stamp ────────────────────────────────────────────────────────────
+class _DiscountStamp extends StatelessWidget {
+  final double pct;
+  const _DiscountStamp({required this.pct});
+
+  @override
+  Widget build(BuildContext context) {
+    final label = pct % 1 == 0 ? '${pct.toInt()}%' : '$pct%';
+    return Opacity(
+      opacity: 0.88,
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 4),
+        decoration: BoxDecoration(
+          border: Border.all(color: const Color(0xFFB71C1C), width: 2),
+          borderRadius: BorderRadius.circular(3),
+          color: Colors.transparent,
+        ),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            const Text('EARLY SUPPORTER',
+              style: TextStyle(fontSize: 7, fontWeight: FontWeight.w900,
+                color: Color(0xFFB71C1C), letterSpacing: 1.0, height: 1.2)),
+            Text('$label DISCOUNT',
+              style: const TextStyle(fontSize: 9, fontWeight: FontWeight.w900,
+                color: Color(0xFFB71C1C), letterSpacing: 0.8, height: 1.2)),
+          ],
+        ),
+      ),
+    );
+  }
 }
