@@ -1,8 +1,8 @@
 Write-Host "Building web app..." -ForegroundColor Yellow
-flutter build web --release
+flutter build web --release --no-tree-shake-icons
 $content = Get-Content "lib\main.dart" -Raw
 if ($content -notmatch "import 'config.dart'") {
-    flutter build web --release
+    flutter build web --release --no-tree-shake-icons
 }
 $idx = Get-Content 'build\web\index.html' -Raw
 if ($idx -notmatch 'install-bar') {
