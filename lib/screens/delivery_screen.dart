@@ -39,12 +39,26 @@ class _DeliveryScreenState extends State<DeliveryScreen> {
   String? _quoteError;
 
   int _itemCount = 1;
+  double _discountPct = 0;
 
   @override
   void initState() {
     super.initState();
     _loadItemCount();
     _prefillAddress();
+    _loadDiscount();
+  }
+
+  Future<void> _loadDiscount() async {
+    final userId = SupabaseService.supabase.auth.currentUser?.id;
+    if (userId == null) return;
+    try {
+      final data = await SupabaseService.supabase
+          .from('profiles').select('discount_pct').eq('id', userId).single();
+      if (mounted) setState(() {
+        _discountPct = ((data['discount_pct'] ?? 0) as num).toDouble();
+      });
+    } catch (_) {}
   }
 
   Future<void> _prefillAddress() async {
@@ -200,7 +214,22 @@ class _DeliveryScreenState extends State<DeliveryScreen> {
       backgroundColor: AppColors.background,
       body: SafeArea(
         child: Column(children: [
-          const YellowAppBar(title: 'Delivery', subtitle: 'Choose how to receive your order', showBack: true),
+          Stack(
+            clipBehavior: Clip.none,
+            children: [
+              YellowAppBar(title: 'Delivery', subtitle: 'Choose how to receive your order', showBack: true),
+              if (_discountPct > 0)
+                Positioned.fill(
+                  child: Align(
+                    alignment: const Alignment(0.3, 0.0),
+                    child: Transform.rotate(
+                      angle: -0.52,
+                      child: _DiscountStamp(pct: _discountPct),
+                    ),
+                  ),
+                ),
+            ],
+          ),
           Expanded(
             child: SingleChildScrollView(
               padding: const EdgeInsets.all(16),
@@ -617,6 +646,33 @@ class _ErrorBanner extends StatelessWidget {
         const SizedBox(width: 8),
         Expanded(child: Text(message, style: const TextStyle(fontSize: 12, color: Colors.red))),
       ]),
+    );
+  }
+}
+
+class _DiscountStamp extends StatelessWidget {
+  final double pct;
+  const _DiscountStamp({required this.pct});
+  @override
+  Widget build(BuildContext context) {
+    final label = pct % 1 == 0 ? '${pct.toInt()}%' : '$pct%';
+    return Opacity(
+      opacity: 0.88,
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 4),
+        decoration: BoxDecoration(
+          border: Border.all(color: const Color(0xFFB71C1C), width: 2),
+          borderRadius: BorderRadius.circular(3),
+          color: Colors.transparent,
+        ),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            const Text('EARLY SUPPORTER', style: TextStyle(fontSize: 7, fontWeight: FontWeight.w900, color: Color(0xFFB71C1C), letterSpacing: 1.0, height: 1.2)),
+            Text('$label DISCOUNT', style: const TextStyle(fontSize: 9, fontWeight: FontWeight.w900, color: Color(0xFFB71C1C), letterSpacing: 0.8, height: 1.2)),
+          ],
+        ),
+      ),
     );
   }
 }
