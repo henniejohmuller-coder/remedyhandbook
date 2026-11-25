@@ -213,7 +213,7 @@ class _CartScreenState extends State<CartScreen> {
                   ]),
                   const Divider(height: 16),
                   Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [
-                    const Text('Subtotal', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16, color: AppColors.dark)),
+                    const Text('Products total', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16, color: AppColors.dark)),
                     Text('R${discountedSubtotal.toInt()}', style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 18, color: AppColors.dark)),
                   ]),
                   const SizedBox(height: 12),
