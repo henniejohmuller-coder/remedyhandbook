@@ -1045,7 +1045,7 @@ class _ActiveFilterBar extends StatelessWidget {
   }
 
   Widget _chip(String label, VoidCallback onRemove) => Container(
-    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+    padding: const EdgeInsets.only(left: 8, top: 3, bottom: 3),
     decoration: BoxDecoration(
       color: AppColors.primary.withOpacity(0.15),
       borderRadius: BorderRadius.circular(12),
@@ -1053,10 +1053,12 @@ class _ActiveFilterBar extends StatelessWidget {
     ),
     child: Row(mainAxisSize: MainAxisSize.min, children: [
       Text(label, style: const TextStyle(fontSize: 10, color: AppColors.primary)),
-      const SizedBox(width: 4),
       GestureDetector(
         onTap: onRemove,
-        child: const Icon(Icons.close, size: 10, color: AppColors.primary),
+        child: const Padding(
+          padding: EdgeInsets.symmetric(horizontal: 6, vertical: 4),
+          child: Icon(Icons.close, size: 12, color: AppColors.primary),
+        ),
       ),
     ]),
   );
