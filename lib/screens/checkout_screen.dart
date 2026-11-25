@@ -356,8 +356,13 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
                           decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(10),
                               boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.04), blurRadius: 6)]),
                           child: Column(children: [
-                            InfoRow(label: 'Subtotal', value: 'R${subtotal.toInt()}'),
+                            // Subtotal
+                            Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [
+                              const Text('Subtotal', style: TextStyle(fontSize: 13, color: AppColors.textSecondary)),
+                              Text('R${subtotal.toStringAsFixed(2)}', style: const TextStyle(fontSize: 13, color: AppColors.textSecondary)),
+                            ]),
                             if (_discountPct > 0) ...[
+                              const SizedBox(height: 6),
                               Row(
                                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                                 children: [
@@ -376,12 +381,23 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
                                   ),
                                 ],
                               ),
+                              const SizedBox(height: 6),
+                              // Product total after discount
+                              Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [
+                                const Text('Product Total', style: TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: AppColors.dark)),
+                                Text('R${discountedSubtotal.toStringAsFixed(2)}', style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: AppColors.dark)),
+                              ]),
                             ],
-                            InfoRow(
-                              label: 'Delivery',
-                              value: shipping == 0 ? 'FREE' : 'R${shipping.toInt()}',
-                            ),
-                            const Divider(height: 16),
+                            const SizedBox(height: 6),
+                            // Delivery
+                            Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [
+                              const Text('Delivery', style: TextStyle(fontSize: 13, color: AppColors.textSecondary)),
+                              Text(
+                                shipping == 0 ? 'FREE' : 'R${shipping.toInt()}',
+                                style: TextStyle(fontSize: 13, color: shipping == 0 ? Colors.green : AppColors.textSecondary, fontWeight: shipping == 0 ? FontWeight.w600 : FontWeight.normal),
+                              ),
+                            ]),
+                            const Divider(height: 20),
                             Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [
                               const Text('Total', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 15)),
                               Text('R${total.toStringAsFixed(2)}', style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 18, color: AppColors.dark)),
