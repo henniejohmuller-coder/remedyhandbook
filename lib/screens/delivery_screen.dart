@@ -258,11 +258,13 @@ class _DeliveryScreenState extends State<DeliveryScreen> {
                       icon: _loadingQuote
                           ? const SizedBox(width: 16, height: 16, child: CircularProgressIndicator(strokeWidth: 2, color: AppColors.dark))
                           : const Icon(Icons.local_shipping_outlined, size: 18),
-                      label: Text(_loadingQuote ? 'Getting quote…' : 'Get delivery quote'),
+                      label: Text(_loadingQuote ? 'Getting quote…' : 'Get delivery quote',
+                          style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 13)),
                       onPressed: _loadingQuote ? null : _getD2DQuote,
                       style: ElevatedButton.styleFrom(
                         backgroundColor: AppColors.primary, foregroundColor: AppColors.dark,
-                        padding: const EdgeInsets.symmetric(vertical: 14),
+                        minimumSize: const Size(double.infinity, 44),
+                        padding: const EdgeInsets.symmetric(vertical: 12),
                         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
                         elevation: 0,
                       ),
@@ -362,7 +364,7 @@ class _DeliveryScreenState extends State<DeliveryScreen> {
                       Text(_selectedQuote!.deliveryDays!, style: AppTextStyles.caption),
                   ]),
                   Text('R${_selectedQuote!.price.toStringAsFixed(2)}',
-                      style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 18, color: AppColors.dark)),
+                      style: AppTextStyles.heading2),
                 ]),
                 const SizedBox(height: 10),
                 SizedBox(
@@ -376,7 +378,7 @@ class _DeliveryScreenState extends State<DeliveryScreen> {
                       elevation: 0,
                     ),
                     child: const Text('Confirm & Continue to Checkout',
-                        style: TextStyle(fontWeight: FontWeight.w700, fontSize: 15)),
+                        style: TextStyle(fontWeight: FontWeight.w600, fontSize: 13)),
                   ),
                 ),
               ]),
@@ -441,8 +443,8 @@ class _MethodCard extends StatelessWidget {
           child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
             Icon(icon, size: 28, color: selected ? AppColors.dark : AppColors.textSecondary),
             const SizedBox(height: 8),
-            Text(label, style: TextStyle(fontSize: 14, fontWeight: FontWeight.w700, color: selected ? AppColors.dark : AppColors.textSecondary)),
-            Text(sub, style: const TextStyle(fontSize: 11, color: AppColors.textSecondary)),
+            Text(label, style: TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: selected ? AppColors.dark : AppColors.textSecondary)),
+            Text(sub, style: AppTextStyles.label),
           ]),
         ),
       ),
@@ -547,12 +549,11 @@ class _QuoteTile extends StatelessWidget {
         ),
         child: Row(children: [
           Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-            Text(quote.serviceName, style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w600, color: AppColors.dark)),
+            Text(quote.serviceName, style: AppTextStyles.heading3),
             if (quote.deliveryDays != null)
               Text(quote.deliveryDays!, style: AppTextStyles.caption),
           ])),
-          Text('R${quote.price.toStringAsFixed(2)}',
-              style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16, color: AppColors.dark)),
+          Text('R${quote.price.toStringAsFixed(2)}', style: AppTextStyles.heading3),
           const SizedBox(width: 8),
           Icon(selected ? Icons.radio_button_checked : Icons.radio_button_unchecked,
               color: selected ? AppColors.dark : AppColors.textSecondary, size: 20),

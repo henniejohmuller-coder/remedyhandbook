@@ -158,7 +158,7 @@ class _CartScreenState extends State<CartScreen> {
                                   Text(name, style: AppTextStyles.heading3, overflow: TextOverflow.ellipsis),
                                   Text(type, style: AppTextStyles.caption),
                                   const SizedBox(height: 4),
-                                  Text('R${price.toInt()}', style: const TextStyle(fontWeight: FontWeight.w700, color: AppColors.dark)),
+                                  Text('R${price.toInt()}', style: AppTextStyles.heading3),
                                 ])),
                                 // Qty controls
                                 Column(children: [
@@ -166,7 +166,7 @@ class _CartScreenState extends State<CartScreen> {
                                     _QtyBtn(icon: Icons.remove, onTap: () => _updateQty(productId, qty - 1)),
                                     Padding(
                                       padding: const EdgeInsets.symmetric(horizontal: 10),
-                                      child: Text('$qty', style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
+                                      child: Text('$qty', style: AppTextStyles.heading3),
                                     ),
                                     _QtyBtn(icon: Icons.add, onTap: () => _updateQty(productId, qty + 1)),
                                   ]),
@@ -213,8 +213,8 @@ class _CartScreenState extends State<CartScreen> {
                   ]),
                   const Divider(height: 16),
                   Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [
-                    const Text('Products total', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16, color: AppColors.dark)),
-                    Text('R${discountedSubtotal.toInt()}', style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 18, color: AppColors.dark)),
+                    const Text('Products total', style: AppTextStyles.heading3),
+                    Text('R${discountedSubtotal.toInt()}', style: AppTextStyles.heading2),
                   ]),
                   const SizedBox(height: 12),
                   SizedBox(
@@ -224,12 +224,13 @@ class _CartScreenState extends State<CartScreen> {
                           MaterialPageRoute(builder: (_) => const DeliveryScreen())),
                       style: ElevatedButton.styleFrom(
                         backgroundColor: AppColors.primary, foregroundColor: AppColors.dark,
-                        padding: const EdgeInsets.symmetric(vertical: 14),
+                        minimumSize: const Size(double.infinity, 44),
+                        padding: const EdgeInsets.symmetric(vertical: 12),
                         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
                         elevation: 0,
                       ),
                       child: const Text('Choose Delivery & Checkout',
-                          style: TextStyle(fontWeight: FontWeight.w700, fontSize: 15)),
+                          style: TextStyle(fontWeight: FontWeight.w600, fontSize: 13)),
                     ),
                   ),
                 ]),

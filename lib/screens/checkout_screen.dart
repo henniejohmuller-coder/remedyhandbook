@@ -423,8 +423,8 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
                             ]),
                             const Divider(height: 20),
                             Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [
-                              const Text('Total', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 15)),
-                              Text('R${total.toStringAsFixed(2)}', style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 18, color: AppColors.dark)),
+                              const Text('Total', style: AppTextStyles.heading3),
+                              Text('R${total.toStringAsFixed(2)}', style: AppTextStyles.heading2),
                             ]),
                           ]),
                         ),
@@ -529,7 +529,7 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
                                     child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white))
                                 : Row(mainAxisAlignment: MainAxisAlignment.center, children: [
                                     Text(_savedToken != null ? 'One-click Pay R\  ' : 'Pay R\ securely  ',
-                                        style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14)),
+                                        style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 13)),
                                     Container(
                                       padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
                                       decoration: BoxDecoration(color: AppColors.primary, borderRadius: BorderRadius.circular(4)),
