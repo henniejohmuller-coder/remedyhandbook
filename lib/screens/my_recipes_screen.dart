@@ -24,6 +24,7 @@ class _MyRecipesScreenState extends State<MyRecipesScreen>
   void initState() {
     super.initState();
     _tabController = TabController(length: 2, vsync: this);
+    _tabController.addListener(() => setState(() {}));
     _loadData();
   }
 
@@ -67,29 +68,23 @@ class _MyRecipesScreenState extends State<MyRecipesScreen>
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             const YellowAppBar(title: 'My Remedy', subtitle: 'Favourites · Orders'),
-            const SizedBox(height: 12),
             Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 16),
-              child: Container(
-                decoration: BoxDecoration(
-                  color: Colors.white,
-                  borderRadius: BorderRadius.circular(10),
-                  boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.04), blurRadius: 4)],
+              padding: const EdgeInsets.fromLTRB(16, 8, 16, 0),
+              child: Row(children: [
+                _FilterTab(
+                  label: 'Favourites (${_saved.length + _savedProducts.length})',
+                  selected: _tabController.index == 0,
+                  onTap: () => setState(() => _tabController.index = 0),
                 ),
-                child: TabBar(
-                  controller: _tabController,
-                  labelColor: AppColors.dark,
-                  unselectedLabelColor: AppColors.textSecondary,
-                  indicator: BoxDecoration(color: AppColors.primary, borderRadius: BorderRadius.circular(10)),
-                  labelStyle: const TextStyle(fontWeight: FontWeight.w600, fontSize: 13),
-                  tabs: [
-                    Tab(text: 'Favourites (${_saved.length + _savedProducts.length})'),
-                    Tab(text: 'Orders (${_orders.length})'),
-                  ],
+                const SizedBox(width: 8),
+                _FilterTab(
+                  label: 'Orders (${_orders.length})',
+                  selected: _tabController.index == 1,
+                  onTap: () => setState(() => _tabController.index = 1),
                 ),
-              ),
+              ]),
             ),
-            const SizedBox(height: 12),
+            const SizedBox(height: 8),
             Expanded(
               child: _loading
                   ? const Center(child: CircularProgressIndicator(color: AppColors.primary))
@@ -103,6 +98,35 @@ class _MyRecipesScreenState extends State<MyRecipesScreen>
             ),
           ],
         ),
+      ),
+    );
+  }
+}
+
+// ── Filter Tab pill ───────────────────────────────────────────────────────
+
+class _FilterTab extends StatelessWidget {
+  final String label;
+  final bool selected;
+  final VoidCallback onTap;
+  const _FilterTab({required this.label, required this.selected, required this.onTap});
+
+  @override
+  Widget build(BuildContext context) {
+    return GestureDetector(
+      onTap: onTap,
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 6),
+        decoration: BoxDecoration(
+          color: selected ? AppColors.dark : Colors.white,
+          borderRadius: BorderRadius.circular(20),
+          border: Border.all(color: selected ? AppColors.primary : Colors.grey.shade300),
+        ),
+        child: Text(label, style: TextStyle(
+          fontSize: 12,
+          color: selected ? AppColors.primary : AppColors.textSecondary,
+          fontWeight: selected ? FontWeight.w600 : FontWeight.normal,
+        )),
       ),
     );
   }
