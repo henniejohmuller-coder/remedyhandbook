@@ -108,10 +108,21 @@ class _DeliveryScreenState extends State<DeliveryScreen> {
       final type = _pudoType == 'all' ? 'locker' : _pudoType;
       final pts  = await CourierGuyService.getPickupPoints(search: q, type: type);
       setState(() { _points = pts; _searchingPoints = false; });
-    } catch (e) {
-      setState(() { _searchError = e.toString().replaceFirst('Exception: ', ''); _searchingPoints = false; });
+    } catch (_) {
+      setState(() {
+        _searchError = 'PUDO lookup not available yet. Please use "To my door" delivery for now.';
+        _searchingPoints = false;
+      });
     }
   }
+
+  /// Flat-rate fallback shown when the CourierGuy API is not yet configured.
+  static final _fallbackQuote = DeliveryQuote(
+    serviceCode:  'FLAT',
+    serviceName:  'Standard Delivery',
+    price:        130,
+    deliveryDays: '3–5 business days',
+  );
 
   Future<void> _getD2DQuote() async {
     final street = _streetCtrl.text.trim();
@@ -132,10 +143,14 @@ class _DeliveryScreenState extends State<DeliveryScreen> {
         province: _province, postalCode: postal,
         itemCount: _itemCount,
       );
-      setState(() { _quotes = quotes; _selectedQuote = quotes.isNotEmpty ? quotes.first : null; _loadingQuote = false; });
-      if (quotes.isEmpty) setState(() => _quoteError = 'No delivery options available for this address');
-    } catch (e) {
-      setState(() { _quoteError = e.toString().replaceFirst('Exception: ', ''); _loadingQuote = false; });
+      if (quotes.isEmpty) {
+        setState(() { _quotes = [_fallbackQuote]; _selectedQuote = _fallbackQuote; _loadingQuote = false; });
+      } else {
+        setState(() { _quotes = quotes; _selectedQuote = quotes.first; _loadingQuote = false; });
+      }
+    } catch (_) {
+      // API not yet configured — show flat-rate fallback so checkout still works
+      setState(() { _quotes = [_fallbackQuote]; _selectedQuote = _fallbackQuote; _loadingQuote = false; });
     }
   }
 
@@ -143,10 +158,13 @@ class _DeliveryScreenState extends State<DeliveryScreen> {
     setState(() { _selectedPoint = point; _loadingQuote = true; _quoteError = null; _quotes = []; _selectedQuote = null; });
     try {
       final quotes = await CourierGuyService.getPudoQuote(pudoPointId: point.id, itemCount: _itemCount);
-      setState(() { _quotes = quotes; _selectedQuote = quotes.isNotEmpty ? quotes.first : null; _loadingQuote = false; });
-      if (quotes.isEmpty) setState(() => _quoteError = 'No PUDO options for this point');
-    } catch (e) {
-      setState(() { _quoteError = e.toString().replaceFirst('Exception: ', ''); _loadingQuote = false; });
+      if (quotes.isEmpty) {
+        setState(() { _quotes = [_fallbackQuote]; _selectedQuote = _fallbackQuote; _loadingQuote = false; });
+      } else {
+        setState(() { _quotes = quotes; _selectedQuote = quotes.first; _loadingQuote = false; });
+      }
+    } catch (_) {
+      setState(() { _quotes = [_fallbackQuote]; _selectedQuote = _fallbackQuote; _loadingQuote = false; });
     }
   }
 
