@@ -118,13 +118,13 @@ class _FilterTab extends StatelessWidget {
       child: Container(
         padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 6),
         decoration: BoxDecoration(
-          color: selected ? AppColors.dark : Colors.white,
+          color: selected ? AppColors.primary : Colors.white,
           borderRadius: BorderRadius.circular(20),
           border: Border.all(color: selected ? AppColors.primary : Colors.grey.shade300),
         ),
         child: Text(label, style: TextStyle(
           fontSize: 12,
-          color: selected ? AppColors.primary : AppColors.textSecondary,
+          color: selected ? AppColors.dark : AppColors.textSecondary,
           fontWeight: selected ? FontWeight.w600 : FontWeight.normal,
         )),
       ),
