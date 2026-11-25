@@ -56,10 +56,7 @@ class _CartScreenState extends State<CartScreen> {
     return s + price * qty;
   });
 
-  double get shipping {
-    if (subtotal >= 500) return 0;
-    return 90;
-  }
+  double get shipping => 130;
   double get total    => subtotal + shipping;
 
   Future<void> _updateQty(String productId, int qty) async {
@@ -90,24 +87,6 @@ class _CartScreenState extends State<CartScreen> {
                 showBack: true,
               );
             }),
-            // Free delivery bar
-            Padding(
-              padding: const EdgeInsets.fromLTRB(16, 8, 16, 0),
-              child: Container(
-                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-                decoration: BoxDecoration(color: AppColors.lightGreen, borderRadius: BorderRadius.circular(8)),
-                child: Row(children: [
-                  const Icon(Icons.local_shipping_outlined, size: 21, color: Colors.green),
-                  const SizedBox(width: 8),
-                  Text(
-                    total >= 500
-                        ? '🎉 Free delivery unlocked!'
-                        : 'Add R${(500 - subtotal).toInt()} more for free delivery!',
-                    style: const TextStyle(fontSize: 12, color: Colors.green, fontWeight: FontWeight.bold),
-                  ),
-                ]),
-              ),
-            ),
             const SizedBox(height: 8),
             Expanded(
               child: _loading
