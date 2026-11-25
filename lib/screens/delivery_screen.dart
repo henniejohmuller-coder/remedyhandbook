@@ -44,7 +44,42 @@ class _DeliveryScreenState extends State<DeliveryScreen> {
   void initState() {
     super.initState();
     _loadItemCount();
+    _prefillAddress();
   }
+
+  Future<void> _prefillAddress() async {
+    try {
+      final userId = SupabaseService.currentUser?.id;
+      if (userId == null) return;
+      final profile = await SupabaseService.getProfile(userId);
+      if (profile == null) return;
+
+      // Try structured shipping_address first, fall back to flat fields
+      final addr = profile['shipping_address'] as Map? ?? {};
+
+      // street: combine address1 + address2 if present
+      final street = addr['address1']?.toString() ?? profile['address']?.toString() ?? '';
+      final suburb = addr['suburb']?.toString() ?? profile['suburb']?.toString() ?? '';
+      final city   = addr['city']?.toString() ?? profile['city']?.toString() ?? '';
+      final postal = addr['postal_code']?.toString() ?? profile['postal_code']?.toString() ?? '';
+      final prov   = addr['province']?.toString() ?? profile['province']?.toString() ?? '';
+
+      if (mounted) {
+        setState(() {
+          if (street.isNotEmpty) _streetCtrl.text = street;
+          if (suburb.isNotEmpty) _suburbCtrl.text = suburb;
+          if (city.isNotEmpty)   _cityCtrl.text   = city;
+          if (postal.isNotEmpty) _postalCtrl.text  = postal;
+          if (prov.isNotEmpty && _provinces.contains(prov)) _province = prov;
+        });
+      }
+    } catch (_) {}
+  }
+
+  static const _provinces = [
+    'Gauteng', 'Western Cape', 'KwaZulu-Natal', 'Eastern Cape',
+    'Limpopo', 'Mpumalanga', 'North West', 'Free State', 'Northern Cape',
+  ];
 
   @override
   void dispose() {
