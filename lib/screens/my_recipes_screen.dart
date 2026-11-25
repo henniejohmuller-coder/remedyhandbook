@@ -67,7 +67,7 @@ class _MyRecipesScreenState extends State<MyRecipesScreen>
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            const YellowAppBar(title: 'My Remedy', subtitle: 'Favourites · Orders'),
+            const YellowAppBar(title: 'My Favourites', subtitle: 'Favourites · Orders'),
             Padding(
               padding: const EdgeInsets.fromLTRB(16, 8, 16, 0),
               child: Row(children: [
