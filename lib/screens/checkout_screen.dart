@@ -520,7 +520,7 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
                             onPressed: _paying ? null : (_savedToken != null ? _payWithToken : _pay),
                             style: ElevatedButton.styleFrom(
                               backgroundColor: AppColors.dark, foregroundColor: Colors.white,
-                              padding: const EdgeInsets.symmetric(vertical: 14),
+                              minimumSize: const Size(double.infinity, 44),
                               shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
                               elevation: 0,
                             ),
@@ -558,20 +558,39 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
 
   Widget _inputField(String label, TextEditingController controller, String hint, {int maxLines = 1}) {
     return Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-      Text(label, style: AppTextStyles.label),
-      const SizedBox(height: 4),
-      TextField(
-        controller: controller,
-        maxLines: maxLines,
-        decoration: InputDecoration(
-          hintText: hint,
-          filled: true, fillColor: Colors.white,
-          border: OutlineInputBorder(borderRadius: BorderRadius.circular(8), borderSide: BorderSide(color: Colors.grey.shade200)),
-          enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(8), borderSide: BorderSide(color: Colors.grey.shade200)),
-          focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(8), borderSide: const BorderSide(color: AppColors.primary, width: 1.5)),
-          contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
-        ),
-      ),
+      Text(label, style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: AppColors.dark)),
+      const SizedBox(height: 6),
+      maxLines == 1
+          ? SizedBox(
+              height: 44,
+              child: TextField(
+                controller: controller,
+                style: const TextStyle(fontSize: 13),
+                decoration: InputDecoration(
+                  hintText: hint,
+                  hintStyle: const TextStyle(fontSize: 13, color: AppColors.textSecondary),
+                  filled: true, fillColor: Colors.white,
+                  border: OutlineInputBorder(borderRadius: BorderRadius.circular(10), borderSide: BorderSide(color: Colors.grey.shade300)),
+                  enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(10), borderSide: BorderSide(color: Colors.grey.shade300)),
+                  focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(10), borderSide: const BorderSide(color: AppColors.primary, width: 1.5)),
+                  contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 11),
+                ),
+              ),
+            )
+          : TextField(
+              controller: controller,
+              maxLines: maxLines,
+              style: const TextStyle(fontSize: 13),
+              decoration: InputDecoration(
+                hintText: hint,
+                hintStyle: const TextStyle(fontSize: 13, color: AppColors.textSecondary),
+                filled: true, fillColor: Colors.white,
+                border: OutlineInputBorder(borderRadius: BorderRadius.circular(10), borderSide: BorderSide(color: Colors.grey.shade300)),
+                enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(10), borderSide: BorderSide(color: Colors.grey.shade300)),
+                focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(10), borderSide: const BorderSide(color: AppColors.primary, width: 1.5)),
+                contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 11),
+              ),
+            ),
     ]);
   }
 }
