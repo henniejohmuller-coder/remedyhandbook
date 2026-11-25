@@ -3,12 +3,14 @@ import 'package:flutter/foundation.dart' show kIsWeb;
 import '../theme/app_theme.dart';
 import '../widgets/shared_widgets.dart';
 import '../services/supabase_service.dart';
+import '../models/delivery_models.dart';
 import 'order_confirmation_screen.dart';
 import 'payfast_screen.dart';
 import 'cart_screen.dart';
 
 class CheckoutScreen extends StatefulWidget {
-  const CheckoutScreen({super.key});
+  final DeliverySelection? deliverySelection;
+  const CheckoutScreen({super.key, this.deliverySelection});
 
   @override
   State<CheckoutScreen> createState() => _CheckoutScreenState();
@@ -40,6 +42,22 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
     _loadSavedToken();
     _loadDiscount();
     _prefillProfile();
+    _applyDeliverySelection();
+  }
+
+  void _applyDeliverySelection() {
+    final sel = widget.deliverySelection;
+    if (sel == null) return;
+    if (sel.type == DeliveryType.door2door) {
+      _addressController.text  = [sel.street, sel.suburb].where((s) => s != null && s!.isNotEmpty).join(', ');
+      _cityController.text     = sel.city ?? '';
+      _postalController.text   = sel.postalCode ?? '';
+      _provinceController.text = sel.province ?? '';
+    } else if (sel.pudoPoint != null) {
+      // PUDO: pre-fill address with the point's details
+      _addressController.text  = sel.pudoPoint!.name;
+      _cityController.text     = sel.pudoPoint!.city;
+    }
   }
 
   @override
@@ -182,7 +200,7 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
   });
   double get discountAmount => _discountPct > 0 ? subtotal * _discountPct / 100 : 0;
   double get discountedSubtotal => subtotal - discountAmount;
-  double get shipping => 130;
+  double get shipping => widget.deliverySelection?.quote.price ?? 130;
   double get total    => discountedSubtotal + shipping;
 
   Future<void> _payWithToken() async {
@@ -299,7 +317,13 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
                       padding: const EdgeInsets.all(16),
                       child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
 
-                        // Delivery details
+                        // Delivery summary (from delivery screen)
+                        if (widget.deliverySelection != null) ...[
+                          _DeliverySummaryCard(selection: widget.deliverySelection!),
+                          const SizedBox(height: 16),
+                        ],
+
+                        // Contact & address details
                         const SectionLabel('DELIVERY DETAILS'),
                         _inputField('Full name *', _nameController, 'e.g. Maria Smit'),
                         const SizedBox(height: 10),
@@ -549,6 +573,41 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
         ),
       ),
     ]);
+  }
+}
+
+class _DeliverySummaryCard extends StatelessWidget {
+  final DeliverySelection selection;
+  const _DeliverySummaryCard({required this.selection});
+
+  @override
+  Widget build(BuildContext context) {
+    final isPudo = selection.type == DeliveryType.pudo;
+    return Container(
+      padding: const EdgeInsets.all(14),
+      decoration: BoxDecoration(
+        color: AppColors.lightGreen,
+        borderRadius: BorderRadius.circular(10),
+        border: Border.all(color: Colors.green.shade200),
+      ),
+      child: Row(children: [
+        Icon(isPudo ? Icons.inventory_2_outlined : Icons.local_shipping_outlined,
+            color: Colors.green.shade700, size: 22),
+        const SizedBox(width: 10),
+        Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+          Text(selection.quote.serviceName,
+              style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w700, color: AppColors.dark)),
+          Text(selection.summaryLine,
+              style: const TextStyle(fontSize: 12, color: AppColors.textSecondary),
+              overflow: TextOverflow.ellipsis),
+          if (selection.quote.deliveryDays != null)
+            Text(selection.quote.deliveryDays!,
+                style: const TextStyle(fontSize: 11, color: AppColors.textSecondary)),
+        ])),
+        Text('R${selection.quote.price.toStringAsFixed(2)}',
+            style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 15, color: AppColors.dark)),
+      ]),
+    );
   }
 }
 

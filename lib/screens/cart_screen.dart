@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import '../theme/app_theme.dart';
 import '../widgets/shared_widgets.dart';
 import '../services/supabase_service.dart';
-import 'checkout_screen.dart';
+import 'delivery_screen.dart';
 class CartScreen extends StatefulWidget {
   const CartScreen({super.key});
 
@@ -189,7 +189,7 @@ class _CartScreenState extends State<CartScreen> {
                     width: double.infinity,
                     child: ElevatedButton(
                       onPressed: () => Navigator.push(context,
-                          MaterialPageRoute(builder: (_) => const CheckoutScreen())),
+                          MaterialPageRoute(builder: (_) => const DeliveryScreen())),
                       style: ElevatedButton.styleFrom(
                         backgroundColor: AppColors.primary, foregroundColor: AppColors.dark,
                         padding: const EdgeInsets.symmetric(vertical: 14),
