@@ -14,12 +14,8 @@ serve(async (req) => {
   }
 
   try {
-    const apiKey = Deno.env.get('COURIER_GUY_API_KEY');
-    if (!apiKey) {
-      return new Response(JSON.stringify({ error: 'COURIER_GUY_API_KEY secret not set' }), {
-        status: 500, headers: { ...CORS, 'Content-Type': 'application/json' },
-      });
-    }
+    // TODO: Move back to secret once Supabase restores secret storage
+    const apiKey = Deno.env.get('COURIER_GUY_API_KEY') ?? '56913188326c43d2a471499d63589c55';
 
     const body = await req.json();
     const { search, lat, lng, type = 'locker' } = body;
