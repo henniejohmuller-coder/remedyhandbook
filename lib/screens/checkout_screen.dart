@@ -3,6 +3,7 @@ import 'package:flutter/foundation.dart' show kIsWeb;
 import '../theme/app_theme.dart';
 import '../widgets/shared_widgets.dart';
 import '../services/supabase_service.dart';
+import '../services/courierguy_service.dart';
 import '../models/delivery_models.dart';
 import 'order_confirmation_screen.dart';
 import 'payfast_screen.dart';
@@ -203,6 +204,53 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
   double get shipping => widget.deliverySelection?.quote.price ?? 130;
   double get total    => discountedSubtotal + shipping;
 
+  /// Attempts to create a Courier Guy waybill after order placement.
+  /// Silently logs on failure — order already exists, so we don't block the user.
+  Future<void> _createWaybill(String orderId, String orderRef) async {
+    final sel = widget.deliverySelection;
+    if (sel == null || sel.quote.serviceCode == 'FLAT') return; // flat-rate fallback, no waybill
+    try {
+      final result = await CourierGuyService.createWaybill(
+        orderId:        orderId,
+        serviceCode:    sel.quote.serviceCode,
+        recipientName:  _nameController.text.trim(),
+        recipientPhone: _phoneController.text.trim(),
+        recipientEmail: _emailController.text.trim(),
+        orderRef:       orderRef,
+        itemCount:      _items.fold<int>(0, (s, i) => s + ((i['quantity'] ?? 1) as int)).clamp(1, 99),
+        pudoPointId:    sel.type == DeliveryType.pudo ? sel.pudoPoint?.id : null,
+        street:         sel.street,
+        suburb:         sel.suburb,
+        city:           sel.city,
+        province:       sel.province,
+        postalCode:     sel.postalCode,
+      );
+      // Persist waybill & tracking number on the order row
+      final updates = <String, dynamic>{
+        'waybill_number':  result['waybillNumber'],
+        'tracking_number': result['trackingNumber'],
+        'delivery_type':   sel.type == DeliveryType.pudo ? 'pudo' : 'door2door',
+        'courier_service': sel.quote.serviceName,
+      };
+      if (sel.type == DeliveryType.pudo && sel.pudoPoint != null) {
+        updates['pudo_point_id']   = sel.pudoPoint!.id;
+        updates['pudo_point_name'] = sel.pudoPoint!.name;
+      } else {
+        updates['delivery_address'] = {
+          'street':     sel.street,
+          'suburb':     sel.suburb,
+          'city':       sel.city,
+          'province':   sel.province,
+          'postalCode': sel.postalCode,
+        };
+      }
+      await SupabaseService.supabase.from('orders').update(updates).eq('id', orderId);
+    } catch (e) {
+      // Non-fatal: order is confirmed, waybill can be created manually
+      debugPrint('Waybill creation failed (non-fatal): $e');
+    }
+  }
+
   Future<void> _payWithToken() async {
     if (_nameController.text.isEmpty || _addressController.text.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
@@ -223,7 +271,10 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
         },
         cartItems: _items, subtotal: subtotal, shipping: shipping, total: total,
       );
-      final orderId = orderResult['id']?.toString() ?? '';
+      final orderId  = orderResult['id']?.toString() ?? '';
+      final orderRef = orderResult['order_number']?.toString() ?? orderId;
+      // Fire waybill creation (non-fatal)
+      await _createWaybill(orderId, orderRef);
       await SupabaseService.supabase.rpc('process_token_payment', params: {
         'p_token': _savedToken,
         'p_amount': (total * 100).round(),
@@ -276,6 +327,10 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
         shipping: shipping,
         total: total,
       );
+      final orderId2  = orderResult['id']?.toString() ?? '';
+      final orderRef2 = orderResult['order_number']?.toString() ?? orderId2;
+      // Fire waybill creation (non-fatal)
+      await _createWaybill(orderId2, orderRef2);
       setState(() => _paying = false);
       if (!mounted) return;
       await Navigator.push(context, MaterialPageRoute(

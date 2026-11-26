@@ -105,6 +105,61 @@ class CourierGuyService {
     return quotes;
   }
 
+  /// Creates a waybill (shipment) on The Courier Guy after order is placed.
+  /// Returns a map with waybillNumber and trackingNumber, or throws on error.
+  static Future<Map<String, String?>> createWaybill({
+    required String orderId,
+    required String serviceCode,
+    required String recipientName,
+    required String recipientPhone,
+    required String recipientEmail,
+    required String orderRef,
+    // D2D
+    String? street,
+    String? suburb,
+    String? city,
+    String? province,
+    String? postalCode,
+    // PUDO
+    String? pudoPointId,
+    int itemCount = 1,
+  }) async {
+    final body = <String, dynamic>{
+      'orderId':       orderId,
+      'serviceCode':   serviceCode,
+      'recipientName': recipientName,
+      'recipientPhone': recipientPhone,
+      'recipientEmail': recipientEmail,
+      'orderRef':      orderRef,
+      'itemCount':     itemCount,
+    };
+
+    if (pudoPointId != null) {
+      body['pudoPointId'] = pudoPointId;
+    } else {
+      body['deliveryAddress'] = {
+        'street_address': street ?? '',
+        'suburb':         suburb ?? '',
+        'city':           city ?? '',
+        'zone':           _provinceCode(province ?? 'Gauteng'),
+        'code':           postalCode ?? '',
+        'country':        'ZA',
+      };
+    }
+
+    final res = await _sb.functions.invoke('courierguy-waybill', body: body);
+
+    if (res.status != 200) {
+      throw Exception('Could not create waybill (${res.status})');
+    }
+
+    final data = res.data as Map<String, dynamic>? ?? {};
+    return {
+      'waybillNumber':  data['waybillNumber']?.toString(),
+      'trackingNumber': data['trackingNumber']?.toString(),
+    };
+  }
+
   /// Maps SA province name to Shiplogic zone code.
   static String _provinceCode(String province) {
     const map = {
