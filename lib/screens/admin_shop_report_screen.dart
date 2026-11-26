@@ -2,7 +2,59 @@ import 'package:flutter/material.dart';
 import '../theme/app_theme.dart';
 import '../widgets/shared_widgets.dart';
 import '../services/supabase_service.dart';
+import '../services/courierguy_service.dart';
 import '../utils/csv_download.dart';
+
+// ── Supplier definitions ─────────────────────────────────────────────────────
+class _Supplier {
+  final String name;
+  final Map<String, String> address;
+  final Map<String, String> contact;
+  const _Supplier({required this.name, required this.address, required this.contact});
+}
+
+const _suppliers = [
+  _Supplier(
+    name: 'Willow Wellness',
+    address: {
+      'street_address': '21 McHardy Avenue',
+      'suburb':         'Holland Park',
+      'city':           'Gqeberha',
+      'code':           '6001',
+      'zone':           'EC',
+      'country':        'ZA',
+    },
+    contact: {
+      'name':  'Willow Wellness',
+      'phone': '+27413734191',
+      'email': '',
+    },
+  ),
+  _Supplier(
+    name: 'MetaGenics',
+    address: {
+      'street_address': '',
+      'suburb':         '',
+      'city':           '',
+      'code':           '',
+      'zone':           'GAU',
+      'country':        'ZA',
+    },
+    contact: {'name': 'MetaGenics', 'phone': '', 'email': ''},
+  ),
+  _Supplier(
+    name: 'DS International',
+    address: {
+      'street_address': '',
+      'suburb':         '',
+      'city':           '',
+      'code':           '',
+      'zone':           'GAU',
+      'country':        'ZA',
+    },
+    contact: {'name': 'DS International', 'phone': '', 'email': ''},
+  ),
+];
 
 class AdminShopReportScreen extends StatefulWidget {
   const AdminShopReportScreen({super.key});
